@@ -1,10 +1,13 @@
 # UE Nodes
 
-UE nodes are "Use Everywhere".
+UE nodes are "Use Everywhere". Put a UE node into your workflow, connect its input, and every node with an unconnected input of the same type will act as if connected to it. 
 
-Put a `UE CLIP` into your workflow, and connect it's input (ignore it's output).
+CLIP, IMAGE, MODEL, VAE, or LATENT (want something else? Edit `__init__.py` line 3.)
 
-Then any node, anywhere in the workflow, which needs a CLIP input will get it automatically, if left unconnected.
+| Model, clip, vae, latent and image are all being automagically connected. | Drop this image into ComfyUI to get a working workflow. |
+|-|-|
+|![workflow](docs/workflow.png)|![portrait](docs/portrait.png)|
 
-It's as the UE CLIP output was connected to every unconnected CLIP input.
- 
+## How does it work?
+
+Read the javascript - it's less than thirty lines long! Basically it hijacks the output of the ComfyUI app.graphToPrompt method, and scans through all the nodes twice - once to find any UE nodes, and the second time to find any unconnected inputs and, if there's a UE of the right type, connects them up (but only in the prompt that is about to be sent to the backend).
