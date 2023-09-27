@@ -16,7 +16,7 @@ class UseEverywhere():
         return (s.TYPE,)
     
     FUNCTION = "func"
-    CATEGORY = "anywhere"
+    CATEGORY = "everywhere"
     OUTPUT_NODE = True
 
     def func(self, **kwargs):

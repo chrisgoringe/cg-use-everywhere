@@ -2,7 +2,7 @@
 
 UE nodes are "Use Everywhere". Put a UE node into your workflow, connect its input, and every node with an unconnected input of the same type will act as if connected to it. 
 
-CLIP, IMAGE, MODEL, VAE, or LATENT (want something else? Edit `__init__.py` line 3.)
+CLIP, IMAGE, MODEL, VAE, CONDITIONING, or LATENT (want something else? Edit `__init__.py` line 3.)
 
 | Model, clip, vae, latent and image are all being automagically connected. | Drop this image into ComfyUI to get a working workflow. |
 |-|-|
