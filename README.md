@@ -8,6 +8,14 @@ CLIP, IMAGE, MODEL, VAE, CONDITIONING, or LATENT (want something else? Edit `__i
 |-|-|
 |![workflow](docs/workflow.png)|![portrait](docs/portrait.png)|
 
+## UE? Nodes
+
+UE? nodes are like UE Nodes, but add two widgets, 'title' and 'input'. These are Regular Expressions, and the node will only send to nodes where the node Title and the unconnected input match. 
+
+| So you can do things like: | Drop this image into ComfyUI to get a working workflow. |
+|-|-|
+|![this](docs/UEQ.png)|![drop](docs/UEQportrait.png)|
+
 ## Caution
 
 It's possible to create a loop with UE, and that currently isn't detected. If you get a RecursionError that's probably what you've done. Remember, *every* unconnected input gets connected to the UE output, even optional ones...
