@@ -17,3 +17,14 @@ class UseEverywhere():
 
     def func(self, **kwargs):
         return tuple([kwargs.get(t.lower(),None) for t in self.RETURN_TYPES])   
+    
+class UseSomewhere(UseEverywhere):
+    @classmethod
+    def INPUT_TYPES(s):
+        it = {"required":{},
+                "optional": { x.lower() : (x, {}) for x in s.RETURN_TYPES }
+                }
+        it['optional']['title'] = ("STRING", {"default":".*"})
+        it['optional']['input'] = ("STRING", {"default":".*"})
+        return it
+

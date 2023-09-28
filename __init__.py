@@ -1,4 +1,4 @@
-from .use_everywhere import UseEverywhere
+from .use_everywhere import UseEverywhere, UseSomewhere
 
 types = {
     "MODEL" : ("MODEL",),
@@ -10,7 +10,12 @@ types = {
     "CHECKPOINT" : ("MODEL", "CLIP", "VAE"),
 }
 
-NODE_CLASS_MAPPINGS = { f"UE {t}" : type(f"UE {t}", (UseEverywhere,), { "RETURN_TYPES":types[t] }) for t in types }
+NODE_CLASS_MAPPINGS = {}
+for t in types:
+    NODE_CLASS_MAPPINGS[f"UE {t}"] = type(f"UE {t}", (UseEverywhere,), { "RETURN_TYPES":types[t] })
+    NODE_CLASS_MAPPINGS[f"UE? {t}"] = type(f"UE {t}", (UseSomewhere,), { "RETURN_TYPES":types[t] })
+
+
 __all__ = ['NODE_CLASS_MAPPINGS']
 
 import os, shutil
