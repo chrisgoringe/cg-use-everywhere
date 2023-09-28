@@ -11,27 +11,45 @@ app.registerExtension({
             var use_everywheres = [];
             nodes.forEach(node => {
                 if (node.type.startsWith('UE ')) {
-                    for (var i=0; i<node.inputs.length; i++) {
-                        if (node.inputs[i].link != null) {
-                            use_everywheres.splice(0,0,{
-                                type : node.inputs[i].type,
-                                title : always,
-                                input : always,
-                                output : [node.id.toString(),i],
-                            })
+                    if (node.inputs) {
+                        for (var i=0; i<node.inputs.length; i++) {
+                            if (node.inputs[i].link != null) {
+                                use_everywheres.splice(0,0,{
+                                    type : node.inputs[i].type,
+                                    title : always,
+                                    input : always,
+                                    output : [node.id.toString(),i],
+                                })
+                            }
                         }
+                    } else {
+                        use_everywheres.splice(0,0,{
+                            type : node.type.substring(3),
+                            title : always,
+                            input : always,
+                            output : [node.id.toString(),0],
+                        })
                     }
                 }
                 if (node.type.startsWith('UE? ')) {
-                    for (var i=0; i<node.inputs.length; i++) {
-                        if (node.inputs[i].link != null) {
-                            use_everywheres.splice(0,0,{
-                                type : node.inputs[i].type,
-                                title : new RegExp(node.widgets_values[0]),
-                                input : new RegExp(node.widgets_values[1]),
-                                output : [node.id.toString(),i],
-                            })
+                    if (node.inputs) {
+                        for (var i=0; i<node.inputs.length; i++) {
+                            if (node.inputs[i].link != null) {
+                                use_everywheres.splice(0,0,{
+                                    type : node.inputs[i].type,
+                                    title : new RegExp(node.widgets_values[0]),
+                                    input : new RegExp(node.widgets_values[1]),
+                                    output : [node.id.toString(),i],
+                                })
+                            }
                         }
+                    } else {
+                        use_everywheres.splice(0,0,{
+                            type : node.type.substring(4),
+                            title : new RegExp(node.widgets_values[1]),
+                            input : new RegExp(node.widgets_values[2]),
+                            output : [node.id.toString(),0],
+                        })
                     }
                 }
                 if (node.type === "Seed Everywhere") {

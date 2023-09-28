@@ -20,6 +20,10 @@ UE? nodes are like UE Nodes, but add two widgets, 'title' and 'input'. These are
 
 A special case of UE? - Seed Everywhere connects to any unconnected INT input with 'seed' in the input name. So you can use the same seed everywhere.
 
+## Widget?
+
+A UE or UE? node with just one output can have the output converted to a widget. But the combination ones can't.
+
 ## Caution
 
 It's possible to create a loop with UE, and that currently isn't detected. If you get a RecursionError that's probably what you've done. Remember, *every* unconnected input gets connected to the UE output, even optional ones...

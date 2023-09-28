@@ -7,6 +7,7 @@ types = {
     "LATENT" : ("LATENT", ),
     "IMAGE" : ("IMAGE",),
     "CONDITIONING" : ("CONDITIONING",),
+    "INT" : ("INT",),
     "CHECKPOINT" : ("MODEL", "CLIP", "VAE"),
 }
 
