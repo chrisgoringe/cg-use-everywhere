@@ -1,4 +1,4 @@
-from .use_everywhere import UseEverywhere, UseSomewhere
+from .use_everywhere import UseEverywhere, UseSomewhere, SeedEverywhere
 
 types = {
     "MODEL" : ("MODEL",),
@@ -10,7 +10,7 @@ types = {
     "CHECKPOINT" : ("MODEL", "CLIP", "VAE"),
 }
 
-NODE_CLASS_MAPPINGS = {}
+NODE_CLASS_MAPPINGS = { "Seed Everywhere": SeedEverywhere }
 for t in types:
     NODE_CLASS_MAPPINGS[f"UE {t}"] = type(f"UE {t}", (UseEverywhere,), { "RETURN_TYPES":types[t] })
     NODE_CLASS_MAPPINGS[f"UE? {t}"] = type(f"UE {t}", (UseSomewhere,), { "RETURN_TYPES":types[t] })

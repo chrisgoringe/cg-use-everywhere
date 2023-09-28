@@ -7,6 +7,7 @@ app.registerExtension({
         app.graphToPrompt = async function () {
             const p = structuredClone(await graphToPrompt.apply(app));
             const nodes = p.workflow.nodes;
+            const always = new RegExp(".*");
             var use_everywheres = [];
             nodes.forEach(node => {
                 if (node.type.startsWith('UE ')) {
@@ -14,8 +15,8 @@ app.registerExtension({
                         if (node.inputs[i].link != null) {
                             use_everywheres.splice(0,0,{
                                 type : node.inputs[i].type,
-                                title : new RegExp(".*"),
-                                input : new RegExp(".*"),
+                                title : always,
+                                input : always,
                                 output : [node.id.toString(),i],
                             })
                         }
@@ -32,6 +33,14 @@ app.registerExtension({
                             })
                         }
                     }
+                }
+                if (node.type === "Seed Everywhere") {
+                    use_everywheres.splice(0,0,{
+                        type : "INT",
+                        title : always,
+                        input : new RegExp("seed"),
+                        output : [node.id.toString(),0],
+                    })
                 }
             })
             nodes.forEach(node => {

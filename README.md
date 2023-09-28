@@ -16,6 +16,10 @@ UE? nodes are like UE Nodes, but add two widgets, 'title' and 'input'. These are
 |-|-|
 |![this](docs/UEQ.png)|![drop](docs/UEQportrait.png)|
 
+## Seed Everywhere
+
+A special case of UE? - Seed Everywhere connects to any unconnected INT input with 'seed' in the input name. So you can use the same seed everywhere.
+
 ## Caution
 
 It's possible to create a loop with UE, and that currently isn't detected. If you get a RecursionError that's probably what you've done. Remember, *every* unconnected input gets connected to the UE output, even optional ones...
