@@ -1,7 +1,16 @@
 from .use_everywhere import UseEverywhere
 
-NODE_CLASS_MAPPINGS = { f"UE {TYPE}" : type(f"UE_{TYPE}", (UseEverywhere,), { "TYPE":TYPE }) for TYPE in ["MODEL","VAE","CLIP","LATENT","IMAGE","CONDITIONING"] }
+types = {
+    "MODEL" : ("MODEL",),
+    "VAE" : ("VAE",),
+    "CLIP" : ("CLIP",),
+    "LATENT" : ("LATENT", ),
+    "IMAGE" : ("IMAGE",),
+    "CONDITIONING" : ("CONDITIONING",),
+    "CHECKPOINT" : ("MODEL", "CLIP", "VAE"),
+}
 
+NODE_CLASS_MAPPINGS = { f"UE {t}" : type(f"UE {t}", (UseEverywhere,), { "RETURN_TYPES":types[t] }) for t in types }
 __all__ = ['NODE_CLASS_MAPPINGS']
 
 import os, shutil

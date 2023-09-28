@@ -5,19 +5,15 @@ class classproperty(object):
         return self.f(owner)
 
 class UseEverywhere():
-    TYPE = None
-
     @classmethod
     def INPUT_TYPES(s):
-        return {"required":{s.TYPE.lower(): (s.TYPE,{})}}
-    
-    @classproperty
-    def RETURN_TYPES(s):
-        return (s.TYPE,)
-    
+        return {"required":{},
+                "optional": { x.lower() : (x, {}) for x in s.RETURN_TYPES }
+                }
     FUNCTION = "func"
     CATEGORY = "everywhere"
     OUTPUT_NODE = True
+    DESCRIPTION = "UE"
 
     def func(self, **kwargs):
-        return (kwargs[self.TYPE.lower()],)
+        return tuple([kwargs.get(t.lower(),None) for t in self.RETURN_TYPES])   

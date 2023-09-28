@@ -10,13 +10,17 @@ app.registerExtension({
             var use_everywheres = {};
             nodes.forEach(node => {
                 if (node.type.startsWith('UE ')) {
-                    use_everywheres[node.type.substring(3)] = node.id.toString();
+                    for (var i=0; i<node.inputs.length; i++) {
+                        if (node.inputs[i].link != null) {
+                            use_everywheres[node.inputs[i].type] = [node.id.toString(),i];
+                        }
+                    }
                 }
             })
             nodes.forEach(node => {
                 node.inputs?.forEach(input => {
                     if (input.link === null && use_everywheres[input.type]) {
-                        p.output[node.id].inputs[input.name] = [use_everywheres[input.type],0];
+                        p.output[node.id].inputs[input.name] = use_everywheres[input.type];
                     }
                 });
             });
