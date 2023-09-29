@@ -1,5 +1,9 @@
 # UE Nodes
 
+Like these nodes? Leave a star. And check out [Image Picker](https://github.com/chrisgoringe/cg-image-picker) for another way to make some workflows smoother.
+
+---
+
 UE nodes are "Use Everywhere". Put a UE node into your workflow, connect its input, and every node with an unconnected input of the same type will act as if connected to it. 
 
 CLIP, IMAGE, MODEL, VAE, CONDITIONING, or LATENT (want something else? Edit `__init__.py` line 3.)
