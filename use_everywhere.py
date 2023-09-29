@@ -39,3 +39,39 @@ class SeedEverywhere():
 
     def func(self, seed):
         return (seed,)
+
+try:
+    from custom_nodes.cg_custom_core.ui_decorator import ui_signal
+    @ui_signal('display_text')
+    class AnythingEverywhere(UseEverywhere):
+        @classmethod
+        def INPUT_TYPES(s):
+            return {"required":{}, 
+                    "optional": { 
+                        "anything" : ("*", {}), 
+                        "detected_type" : ("STRING", {"default":""}),
+                        } }
+
+        RETURN_TYPES = ("*",)
+
+        def func(self, anything=None, **kwargs):
+            return (anything, str(anything),)
+        
+    @ui_signal('display_text')
+    class AnythingSomewhere(UseEverywhere):
+        @classmethod
+        def INPUT_TYPES(s):
+            return {"required":{}, 
+                    "optional": { 
+                        "anything" : ("*", {}), 
+                        "title" : ("STRING", {"default":".*"}),
+                        "input" : ("STRING", {"default":".*"}),
+                        "detected_type" : ("STRING", {"default":""}),
+                        } }
+
+        RETURN_TYPES = ("*",)
+
+        def func(self, anything=None, **kwargs):
+            return (anything, str(anything),)
+except:
+    pass

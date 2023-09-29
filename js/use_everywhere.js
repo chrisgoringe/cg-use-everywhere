@@ -60,6 +60,38 @@ app.registerExtension({
                         output : [node.id.toString(),0],
                     })
                 }
+                if (node.type === "Anything Everywhere?") {
+                    const in_link = node?.inputs[0].link;
+                    if (in_link) {
+                        const link = app.graph.links[in_link];
+                        const origin_node = app.graph._nodes_by_id[link.origin_id.toString()];
+                        const output = origin_node.outputs[link.origin_slot];
+                        use_everywheres.splice(0,0,{
+                            type : output.type,
+                            title : new RegExp(node.widgets_values[0]),
+                            input : new RegExp(node.widgets_values[1]),
+                            output : [link.origin_id.toString(), link.origin_slot],
+                        })
+                        const detected = app.graph._nodes_by_id[node.id.toString()]?.widgets?.find((w)=>w.name==='detected_type');
+                        if(detected) detected.value = output.type;
+                    }
+                }
+                if (node.type === "Anything Everywhere") {
+                    const in_link = node?.inputs[0].link;
+                    if (in_link) {
+                        const link = app.graph.links[in_link];
+                        const origin_node = app.graph._nodes_by_id[link.origin_id.toString()];
+                        const output = origin_node.outputs[link.origin_slot];
+                        use_everywheres.splice(0,0,{
+                            type : output.type,
+                            title : always,
+                            input : always,
+                            output : [link.origin_id.toString(), link.origin_slot],
+                        })
+                        const detected = app.graph._nodes_by_id[node.id.toString()]?.widgets?.find((w)=>w.name==='detected_type');
+                        if(detected) detected.value = output.type;
+                    }
+                }
             })
             nodes.forEach(node => {
                 node.inputs?.forEach(input => {
@@ -77,4 +109,5 @@ app.registerExtension({
             return p;
         }
 	},
+
 });
