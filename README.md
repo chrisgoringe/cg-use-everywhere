@@ -1,6 +1,6 @@
 # UE Nodes
 
-Like these nodes? Leave a star. And check out [Image Picker](https://github.com/chrisgoringe/cg-image-picker) for another way to make some workflows smoother.
+Shameless plug for my other nodes -> Check out [Image Picker](https://github.com/chrisgoringe/cg-image-picker) for another way to make some workflows smoother. And leave a star if you like something!
 
 ---
 
