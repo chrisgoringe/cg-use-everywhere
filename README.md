@@ -39,3 +39,7 @@ Why not? because the code gets the data type from the input (weirdly the prompt 
 ## Caution
 
 It's possible to create a loop with UE, and that currently isn't detected. If you get a RecursionError that's probably what you've done. Remember, *every* unconnected input gets connected to the UE output, even optional ones... you might want to use UE? nodes if this is a problem.
+
+## Experimental - Anything Everywhere?
+
+A node you can plug anything you like into, and it will work out the type and send it appropriately. Maybe.
