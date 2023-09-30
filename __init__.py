@@ -18,14 +18,9 @@ for t in types:
     NODE_CLASS_MAPPINGS[f"UE {t}"] = type(f"UE {t}", (UseEverywhere,), { "RETURN_TYPES":types[t] })
     NODE_CLASS_MAPPINGS[f"UE? {t}"] = type(f"UE {t}", (UseSomewhere,), { "RETURN_TYPES":types[t] })
 
-try:
-    from .use_everywhere import AnythingEverywhere, AnythingSomewhere
-    NODE_CLASS_MAPPINGS["Anything Everywhere"] = AnythingEverywhere
-    NODE_CLASS_MAPPINGS["Anything Everywhere?"] = AnythingSomewhere
-except:
-    print ("""Anything Everywhere requires custom_nodes.cg_custom_core
-    In your custom_nodes directory type
-    git clone https://github.com/chrisgoringe/cg-custom-core.git cg_custom_core""")
+from .use_everywhere import AnythingEverywhere, AnythingSomewhere
+NODE_CLASS_MAPPINGS["Anything Everywhere"] = AnythingEverywhere
+NODE_CLASS_MAPPINGS["Anything Everywhere?"] = AnythingSomewhere
 
 __all__ = ['NODE_CLASS_MAPPINGS']
 

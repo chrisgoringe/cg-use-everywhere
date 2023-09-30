@@ -11,7 +11,7 @@ class UseEverywhere():
                 "optional": { x.lower() : (x, {}) for x in s.RETURN_TYPES }
                 }
     FUNCTION = "func"
-    CATEGORY = "everywhere"
+    CATEGORY = "everywhere/deprecated"
     OUTPUT_NODE = True
 
     def func(self, **kwargs):
@@ -40,36 +40,37 @@ class SeedEverywhere():
     def func(self, seed):
         return (seed,)
 
-try:
-    from custom_nodes.cg_custom_core.ui_decorator import ui_signal
-    @ui_signal('display_text')
-    class AnythingEverywhere(UseEverywhere):
-        @classmethod
-        def INPUT_TYPES(s):
-            return {"required":{}, 
-                    "optional": { 
-                        "anything" : ("*", {}), 
-                        } }
+from custom_nodes.cg_custom_core.ui_decorator import ui_signal
+@ui_signal('display_text')
+class AnythingEverywhere(UseEverywhere):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required":{}, 
+                "optional": { "anything" : ("*", {}), } }
 
-        RETURN_TYPES = ()
+    RETURN_TYPES = ()
+    CATEGORY = "everywhere"
 
-        def func(self, anything=None, **kwargs):
-            return (str(anything),)
-        
-    @ui_signal('display_text')
-    class AnythingSomewhere(UseEverywhere):
-        @classmethod
-        def INPUT_TYPES(s):
-            return {"required":{}, 
-                    "optional": { 
-                        "anything" : ("*", {}), 
-                        "title" : ("STRING", {"default":".*"}),
-                        "input" : ("STRING", {"default":".*"}),
-                        } }
+    def func(self, **kwargs):
+        for key in kwargs:
+            return (f"{key} - {kwargs[key]}",)
+        return ("unconnected",)
+    
+@ui_signal('display_text')
+class AnythingSomewhere(UseEverywhere):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required":{}, 
+                "optional": { 
+                    "anything" : ("*", {}), 
+                    "title_regex" : ("STRING", {"default":".*"}),
+                    "input_regex" : ("STRING", {"default":".*"}),
+                    } }
 
-        RETURN_TYPES = ()
+    RETURN_TYPES = ()
+    CATEGORY = "everywhere"
 
-        def func(self, anything=None, **kwargs):
-            return (str(anything),)
-except:
-    pass
+    def func(self, title_regex=None, input_regex=None, **kwargs):
+        for key in kwargs:
+            return (f"{key} - {kwargs[key]}",)
+        return ("unconnected",)

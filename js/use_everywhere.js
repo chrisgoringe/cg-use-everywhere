@@ -1,24 +1,30 @@
 import { app } from "../../../scripts/app.js";
-import { ComfyWidgets } from "../../../scripts/widgets.js";
 
 function add_ue(ue, type, title, input, output) {
     ue.splice(0,0,{type:type, title:title, input:input, output:output})
 }
 
-function set_label(node, label, value) {
-    const the_node = app.graph._nodes_by_id[node.id.toString()];
-    var detected = the_node?.widgets?.find((w)=>w.name===label);
-    if (detected===undefined) {
-        detected = ComfyWidgets["STRING"](the_node, label, ["STRING", { multiline: false }], app).widget;
-        //detected.inputEl.readOnly = true;
-        //detected.inputEl.style.opacity = 0.6;
-        //detected.inputEl.style.fontSize = "9pt";
-    }
-    detected.value = value;
-}
-
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
+    async beforeRegisterNodeDef(nodeType, nodeData, app) {
+        if (nodeType.title.startsWith("Anything Everywhere")) {
+            const onConnectionsChange = nodeType.prototype.onConnectionsChange;
+            nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {
+				onConnectionsChange?.apply(side,slot,connect,link_info,output);
+                if (connect && link_info) {
+                    const origin_id = link_info.origin_id;
+                    const origin_slot = link_info.origin_slot;
+                    const input = this.graph._nodes_by_id[origin_id].outputs[origin_slot];
+                    this.input_type = input.type;
+                    this.inputs[0].name = this.input_type;
+                } else {
+                    this.input_type = undefined;
+                    this.inputs[0].name = "anything";
+                }
+                
+            }
+        }
+    },
 	async setup() {
 		const graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
@@ -56,21 +62,21 @@ app.registerExtension({
                     const in_link = node?.inputs[0].link;
                     if (in_link) {
                         const link = app.graph.links[in_link];
-                        const origin_node = app.graph._nodes_by_id[link.origin_id.toString()];
-                        const output = origin_node.outputs[link.origin_slot];
-                        add_ue(use_everywheres, output.type, new RegExp(node.widgets_values[0]), new RegExp(node.widgets_values[1]), 
-                                           [link.origin_id.toString(), link.origin_slot])
-                        set_label(node, 'detected_type', output.type);
+                        const type = app.graph._nodes_by_id[node.id.toString()].input_type;
+                        if (type) {
+                            add_ue(use_everywheres, type, new RegExp(node.widgets_values[0]), new RegExp(node.widgets_values[1]), 
+                                            [link.origin_id.toString(), link.origin_slot])
+                        }
                     }
                 }
                 if (node.type === "Anything Everywhere") {
                     const in_link = node?.inputs[0].link;
                     if (in_link) {
                         const link = app.graph.links[in_link];
-                        const origin_node = app.graph._nodes_by_id[link.origin_id.toString()];
-                        const output = origin_node.outputs[link.origin_slot];
-                        add_ue(use_everywheres, output.type, always, always, [link.origin_id.toString(), link.origin_slot])
-                        set_label(node, 'detected_type', output.type);
+                        const type = app.graph._nodes_by_id[node.id.toString()].input_type;
+                        if (type) {
+                            add_ue(use_everywheres, type, always, always, [link.origin_id.toString(), link.origin_slot])
+                        }
                     }
                 }
             })
