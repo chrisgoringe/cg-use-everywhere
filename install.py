@@ -18,5 +18,6 @@ def installer(custom_node_path):
         repo.git.submodule('update','--init','--recursive')
         repo.close()
 
-if "SkipAutoInstall" not in globals():
+global SkipAutoInstall
+if not ("SkipAutoInstall" in globals() and globals['SkipAutoInstall']):
     installer(os.path.join(os.getcwd(),".."))
