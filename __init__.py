@@ -3,7 +3,10 @@ try:
 except:
     print("cg_custom_core not found - will try to install - you may need to restart afterwards")
     from .install import installer
-    installer()
+    import os
+    import folder_paths
+    application_root_directory = os.path.dirname(folder_paths.__file__)
+    installer(os.path.join(application_root_directory,"custom_nodes"))
 
 from .use_everywhere import UseEverywhere, UseSomewhere, SeedEverywhere
 

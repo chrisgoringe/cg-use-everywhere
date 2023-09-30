@@ -1,9 +1,9 @@
 import os, git, sys
 sys.path.insert(0,os.path.join(os.path.dirname(os.path.realpath(__file__)),"..",".."))
 
-def installer():
+def installer(custom_node_path):
     repo_url = 'https://github.com/chrisgoringe/cg-custom-core.git/'
-    repo_path = os.path.join(os.getcwd(),"..","cg_custom_core")
+    repo_path = os.path.join(custom_node_path,"cg_custom_core")
     if os.path.exists(os.path.join(repo_path, '.git')):
         print("Updating cg_custom_nodes")
         repo:git.Repo = git.Repo(repo_path)
@@ -18,4 +18,5 @@ def installer():
         repo.git.submodule('update','--init','--recursive')
         repo.close()
 
-installer()
+print(__name__)
+installer(os.path.join(os.getcwd(),".."))
