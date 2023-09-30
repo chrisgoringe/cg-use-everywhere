@@ -10,9 +10,9 @@ The whole zoo of UE nodes has been replaced by `Anything Everywhere` nodes which
 
 For backward compatibility, all the old nodes are still supported for the time being - you can find them in everywhere/deprecated. The only one still in the main folder is Seed Everywhere, which plays a slightly special role. Below are the instructions for the new nodes - then further down you can find the old documentation.
 
-|Separate your workflow logically without spaghetti|
-|-|
-![separate](docs/separate.png)
+|Separate your workflow logically without spaghetti|This image has a simple example workflow you can drop onto Comfy|
+|-|-|
+|![separate](docs/separate.png)|![simple](docs/girl.png)|
 
 ## Anything Everywhere
 
