@@ -2,8 +2,6 @@ try:
     from custom_nodes.cg_custom_core import CC_VERSION
 except:
     print("cg_custom_core not found - will try to install - you may need to restart afterwards")
-    global SkipAutoInstall
-    SkipAutoInstall = True
     from .install import installer
     import os
     import folder_paths
