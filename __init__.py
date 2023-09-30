@@ -1,3 +1,10 @@
+try:
+    from custom_nodes.cg_custom_core import CC_VERSION
+except:
+    print("cg_custom_core not found - will try to install - you may need to restart afterwards")
+    from .install import installer
+    installer()
+
 from .use_everywhere import UseEverywhere, UseSomewhere, SeedEverywhere
 
 types = {

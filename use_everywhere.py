@@ -1,8 +1,4 @@
-class classproperty(object):
-    def __init__(self, f):
-        self.f = f
-    def __get__(self, obj, owner):
-        return self.f(owner)
+from custom_nodes.cg_custom_core.ui_decorator import ui_signal
 
 class UseEverywhere():
     @classmethod
@@ -40,7 +36,6 @@ class SeedEverywhere():
     def func(self, seed):
         return (seed,)
 
-from custom_nodes.cg_custom_core.ui_decorator import ui_signal
 @ui_signal('display_text')
 class AnythingEverywhere(UseEverywhere):
     @classmethod
