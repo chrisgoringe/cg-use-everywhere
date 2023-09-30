@@ -23,6 +23,7 @@ class UseSomewhere(UseEverywhere):
         it['optional']['input'] = ("STRING", {"default":".*"})
         return it
 
+@ui_signal('display_text')
 class SeedEverywhere():
     @classmethod
     def INPUT_TYPES(s):
@@ -34,7 +35,7 @@ class SeedEverywhere():
     CATEGORY = "everywhere"
 
     def func(self, seed):
-        return (seed,)
+        return (seed,f"Seed : INT : {seed}")
 
 @ui_signal('display_text')
 class AnythingEverywhere(UseEverywhere):
@@ -48,7 +49,7 @@ class AnythingEverywhere(UseEverywhere):
 
     def func(self, **kwargs):
         for key in kwargs:
-            return (f"{key} - {kwargs[key]}",)
+            return (f"{key} : {kwargs[key]}",)
         return ("unconnected",)
     
 @ui_signal('display_text')
@@ -67,5 +68,5 @@ class AnythingSomewhere(UseEverywhere):
 
     def func(self, title_regex=None, input_regex=None, **kwargs):
         for key in kwargs:
-            return (f"{key} - {kwargs[key]}",)
+            return (f"{key} : {kwargs[key]}",)
         return ("unconnected",)
