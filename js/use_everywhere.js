@@ -1,4 +1,21 @@
 import { app } from "../../../scripts/app.js";
+import { ComfyWidgets } from "../../../scripts/widgets.js";
+
+function add_ue(ue, type, title, input, output) {
+    ue.splice(0,0,{type:type, title:title, input:input, output:output})
+}
+
+function set_label(node, label, value) {
+    const the_node = app.graph._nodes_by_id[node.id.toString()];
+    var detected = the_node?.widgets?.find((w)=>w.name===label);
+    if (detected===undefined) {
+        detected = ComfyWidgets["STRING"](the_node, label, ["STRING", { multiline: false }], app).widget;
+        //detected.inputEl.readOnly = true;
+        //detected.inputEl.style.opacity = 0.6;
+        //detected.inputEl.style.fontSize = "9pt";
+    }
+    detected.value = value;
+}
 
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
@@ -14,51 +31,26 @@ app.registerExtension({
                     if (node.inputs) {
                         for (var i=0; i<node.inputs.length; i++) {
                             if (node.inputs[i].link != null) {
-                                use_everywheres.splice(0,0,{
-                                    type : node.inputs[i].type,
-                                    title : always,
-                                    input : always,
-                                    output : [node.id.toString(),i],
-                                })
+                                add_ue(use_everywheres, node.inputs[i].type, always, always,[node.id.toString(),i])
                             }
                         }
                     } else {
-                        use_everywheres.splice(0,0,{
-                            type : node.type.substring(3),
-                            title : always,
-                            input : always,
-                            output : [node.id.toString(),0],
-                        })
+                        add_ue(use_everywheres, node.type.substring(3), always, always, [node.id.toString(),0])
                     }
                 }
                 if (node.type.startsWith('UE? ')) {
                     if (node.inputs) {
                         for (var i=0; i<node.inputs.length; i++) {
                             if (node.inputs[i].link != null) {
-                                use_everywheres.splice(0,0,{
-                                    type : node.inputs[i].type,
-                                    title : new RegExp(node.widgets_values[0]),
-                                    input : new RegExp(node.widgets_values[1]),
-                                    output : [node.id.toString(),i],
-                                })
+                                add_ue(use_everywheres,node.inputs[i].type,new RegExp(node.widgets_values[0]),new RegExp(node.widgets_values[1]),[node.id.toString(),i])
                             }
                         }
                     } else {
-                        use_everywheres.splice(0,0,{
-                            type : node.type.substring(4),
-                            title : new RegExp(node.widgets_values[1]),
-                            input : new RegExp(node.widgets_values[2]),
-                            output : [node.id.toString(),0],
-                        })
+                        add_ue(use_everywheres, node.type.substring(4), new RegExp(node.widgets_values[1]), new RegExp(node.widgets_values[2]), [node.id.toString(),0])
                     }
                 }
                 if (node.type === "Seed Everywhere") {
-                    use_everywheres.splice(0,0,{
-                        type : "INT",
-                        title : always,
-                        input : new RegExp("seed"),
-                        output : [node.id.toString(),0],
-                    })
+                    add_ue(use_everywheres, "INT", always, new RegExp("seed"),[node.id.toString(),0])
                 }
                 if (node.type === "Anything Everywhere?") {
                     const in_link = node?.inputs[0].link;
@@ -66,14 +58,9 @@ app.registerExtension({
                         const link = app.graph.links[in_link];
                         const origin_node = app.graph._nodes_by_id[link.origin_id.toString()];
                         const output = origin_node.outputs[link.origin_slot];
-                        use_everywheres.splice(0,0,{
-                            type : output.type,
-                            title : new RegExp(node.widgets_values[0]),
-                            input : new RegExp(node.widgets_values[1]),
-                            output : [link.origin_id.toString(), link.origin_slot],
-                        })
-                        const detected = app.graph._nodes_by_id[node.id.toString()]?.widgets?.find((w)=>w.name==='detected_type');
-                        if(detected) detected.value = output.type;
+                        add_ue(use_everywheres, output.type, new RegExp(node.widgets_values[0]), new RegExp(node.widgets_values[1]), 
+                                           [link.origin_id.toString(), link.origin_slot])
+                        set_label(node, 'detected_type', output.type);
                     }
                 }
                 if (node.type === "Anything Everywhere") {
@@ -82,14 +69,8 @@ app.registerExtension({
                         const link = app.graph.links[in_link];
                         const origin_node = app.graph._nodes_by_id[link.origin_id.toString()];
                         const output = origin_node.outputs[link.origin_slot];
-                        use_everywheres.splice(0,0,{
-                            type : output.type,
-                            title : always,
-                            input : always,
-                            output : [link.origin_id.toString(), link.origin_slot],
-                        })
-                        const detected = app.graph._nodes_by_id[node.id.toString()]?.widgets?.find((w)=>w.name==='detected_type');
-                        if(detected) detected.value = output.type;
+                        add_ue(use_everywheres, output.type, always, always, [link.origin_id.toString(), link.origin_slot])
+                        set_label(node, 'detected_type', output.type);
                     }
                 }
             })

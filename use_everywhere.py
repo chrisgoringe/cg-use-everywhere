@@ -49,13 +49,12 @@ try:
             return {"required":{}, 
                     "optional": { 
                         "anything" : ("*", {}), 
-                        "detected_type" : ("STRING", {"default":""}),
                         } }
 
-        RETURN_TYPES = ("*",)
+        RETURN_TYPES = ()
 
         def func(self, anything=None, **kwargs):
-            return (anything, str(anything),)
+            return (str(anything),)
         
     @ui_signal('display_text')
     class AnythingSomewhere(UseEverywhere):
@@ -66,12 +65,11 @@ try:
                         "anything" : ("*", {}), 
                         "title" : ("STRING", {"default":".*"}),
                         "input" : ("STRING", {"default":".*"}),
-                        "detected_type" : ("STRING", {"default":""}),
                         } }
 
-        RETURN_TYPES = ("*",)
+        RETURN_TYPES = ()
 
         def func(self, anything=None, **kwargs):
-            return (anything, str(anything),)
+            return (str(anything),)
 except:
     pass
