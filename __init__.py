@@ -1,3 +1,13 @@
+try:
+    from custom_nodes.cg_custom_core import CC_VERSION
+except:
+    print("cg_custom_core not found - will try to install - you may need to restart afterwards")
+    from .install import installer
+    import os
+    import folder_paths
+    application_root_directory = os.path.dirname(folder_paths.__file__)
+    installer(os.path.join(application_root_directory,"custom_nodes"))
+
 from .use_everywhere import UseEverywhere, UseSomewhere, SeedEverywhere
 
 types = {
@@ -6,16 +16,21 @@ types = {
     "CLIP" : ("CLIP",),
     "LATENT" : ("LATENT", ),
     "IMAGE" : ("IMAGE",),
+    "MASK" : ("MASK",),
     "CONDITIONING" : ("CONDITIONING",),
     "INT" : ("INT",),
     "CHECKPOINT" : ("MODEL", "CLIP", "VAE"),
 }
 
 NODE_CLASS_MAPPINGS = { "Seed Everywhere": SeedEverywhere }
+
 for t in types:
     NODE_CLASS_MAPPINGS[f"UE {t}"] = type(f"UE {t}", (UseEverywhere,), { "RETURN_TYPES":types[t] })
     NODE_CLASS_MAPPINGS[f"UE? {t}"] = type(f"UE {t}", (UseSomewhere,), { "RETURN_TYPES":types[t] })
 
+from .use_everywhere import AnythingEverywhere, AnythingSomewhere
+NODE_CLASS_MAPPINGS["Anything Everywhere"] = AnythingEverywhere
+NODE_CLASS_MAPPINGS["Anything Everywhere?"] = AnythingSomewhere
 
 __all__ = ['NODE_CLASS_MAPPINGS']
 
