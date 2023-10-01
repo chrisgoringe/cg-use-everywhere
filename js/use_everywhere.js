@@ -40,6 +40,29 @@ function remove_text_display(node) {
     node.setDirtyCanvas(true, true);// mark for redrawing
 }
 
+function mode_is_live(mode){
+    if (mode===0) return true;
+    if (mode===2 || mode===4) return false;
+    console.log("Found node with mode which isn't 0, 2 or 4... confused by treating it as active");
+    return true;
+}
+
+/*
+Does this input (an integer index) connect upstream to a live node?
+input.link is the link_id; the form of workflow.links is [id, upnode_id, upnode_output, downnode_id, downnode_output, type]
+*/
+function is_connected(input, workflow) {
+    const link_id = input.link;
+    if (link_id === null) return false;                                    // no connection
+    const the_link = workflow.links.find((link) => link[0] === link_id);   // link[0] is the link_id
+    if (!the_link) return false;                                           // shouldn't happen: link with that id doesn't exist.
+    const source_node_id = the_link[1];                                    // link[1] is upstream node_id 
+    const source_node = workflow.nodes.find((n) => n.id === source_node_id);
+    if (!source_node) return false;                                        // shouldn't happen: node with that id doesn't exist
+    return mode_is_live(source_node.mode);                                 // is the upstream node alive?
+}
+
+
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
 
@@ -70,12 +93,12 @@ app.registerExtension({
 
     /*
     Remove the display_text_widget if the option is set to false.
-    Do this in loadedGraphNode because the widget gets added in beforeRegisterNodeDef
+    Do this in nodeCreated because the widget gets added in beforeRegisterNodeDef
     and we can't be sure this will run after that.
     */
 
-    loadedGraphNode(node) {
-        if (node.title.startsWith("Anything Everywhere") || node.title.startsWith("Seed Everywhere")) {
+    async nodeCreated(node) {
+        if (node.comfyClass.startsWith("Anything Everywhere") || node.comfyClass.startsWith("Seed Everywhere")) {
             const onExecuted = node.onExecuted;
             node.onExecuted = function() {
                 onExecuted?.apply(this, arguments);
@@ -105,7 +128,10 @@ app.registerExtension({
             
              // Add all of the available sources to the UseEverywhereList
             const ues = new UseEverywhereList();
-            p.workflow.nodes.forEach(node => {
+
+            /* only want to consider live nodes (not bypassed) */
+            const live_nodes = p.workflow.nodes.filter((node) => mode_is_live(node.mode));
+            live_nodes.forEach(node => {
                 if (node.type.startsWith('UE ')) {
                     if (node.inputs) {
                         for (var i=0; i<node.inputs.length; i++) {
@@ -152,9 +178,9 @@ app.registerExtension({
             })
 
             // Look for unconnected inputs and see if we can connect them
-            p.workflow.nodes.forEach(node => {
+            live_nodes.forEach(node => {
                 node.inputs?.forEach(input => {
-                    if (input.link === null) {
+                    if (!is_connected(input,p.workflow)) {
                         var ue = ues.find_best_match(input, node);
                         if (ue) p.output[node.id].inputs[input.name] = ue.output;
                         else console.log(`Everywhere nodes did not connect '${display_name(node)}' input '${input.name}'`);
