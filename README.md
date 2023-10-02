@@ -30,7 +30,12 @@ This node adds two widgets - title_regex and input_regex. It will only send to i
 
 ![regex](docs/regex.png)
 
+## Help! How do I connect to prompt but not negative_prompt?
+
+The matches are regular expressions, not straight string matches. So `^prompt` will match `prompt` at the beginning of the title only.
+
 Regex 101 - ^ means 'the start', $ means 'the end', '.' matches anything, '.*' matches any number of anything. For more than that, visit [regex101](https://regex101.com/) (the flavour you want is ECMAScript, though that probably won't matter).
+
 
 ## Seed Everywhere
 
