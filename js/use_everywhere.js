@@ -75,17 +75,22 @@ app.registerExtension({
         if (nodeType.title.startsWith("Anything Everywhere")) {
             const onConnectionsChange = nodeType.prototype.onConnectionsChange;
             nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {
+                var input;
                 if (connect && link_info) {
                     const origin_id = link_info.origin_id;
                     const origin_slot = link_info.origin_slot;
-                    const input = this.graph._nodes_by_id[origin_id].outputs[origin_slot];
+                    input = this.graph._nodes_by_id[origin_id].outputs[origin_slot];
+                } else {
+                    input = undefined; // it's connected to a Custom Node that isn't installed!
+                }
+                if (input) {
                     this.input_type = input.type;
                     this.inputs[0].name = this.input_type;
                     this.inputs[0].color_on = app.canvas.default_connection_color_byType[input.type];
                 } else {
                     this.input_type = undefined;
-                    this.inputs[0].color_on = undefined;
                     this.inputs[0].name = "anything";
+                    this.inputs[0].color_on = undefined;
                 }
                 onConnectionsChange?.apply(side,slot,connect,link_info,output);
             };
