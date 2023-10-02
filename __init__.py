@@ -1,7 +1,9 @@
 try:
     from custom_nodes.cg_custom_core import CC_VERSION
+    if CC_VERSION < 2.2:
+        raise Exception()
 except:
-    print("cg_custom_core not found - will try to install - you may need to restart afterwards")
+    print("cg_custom_core 2.2 not found - will try to install - you may need to restart afterwards")
     from .install import installer
     import os
     import folder_paths
@@ -9,6 +11,8 @@ except:
     installer(os.path.join(application_root_directory,"custom_nodes"))
 
 from .use_everywhere import UseEverywhere, UseSomewhere, SeedEverywhere
+
+UE_VERSION = 2.1
 
 types = {
     "MODEL" : ("MODEL",),
