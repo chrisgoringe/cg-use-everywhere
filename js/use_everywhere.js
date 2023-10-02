@@ -1,17 +1,33 @@
 import { app } from "../../../scripts/app.js";
 
+class UseEverywhere {
+    constructor() {
+        this.sending_to = [];
+        this.priority = 0;
+        Object.assign(this, arguments);
+    }
+    matches(node, input) {
+        if (this.type != input.type) return false;
+        if (this.input_regex && !this.input_regex.test(input.name)) return false;
+        if (this.title_regex) {
+            if (!(this.title_regex.test(node.properties['Node name for S&R']) || this.title_regex.test(node?.title))) return false;
+        }
+        return true;
+    }
+    note_sending(node, input) {
+        this.sending_to.splice(0,0,{node:node, input:input})
+    }
+}
 class UseEverywhereList {
     #ues;
     constructor() { this.#ues = [] }
-    static always = new RegExp(".*");
-    add_ue(type, output, title=UseEverywhereList.always, input=UseEverywhereList.always, priority = 0) {
-        this.#ues.splice(0,0,{type:type, title:title, input:input, output:output, priority:priority});
+    
+    add_ue() {
+        this.#ues.splice(0,0,new UseEverywhere(arguments));
     }
-    find_best_match(input, node) {
+    find_best_match(node, input) {
         var matches = this.#ues.filter((candidate) => (  
-            candidate.type===input.type && 
-            (candidate.title.test(node.properties['Node name for S&R']) || candidate.title.test(node?.title)) && 
-            candidate.input.test(input.name)
+            candidate.matches(node, input)
         ));
         if (matches.length==0) { return undefined; }
         if (matches.length>1) {
@@ -21,6 +37,7 @@ class UseEverywhereList {
                 return undefined;
             }
         }
+        matches[0].note_sending(node, input);
         return matches[0];        
     }
 }
@@ -133,29 +150,33 @@ app.registerExtension({
             /* only want to consider live nodes (not bypassed) */
             const live_nodes = p.workflow.nodes.filter((node) => mode_is_live(node.mode));
             live_nodes.forEach(node => {
+                /* this section deprecated: remove in V4 */
                 if (node.type.startsWith('UE ')) {
                     if (node.inputs) {
                         for (var i=0; i<node.inputs.length; i++) {
-                            if (node.inputs[i].link != null) ues.add_ue(node.inputs[i].type, [node.id.toString(),i]);
+                            if (node.inputs[i].link != null) ues.add_ue(type=node.inputs[i].type, output=[node.id.toString(),i]);
                         }
-                    } else ues.add_ue(node.type.substring(3), [node.id.toString(),0]);
+                    } else ues.add_ue(type=node.type.substring(3), output=[node.id.toString(),0]);
                 }
 
                 if (node.type.startsWith('UE? ')) {
                     if (node.inputs) {
                         for (var i=0; i<node.inputs.length; i++) {
                             if (node.inputs[i].link != null) {
-                                ues.add_ue(node.inputs[i].type, [node.id.toString(),i], 
-                                            new RegExp(node.widgets_values[0]), new RegExp(node.widgets_values[1]), 10);
+                                ues.add_ue(type=node.inputs[i].type, output=[node.id.toString(),i], 
+                                            title_regex=new RegExp(node.widgets_values[0]), 
+                                            input_regex=new RegExp(node.widgets_values[1]), priority=10);
                             }
                         }
                     } else {
-                        ues.add_ue(node.type.substring(4), [node.id.toString(),0], 
-                                    new RegExp(node.widgets_values[1]), new RegExp(node.widgets_values[2]), 10);
+                        ues.add_ue(type=node.type.substring(4), output=[node.id.toString(),0], 
+                                    title_regex=new RegExp(node.widgets_values[1]), 
+                                    input_regex=new RegExp(node.widgets_values[2]), prioirty=10);
                     }
                 }
-
-                if (node.type === "Seed Everywhere") ues.add_ue("INT", [node.id.toString(),0], undefined, new RegExp("seed"), 5);
+                /* end of deprecated section */
+                if (node.type === "Seed Everywhere") ues.add_ue(type="INT", output=[node.id.toString(),0], 
+                                                                input_regex=new RegExp("seed"), priority=5);
 
                 if (node.type === "Anything Everywhere?") {
                     const in_link = node?.inputs[0].link;
@@ -163,8 +184,9 @@ app.registerExtension({
                         const link = app.graph.links[in_link];
                         const type = app.graph._nodes_by_id[node.id.toString()].input_type;
                         if (type) {
-                            ues.add_ue(type, [link.origin_id.toString(), link.origin_slot],
-                                                new RegExp(node.widgets_values[0]), new RegExp(node.widgets_values[1]), 10);
+                            ues.add_ue(type=type, output=[link.origin_id.toString(), link.origin_slot],
+                                        title_regex=new RegExp(node.widgets_values[0]), 
+                                        input_regex=new RegExp(node.widgets_values[1]), priority=10);
                         }
                     }
                 }
@@ -173,7 +195,7 @@ app.registerExtension({
                     if (in_link) {
                         const link = app.graph.links[in_link];
                         const type = app.graph._nodes_by_id[node.id.toString()].input_type;
-                        if (type) ues.add_ue(type, [link.origin_id.toString(), link.origin_slot]);
+                        if (type) ues.add_ue(type=type, output=[link.origin_id.toString(), link.origin_slot]);
                     }
                 }
             })
@@ -182,9 +204,8 @@ app.registerExtension({
             live_nodes.forEach(node => {
                 node.inputs?.forEach(input => {
                     if (!is_connected(input,p.workflow)) {
-                        var ue = ues.find_best_match(input, node);
+                        var ue = ues.find_best_match(node, input);
                         if (ue) p.output[node.id].inputs[input.name] = ue.output;
-                        else console.log(`Everywhere nodes did not connect '${display_name(node)}' input '${input.name}'`);
                     }
                 });
             });
