@@ -1,4 +1,4 @@
-const DEBUG = true
+import { is_UEnode, DEBUG_LEVEL } from "./use_everywhere_utilities.js";
 
 function display_name(node) { return (node?.title) ? node.title : node.properties['Node name for S&R']; }
 
@@ -20,7 +20,8 @@ class UseEverywhere {
         return true;
     }
     note_sending_to(node, input) {
-        this.sending_to.push({node:node, input:input})
+        const input_index = node.inputs.findIndex((n) => n.name==input.name);
+        this.sending_to.push({node:node, input:input, input_index:input_index})
     }
     describe_sending(){
         var description = "  Linked to:";
@@ -34,13 +35,12 @@ class UseEverywhere {
 }
 
 class UseEverywhereList {
-    constructor() { 
-        this.ues = []; 
-        this.as_string = ""; 
-    }
+    constructor() { this.ues = []; }
 
-    add_ue(type, output, title_regex, input_regex, priority) {
+    add_ue(node, source_node_input_index, type, output, title_regex, input_regex, priority) {
         const params = {
+            controller: node,
+            source_node_input_index: source_node_input_index, 
             type: type,
             output: output,
             title_regex: title_regex,
@@ -49,8 +49,7 @@ class UseEverywhereList {
         }
         const ue = new UseEverywhere(params);
         this.ues.push(ue);
-        this.as_string = `${params},${this.as_string}`;
-        if (DEBUG) console.log(`UE: added ${params}`)
+        if (DEBUG_LEVEL>1) console.log(`UE added`)
     }
 
     find_best_match(node, input) {
@@ -61,7 +60,7 @@ class UseEverywhereList {
         if (matches.length>1) {
             matches.sort((a,b) => b.priority-a.priority);
             if(matches[0].priority == matches[1].priority) {
-                if (DEBUG) console.log(`Everywhere nodes found ambiguous matches for '${display_name(node)}' input '${input.name}'`);
+                if (DEBUG_LEVEL) console.log(`Everywhere nodes found ambiguous matches for '${display_name(node)}' input '${input.name}'`);
                 return undefined;
             }
         }
@@ -71,6 +70,23 @@ class UseEverywhereList {
 
     print_all() {
         this.ues.forEach((ue) => { console.log(ue.describe()); });
+    }
+
+    all_connected_inputs(for_node) {
+        const ue_connections = [];
+        this.ues.forEach((ue) => { 
+            ue.sending_to.forEach((st) => {
+                if (st.node.id == for_node.id) {
+                    ue_connections.push({
+                        type : ue.type, 
+                        input_index : st.input_index,
+                        source_node : app.graph._nodes_by_id[ue.controller.id],
+                        source_node_input_index : ue.source_node_input_index,
+                    });
+                }
+            });
+        });
+        return ue_connections;
     }
 }
 

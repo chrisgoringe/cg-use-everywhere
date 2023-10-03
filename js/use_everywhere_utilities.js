@@ -20,4 +20,21 @@ function is_connected(input, workflow) {
     return mode_is_live(source_node.mode);                                 // is the upstream node alive?
 }
 
-export {mode_is_live, is_connected}
+/*
+Is this a UE node?
+*/
+
+function is_UEnode(node_or_nodeType) {
+    const title = node_or_nodeType?.title ? node_or_nodeType.title : node_or_nodeType.comfyClass;
+    return (title.startsWith("Anything Everywhere") || title==="Seed Everywhere")
+}
+
+/*
+0 - nothing
+1 - single lines mostly
+2 - ue list when reloaded
+3 - lots of stuff
+*/
+const DEBUG_LEVEL = 1;
+
+export {mode_is_live, is_connected, is_UEnode, DEBUG_LEVEL}
