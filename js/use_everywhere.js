@@ -1,7 +1,7 @@
 import { app } from "../../../scripts/app.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node } from "./use_everywhere_nodes.js";
-import { mode_is_live, is_connected, is_UEnode } from "./use_everywhere_utilities.js";
+import { mode_is_live, is_connected, is_UEnode, DEBUG_LEVEL } from "./use_everywhere_utilities.js";
 import { maybe_remove_text_display, LinkRenderController } from "./use_everywhere_ui.js";
 
 var _original_graphToPrompt;
@@ -21,12 +21,14 @@ async function analyse_graph(modify_and_return_prompt=false) {
 
     // Look for unconnected inputs and see if we can connect them
     live_nodes.forEach(node => {
-        node.inputs?.forEach(input => {
-            if (!is_connected(input,p.workflow)) {
-                var ue = ues.find_best_match(node, input);
-                if (ue && modify_and_return_prompt) p.output[node.id].inputs[input.name] = ue.output;
-            }
-        });
+        if (!is_UEnode(node)) { // don't try to connect UE node inputs...
+            node.inputs?.forEach(input => {
+                if (!is_connected(input,p.workflow)) {
+                    var ue = ues.find_best_match(node, input);
+                    if (ue && modify_and_return_prompt) p.output[node.id].inputs[input.name] = ue.output;
+                }
+            });
+        }
     });
     if (modify_and_return_prompt) return p;
     else return ues;
@@ -43,30 +45,31 @@ app.registerExtension({
             When an AE node is connected or disconnected, update its input type, name, and colour.
             */
             const onConnectionsChange = nodeType.prototype.onConnectionsChange;
-            nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {                
-                // if connecting, find what type of connection; if not, set to undefined
+            nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {        
+                if (DEBUG_LEVEL>1) {
+                    console.log(`Link changed`);
+                    for (var i=0; i<arguments.length; i++) { console.log(arguments[i]) }
+                }
                 if (connect && link_info) {
-                    const origin_id = link_info.origin_id;
-                    const origin_slot = link_info.origin_slot;
-                    this.input_type = this.graph._nodes_by_id[origin_id].outputs[origin_slot].type;
+                    this.input_type[slot] = this.graph?._nodes_by_id[link_info?.origin_id]?.outputs[link_info?.origin_slot]?.type;
                 } else {
-                    this.input_type = undefined; // it's connected to a Custom Node that isn't installed, so treat as unconnected
+                    this.input_type[slot] = undefined; 
                 }
 
                 // set the name and colour of the input
-                if (this.input_type) {
-                    this.inputs[0].name = this.input_type;
-                    this.inputs[0].color_on = app.canvas.default_connection_color_byType[this.input_type];
+                if (this.input_type[slot]) {
+                    this.inputs[slot].name = this.input_type[slot];
+                    this.inputs[slot].color_on = app.canvas.default_connection_color_byType[this.input_type[slot]];
                 } else {
-                    this.inputs[0].name = "anything";
-                    this.inputs[0].color_on = undefined;
+                    this.inputs[slot].name = "anything";
+                    this.inputs[slot].color_on = undefined;
                 }
-
-                // call the underlying change handler (which will do the redraw etc)
-                onConnectionsChange?.apply(side,slot,connect,link_info,output);
 
                 // require a recalculation of the virtual links
                 _lrc.mark_link_list_outdated();
+                
+                // call the underlying change handler (which will do the redraw etc)
+                onConnectionsChange?.apply(side,slot,connect,link_info,output);
             };
 
             /*
@@ -86,15 +89,21 @@ app.registerExtension({
                 }
             }
         } else {
-            var a = 0;
+            /*
+            When any other node is connected or disconnected, our list is out of date
+            */
+            const onConnectionsChange = nodeType.prototype.onConnectionsChange;
+            nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {
+                _lrc.mark_link_list_outdated();
+                onConnectionsChange?.apply(side,slot,connect,link_info,output);
+            }
         }
     },
 
     async nodeCreated(node) {
         if (is_UEnode(node)) {
-            // our link list will no longer be valid if there is a new UE node
-            _lrc.mark_link_list_outdated();
-
+            node.input_type = [undefined, undefined, undefined]; // enough for three, not all may be used
+            
             /*
             Remove the display_text_widget if the option is set to false.
             Use nodeCreated to insert this so that this code will be run after the code to add the text widget
@@ -126,6 +135,9 @@ app.registerExtension({
                 changeMode?.apply(this, arguments);
                 _lrc.mark_link_list_outdated();
             }
+
+            // our link list will no longer be valid if there is a new UE node
+            _lrc.mark_link_list_outdated();
         }
     },
 

@@ -7,7 +7,7 @@ class UseEverywhere {
         this.sending_to = [];
         Object.assign(this, arguments[0]);
         if (this.priority === undefined) this.priority = 0;
-        this.description = `Priority ${this.priority} Type "${this.type}" from (node, output) (${this.output})`;
+        this.description = `source ${this?.output[0]}.${this?.output[1]} -> control ${this?.controller.id}.${this?.control_node_input_index} "${this.type}" <-  (priority ${this.priority})`;
         if (this.title_regex) this.description += ` - node title regex '${this.title_regex.source}'`;
         if (this.input_regex) this.description += ` - input name regex '${this.input_regex.source}'`;
     }
@@ -37,10 +37,10 @@ class UseEverywhere {
 class UseEverywhereList {
     constructor() { this.ues = []; }
 
-    add_ue(node, source_node_input_index, type, output, title_regex, input_regex, priority) {
+    add_ue(node, control_node_input_index, type, output, title_regex, input_regex, priority) {
         const params = {
             controller: node,
-            source_node_input_index: source_node_input_index, 
+            control_node_input_index: control_node_input_index, 
             type: type,
             output: output,
             title_regex: title_regex,
@@ -49,22 +49,26 @@ class UseEverywhereList {
         }
         const ue = new UseEverywhere(params);
         this.ues.push(ue);
-        if (DEBUG_LEVEL>1) console.log(`UE added`)
+        if (DEBUG_LEVEL>1) console.log(`Added ${ue.description}`)
     }
 
     find_best_match(node, input) {
         var matches = this.ues.filter((candidate) => (  
             candidate.matches(node, input)
         ));
-        if (matches.length==0) { return undefined; }
+        if (matches.length==0) { 
+            if (DEBUG_LEVEL>1) console.log(`'${display_name(node)}' input '${input.name}' unmatched`)
+            return undefined; 
+        }
         if (matches.length>1) {
             matches.sort((a,b) => b.priority-a.priority);
             if(matches[0].priority == matches[1].priority) {
-                if (DEBUG_LEVEL) console.log(`Everywhere nodes found ambiguous matches for '${display_name(node)}' input '${input.name}'`);
+                if (DEBUG_LEVEL>1) console.log(`Ambiguous matches for '${display_name(node)}' input '${input.name}'`);
                 return undefined;
             }
         }
         matches[0].note_sending_to(node, input);
+        if (DEBUG_LEVEL>1) console.log(`'${display_name(node)}' input '${input.name}' matched to ${matches[0].description}`);
         return matches[0];        
     }
 
@@ -80,8 +84,8 @@ class UseEverywhereList {
                     ue_connections.push({
                         type : ue.type, 
                         input_index : st.input_index,
-                        source_node : app.graph._nodes_by_id[ue.controller.id],
-                        source_node_input_index : ue.source_node_input_index,
+                        control_node : app.graph._nodes_by_id[ue.controller.id],
+                        control_node_input_index : ue.control_node_input_index,
                     });
                 }
             });

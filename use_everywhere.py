@@ -52,6 +52,18 @@ class AnythingEverywhere(UseEverywhere):
             return (f"{key} : {kwargs[key]}",)
         return ("unconnected",)
     
+class AnythingEverywhereTriplet(UseEverywhere):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required":{}, 
+                "optional": { "anything" : ("*", {}), "anything2" : ("*", {}), "anything3" : ("*", {}),} }
+    
+    RETURN_TYPES = ()
+    CATEGORY = "everywhere"
+    
+    def func(self, **kwargs):
+        return ()
+    
 @ui_signal('display_text')
 class AnythingSomewhere(UseEverywhere):
     @classmethod

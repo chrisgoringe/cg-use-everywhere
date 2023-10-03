@@ -6,8 +6,8 @@ function mode_is_live(mode){
 }
 
 /*
-Does this input (an integer index) connect upstream to a live node?
-input.link is the link_id; the form of workflow.links is [id, upnode_id, upnode_output, downnode_id, downnode_output, type]
+Does this input connect upstream to a live node?
+input.link is the link_id; the form of workflow.links is [id, upnode_id, upnode_output, downnode_id, downnode_input, type]
 */
 function is_connected(input, workflow) {
     const link_id = input.link;
@@ -25,7 +25,10 @@ Is this a UE node?
 */
 
 function is_UEnode(node_or_nodeType) {
-    const title = node_or_nodeType?.title ? node_or_nodeType.title : node_or_nodeType.comfyClass;
+    var title = node_or_nodeType.title;
+    if (title===undefined) title = node_or_nodeType.type;
+    if (title===undefined) title = node_or_nodeType.comfyClass;
+    if (title===undefined) return false;
     return (title.startsWith("Anything Everywhere") || title==="Seed Everywhere")
 }
 
@@ -35,6 +38,6 @@ function is_UEnode(node_or_nodeType) {
 2 - ue list when reloaded
 3 - lots of stuff
 */
-const DEBUG_LEVEL = 1;
+const DEBUG_LEVEL = 3;
 
 export {mode_is_live, is_connected, is_UEnode, DEBUG_LEVEL}

@@ -46,14 +46,14 @@ class LinkRenderController {
         this.ue_list_reloading=false;
         this.ue_list = value;
         if (DEBUG_LEVEL>0) console.log("reload_resolve");
-        if (DEBUG_LEVEL>1) ue_list.print_all();
+        if (DEBUG_LEVEL>2) this.ue_list.print_all();
         if (this._ue_links_visible) app.graph.setDirtyCanvas(true,true);
     }.bind(this)
 
     // callback for when the_graph_analyser fails - note reloading is false and log
-    reload_reject = function() {
+    reload_reject = function(reason) {
         this.ue_list_reloading=false;
-        if (DEBUG_LEVEL>0) console.log("reload_reject");
+        if (DEBUG_LEVEL>0) console.error(reason);
     }.bind(this)
 
     // request an update to the ue_list. 
@@ -82,10 +82,10 @@ class LinkRenderController {
             var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
 
             /* get the position of the *input* that is being echoed - except for the Seed Anywhere node, 
-            which is displayed with an output: the class records source_node_input_index as -ve (-1 => 0, -2 => 1...) */
-            const input_source = (ue_connection.source_node_input_index >= 0); 
-            const source_index = input_source ? ue_connection.source_node_input_index : -1-ue_connection.source_node_input_index;
-            const pos1 = ue_connection.source_node.getConnectionPos(input_source, source_index, this.slot_pos2);    
+            which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
+            const input_source = (ue_connection.control_node_input_index >= 0); 
+            const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
+            const pos1 = ue_connection.control_node.getConnectionPos(input_source, source_index, this.slot_pos2);    
             
             /* our drawing context is relative to the node we are on, so shift */
             pos2[0] -= node.pos[0];
