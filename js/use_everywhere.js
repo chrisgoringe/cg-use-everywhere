@@ -1,114 +1,72 @@
 import { app } from "../../../scripts/app.js";
+import { UseEverywhereList } from "./use_everywhere_classes.js";
+import { add_ue_from_node } from "./use_everywhere_nodes.js";
+import { mode_is_live, is_connected } from "./use_everywhere_utilities.js";
+import { maybe_remove_text_display, toggle_ue_node_highlights } from "./use_everywhere_ui.js";
 
-class UseEverywhere {
-    constructor() {
-        this.sending_to = [];
-        this.priority = 0;
-        Object.assign(this, arguments);
-    }
-    matches(node, input) {
-        if (this.type != input.type) return false;
-        if (this.input_regex && !this.input_regex.test(input.name)) return false;
-        if (this.title_regex) {
-            if (!(this.title_regex.test(node.properties['Node name for S&R']) || this.title_regex.test(node?.title))) return false;
-        }
-        return true;
-    }
-    note_sending(node, input) {
-        this.sending_to.splice(0,0,{node:node, input:input})
-    }
-}
-class UseEverywhereList {
-    #ues;
-    constructor() { this.#ues = [] }
-    
-    add_ue() {
-        this.#ues.splice(0,0,new UseEverywhere(arguments));
-    }
-    find_best_match(node, input) {
-        var matches = this.#ues.filter((candidate) => (  
-            candidate.matches(node, input)
-        ));
-        if (matches.length==0) { return undefined; }
-        if (matches.length>1) {
-            matches.sort((a,b) => b.priority-a.priority);
-            if(matches[0].priority == matches[1].priority) {
-                console.log(`Everywhere nodes found ambiguous matches for '${display_name(node)}' input '${input.name}'`);
-                return undefined;
-            }
-        }
-        matches[0].note_sending(node, input);
-        return matches[0];        
-    }
+function is_UEnode(node_or_nodeType) {
+    const title = node_or_nodeType?.title ? node_or_nodeType.title : node_or_nodeType.comfyClass;
+    return (title.startsWith("Anything Everywhere") || title==="Seed Everywhere")
 }
 
-function display_name(node) {
-    return (node?.title) ? node.title : node.properties['Node name for S&R'];
-}
-
-function remove_text_display(node) {
-    const w = node.widgets?.findIndex((w) => w.name === "display_text_widget"); // created by cg_custom_nodes
-    if (w>=0) {
-        const wid = node.widgets[w];
-        node.widgets.splice(w,1);   // remove it
-        wid?.onRemove();            // cleanly
-    }
-    node.size = node.computeSize(); // shrink the node
-    node.setDirtyCanvas(true, true);// mark for redrawing
-}
-
-function mode_is_live(mode){
-    if (mode===0) return true;
-    if (mode===2 || mode===4) return false;
-    console.log("Found node with mode which isn't 0, 2 or 4... confused by treating it as active");
-    return true;
-}
+var _original_graphToPrompt;
 
 /*
-Does this input (an integer index) connect upstream to a live node?
-input.link is the link_id; the form of workflow.links is [id, upnode_id, upnode_output, downnode_id, downnode_output, type]
+Get the graph and analyse it.
+If modify_and_return_prompt is true, apply UE modifications and return the prompt (for hijack)
+If modify_and_return_prompt is false, jsut return the UseEverywhereList (for UI highlights etc) 
 */
-function is_connected(input, workflow) {
-    const link_id = input.link;
-    if (link_id === null) return false;                                    // no connection
-    const the_link = workflow.links.find((link) => link[0] === link_id);   // link[0] is the link_id
-    if (!the_link) return false;                                           // shouldn't happen: link with that id doesn't exist.
-    const source_node_id = the_link[1];                                    // link[1] is upstream node_id 
-    const source_node = workflow.nodes.find((n) => n.id === source_node_id);
-    if (!source_node) return false;                                        // shouldn't happen: node with that id doesn't exist
-    return mode_is_live(source_node.mode);                                 // is the upstream node alive?
-}
+async function analyse_graph(modify_and_return_prompt=false) {
+    const p = structuredClone(await _original_graphToPrompt.apply(app));
+            
+    // Create a UseEverywhereList and populate it from all live (not bypassed) nodes
+    const ues = new UseEverywhereList();
+    const live_nodes = p.workflow.nodes.filter((node) => mode_is_live(node.mode));
+    live_nodes.forEach(node => { add_ue_from_node(ues, node); })
 
+    // Look for unconnected inputs and see if we can connect them
+    live_nodes.forEach(node => {
+        node.inputs?.forEach(input => {
+            if (!is_connected(input,p.workflow)) {
+                var ue = ues.find_best_match(node, input);
+                if (ue && modify_and_return_prompt) p.output[node.id].inputs[input.name] = ue.output;
+            }
+        });
+    });
+    if (modify_and_return_prompt) return p;
+    else return ues;
+}
 
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
 
-    /* 
-    Detect when a connection is made or unmade.
-    Code added to the prototype for Anything Everywhere and Anything Everywhere?
-    */
-
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeType.title.startsWith("Anything Everywhere")) {
+        if (is_UEnode(nodeType)) {
+            /*
+            When an AE node is connected or disconnected, update its inputs
+            */
             const onConnectionsChange = nodeType.prototype.onConnectionsChange;
             nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {
-                var input;
+                
+                // if connecting, find what type of connection; if not, set to undefined
                 if (connect && link_info) {
                     const origin_id = link_info.origin_id;
                     const origin_slot = link_info.origin_slot;
-                    input = this.graph._nodes_by_id[origin_id].outputs[origin_slot];
+                    this.input_type = this.graph._nodes_by_id[origin_id].outputs[origin_slot].type;
                 } else {
-                    input = undefined; // it's connected to a Custom Node that isn't installed!
+                    this.input_type = undefined; // it's connected to a Custom Node that isn't installed, so treat as unconnected
                 }
-                if (input) {
-                    this.input_type = input.type;
+
+                // set the name and colour of the input
+                if (this.input_type) {
                     this.inputs[0].name = this.input_type;
-                    this.inputs[0].color_on = app.canvas.default_connection_color_byType[input.type];
+                    this.inputs[0].color_on = app.canvas.default_connection_color_byType[this.input_type];
                 } else {
-                    this.input_type = undefined;
                     this.inputs[0].name = "anything";
                     this.inputs[0].color_on = undefined;
                 }
+
+                // call the underlying change handler (which will do the redraw etc)
                 onConnectionsChange?.apply(side,slot,connect,link_info,output);
             };
         }
@@ -116,18 +74,15 @@ app.registerExtension({
 
     /*
     Remove the display_text_widget if the option is set to false.
-    Do this in nodeCreated because the widget gets added in beforeRegisterNodeDef
-    and we can't be sure this will run after that.
+    Use nodeCreated to insert this so that this code will be run after the code to add the text widget
+    (inserted by cg_custom_core/ui_output.js in beforeRegisterNodeDef)
     */
-
     async nodeCreated(node) {
-        if (node.comfyClass.startsWith("Anything Everywhere") || node.comfyClass.startsWith("Seed Everywhere")) {
+        if (is_UEnode(node)) {
             const onExecuted = node.onExecuted;
             node.onExecuted = function() {
                 onExecuted?.apply(this, arguments);
-                if (!app.ui.settings.getSettingValue('AE.details', false)) {
-                    remove_text_display(node);
-                }
+                maybe_remove_text_display(node);
             }
         }
     },
@@ -137,7 +92,9 @@ app.registerExtension({
     We hijack it, call the original, and return a modified copy.
     */
 	async setup() {
-        // Add the setting
+        /*
+        Add to the settings menu
+        */
         app.ui.settings.addSetting({
             id: "AE.details",
             name: "Anything Everywhere node details",
@@ -145,76 +102,28 @@ app.registerExtension({
             defaultValue: false,
         });
 
-		const graphToPrompt = app.graphToPrompt;
+        /*
+        Hijack the graphToPrompt function
+        */
+		_original_graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
-            const p = structuredClone(await graphToPrompt.apply(app));  // don't want to change any underlying objects, just what we send
-            
-             // Add all of the available sources to the UseEverywhereList
-            const ues = new UseEverywhereList();
+            return analyse_graph(true);
+        }
 
-            /* only want to consider live nodes (not bypassed) */
-            const live_nodes = p.workflow.nodes.filter((node) => mode_is_live(node.mode));
-            live_nodes.forEach(node => {
-                /* this section deprecated: remove in V4 */
-                if (node.type.startsWith('UE ')) {
-                    if (node.inputs) {
-                        for (var i=0; i<node.inputs.length; i++) {
-                            if (node.inputs[i].link != null) ues.add_ue(type=node.inputs[i].type, output=[node.id.toString(),i]);
-                        }
-                    } else ues.add_ue(type=node.type.substring(3), output=[node.id.toString(),0]);
+        /*
+        Add to the canvas menu
+        */
+        const original_getCanvasMenuOptions = LGraphCanvas.prototype.getCanvasMenuOptions;
+        LGraphCanvas.prototype.getCanvasMenuOptions = function () {
+            const options = original_getCanvasMenuOptions.apply(this, arguments);
+            options.push(null); // divider
+            options.push({
+                content: `Toggle UE Node highlights`,
+                callback: () => {
+                    toggle_ue_node_highlights(app, analyse_graph);
                 }
-
-                if (node.type.startsWith('UE? ')) {
-                    if (node.inputs) {
-                        for (var i=0; i<node.inputs.length; i++) {
-                            if (node.inputs[i].link != null) {
-                                ues.add_ue(type=node.inputs[i].type, output=[node.id.toString(),i], 
-                                            title_regex=new RegExp(node.widgets_values[0]), 
-                                            input_regex=new RegExp(node.widgets_values[1]), priority=10);
-                            }
-                        }
-                    } else {
-                        ues.add_ue(type=node.type.substring(4), output=[node.id.toString(),0], 
-                                    title_regex=new RegExp(node.widgets_values[1]), 
-                                    input_regex=new RegExp(node.widgets_values[2]), prioirty=10);
-                    }
-                }
-                /* end of deprecated section */
-                if (node.type === "Seed Everywhere") ues.add_ue(type="INT", output=[node.id.toString(),0], 
-                                                                input_regex=new RegExp("seed"), priority=5);
-
-                if (node.type === "Anything Everywhere?") {
-                    const in_link = node?.inputs[0].link;
-                    if (in_link) {
-                        const link = app.graph.links[in_link];
-                        const type = app.graph._nodes_by_id[node.id.toString()].input_type;
-                        if (type) {
-                            ues.add_ue(type=type, output=[link.origin_id.toString(), link.origin_slot],
-                                        title_regex=new RegExp(node.widgets_values[0]), 
-                                        input_regex=new RegExp(node.widgets_values[1]), priority=10);
-                        }
-                    }
-                }
-                if (node.type === "Anything Everywhere") {
-                    const in_link = node?.inputs[0].link;
-                    if (in_link) {
-                        const link = app.graph.links[in_link];
-                        const type = app.graph._nodes_by_id[node.id.toString()].input_type;
-                        if (type) ues.add_ue(type=type, output=[link.origin_id.toString(), link.origin_slot]);
-                    }
-                }
-            })
-
-            // Look for unconnected inputs and see if we can connect them
-            live_nodes.forEach(node => {
-                node.inputs?.forEach(input => {
-                    if (!is_connected(input,p.workflow)) {
-                        var ue = ues.find_best_match(node, input);
-                        if (ue) p.output[node.id].inputs[input.name] = ue.output;
-                    }
-                });
             });
-            return p;
+            return options;
         }
 	},
 
