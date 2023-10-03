@@ -1,4 +1,4 @@
-import { DEBUG_LEVEL } from "./use_everywhere_utilities.js";
+import { Logger } from "./use_everywhere_utilities.js";
 
 function maybe_remove_text_display(node) {
     if (!app.ui.settings.getSettingValue('AE.details', false)) {
@@ -9,6 +9,16 @@ function maybe_remove_text_display(node) {
         }
         node.size = node.computeSize(); // shrink the node
         node.setDirtyCanvas(true, true);// mark for redrawing
+    }
+}
+
+function update_input_label(node, slot, app) {
+    if (node.input_type[slot]) {
+        node.inputs[slot].name = node.input_type[slot];
+        node.inputs[slot].color_on = app.canvas.default_connection_color_byType[node.input_type[slot]];
+    } else {
+        node.inputs[slot].name = "anything";
+        node.inputs[slot].color_on = undefined;
     }
 }
 
@@ -35,9 +45,9 @@ class LinkRenderController {
         if (this.ue_list) {
             this.ue_list = undefined;
             this.request_link_list_update();
-            if (DEBUG_LEVEL>0) console.log("link_list_outdated");
+            Logger.log(Logger.DETAILS, "link_list marked outdated");
         } else {
-            if (DEBUG_LEVEL>0) console.log("link_list was already outdated");
+            Logger.log(Logger.DETAILS, "link_list was already outdated");
         }
     }
 
@@ -45,15 +55,15 @@ class LinkRenderController {
     reload_resolve = function (value) {
         this.ue_list_reloading=false;
         this.ue_list = value;
-        if (DEBUG_LEVEL>0) console.log("reload_resolve");
-        if (DEBUG_LEVEL>2) this.ue_list.print_all();
+        Logger.log(Logger.DETAILS, "reload_resolve");
+        Logger.log_call(Logger.EVERYTHING, this.ue_list.print_all);
         if (this._ue_links_visible) app.graph.setDirtyCanvas(true,true);
     }.bind(this)
 
     // callback for when the_graph_analyser fails - note reloading is false and log
     reload_reject = function(reason) {
         this.ue_list_reloading=false;
-        if (DEBUG_LEVEL>0) console.error(reason);
+        Logger.log_error(Logger.ALWAYS, reason);
     }.bind(this)
 
     // request an update to the ue_list. 
@@ -61,12 +71,12 @@ class LinkRenderController {
         if (this.ue_list_reloading) return;                            // already doing it
         this.ue_list_reloading = true;                                 // stop any more requests
         this.the_graph_analyser().then(this.reload_resolve, this.reload_reject); // an async call is a promise; pass it two callbacks
-        if (DEBUG_LEVEL>0) console.log("reload_request");
+        Logger.log(Logger.DETAILS, "reload_request");
     } 
 
     async toggle_ue_links_visible() {
         this._ue_links_visible = !this._ue_links_visible;
-        if (DEBUG_LEVEL) console.log("toggle ue links visible ${this._ue_links_visible}");
+        Logger.log(Logger.BASIC, "toggle ue links visible ${this._ue_links_visible}");
         app.graph.setDirtyCanvas(true,true);
     }
 
@@ -111,4 +121,5 @@ class LinkRenderController {
     }
 }
 
-export {maybe_remove_text_display, LinkRenderController}
+export {maybe_remove_text_display, update_input_label}
+export{ LinkRenderController}

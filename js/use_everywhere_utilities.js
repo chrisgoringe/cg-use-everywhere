@@ -1,7 +1,7 @@
-function mode_is_live(mode){
-    if (mode===0) return true;
-    if (mode===2 || mode===4) return false;
-    console.log("Found node with mode which isn't 0, 2 or 4... confused by treating it as active");
+function node_is_live(node){
+    if (node.mode===0) return true;
+    if (node.mode===2 || node.mode===4) return false;
+    console.log("Found node with mode which isn't 0, 2 or 4... confused");
     return true;
 }
 
@@ -17,7 +17,7 @@ function is_connected(input, workflow) {
     const source_node_id = the_link[1];                                    // link[1] is upstream node_id 
     const source_node = workflow.nodes.find((n) => n.id === source_node_id);
     if (!source_node) return false;                                        // shouldn't happen: node with that id doesn't exist
-    return mode_is_live(source_node.mode);                                 // is the upstream node alive?
+    return node_is_live(source_node);                                      // is the upstream node alive?
 }
 
 /*
@@ -32,12 +32,40 @@ function is_UEnode(node_or_nodeType) {
     return (title.startsWith("Anything Everywhere") || title==="Seed Everywhere")
 }
 
-/*
-0 - nothing
-1 - single lines mostly
-2 - ue list when reloaded
-3 - lots of stuff
-*/
-const DEBUG_LEVEL = 3;
+class Logger {
+    static ALWAYS     = 0;
+    static BASIC      = 1;
+    static DETAILS    = 2;
+    static EVERYTHING = 3;
 
-export {mode_is_live, is_connected, is_UEnode, DEBUG_LEVEL}
+    static LEVEL = Logger.DETAILS;
+    static TRACE = true;
+
+    static log(level, message, array) {
+        if (level <= Logger.LEVEL) {
+            console.log(message);
+            if (array) for (var i=0; i<array.length; i++) { console.log(array[i]) }
+        }
+    }
+
+    static log_call(level, method) {
+        if (level <= Logger.LEVEL) {
+            method.apply();
+        }
+    }
+
+    static log_error(level, message) {
+        if (level <= Logger.LEVEL) {
+            console.error(message);
+        }
+    }
+
+    static trace(message, array, node) {
+        if (Logger.TRACE) {
+            if (node) { console.log(`TRACE (${node.id}) : ${message}`) } else { console.log(`TRACE : ${message}`) }
+            if (array) for (var i=0; i<array.length; i++) { console.log(`  ${i} = ${array[i]}`) }
+        }
+    }
+}
+
+export {node_is_live, is_connected, is_UEnode, Logger}

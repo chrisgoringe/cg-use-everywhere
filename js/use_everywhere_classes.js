@@ -1,4 +1,4 @@
-import { is_UEnode, DEBUG_LEVEL } from "./use_everywhere_utilities.js";
+import { Logger } from "./use_everywhere_utilities.js";
 
 function display_name(node) { return (node?.title) ? node.title : node.properties['Node name for S&R']; }
 
@@ -49,7 +49,7 @@ class UseEverywhereList {
         }
         const ue = new UseEverywhere(params);
         this.ues.push(ue);
-        if (DEBUG_LEVEL>1) console.log(`Added ${ue.description}`)
+        Logger.log(Logger.BASIC, `Added ${ue.description}`)
     }
 
     find_best_match(node, input) {
@@ -57,18 +57,18 @@ class UseEverywhereList {
             candidate.matches(node, input)
         ));
         if (matches.length==0) { 
-            if (DEBUG_LEVEL>1) console.log(`'${display_name(node)}' input '${input.name}' unmatched`)
+            Logger.log(Logger.BASIC, `'${display_name(node)}' input '${input.name}' unmatched`)
             return undefined; 
         }
         if (matches.length>1) {
             matches.sort((a,b) => b.priority-a.priority);
             if(matches[0].priority == matches[1].priority) {
-                if (DEBUG_LEVEL>1) console.log(`Ambiguous matches for '${display_name(node)}' input '${input.name}'`);
+                Logger.log(Logger.BASIC, `Ambiguous matches for '${display_name(node)}' input '${input.name}'`);
                 return undefined;
             }
         }
         matches[0].note_sending_to(node, input);
-        if (DEBUG_LEVEL>1) console.log(`'${display_name(node)}' input '${input.name}' matched to ${matches[0].description}`);
+        Logger.log(Logger.BASIC,`'${display_name(node)}' input '${input.name}' matched to ${matches[0].description}`);
         return matches[0];        
     }
 
