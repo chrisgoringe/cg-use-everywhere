@@ -31,12 +31,12 @@ class SeedEverywhere():
         return {"required":{ "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}) }}
     OUTPUT_NODE = True
 
-    RETURN_TYPES = ()
+    RETURN_TYPES = ("INT",)
     FUNCTION = "func"
     CATEGORY = "everywhere"
 
     def func(self, seed):
-        return (f"Seed : INT : {seed}",)
+        return (seed, f"Seed : INT : {seed}",)
 
 @ui_signal('display_text')
 class AnythingEverywhere(UseEverywhere):

@@ -1,12 +1,11 @@
 import { app } from "../../../scripts/app.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node } from "./use_everywhere_nodes.js";
-import { node_is_live, is_connected, is_UEnode, Logger } from "./use_everywhere_utilities.js";
+import { node_is_live, is_connected, is_UEnode, inject, Logger } from "./use_everywhere_utilities.js";
 import { maybe_remove_text_display, update_input_label } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 
-var _original_graphToPrompt;
-
+var _original_graphToPrompt; // gets populated with the original method in setup()
 /*
 Get the graph and analyse it.
 If modify_and_return_prompt is true, apply UE modifications and return the prompt (for hijack)
@@ -36,16 +35,25 @@ async function analyse_graph(modify_and_return_prompt=false) {
     else return ues;
 }
 
-function inject_outdating(method) {
-    const callback = o.callback;
-    o.callback = function() {
-        Logger.trace("Node right-click action called", arguments, this)
-        callback?.apply(this, arguments);
-        _lrc.mark_link_list_outdated();
+/*
+The ui component that looks after the link rendering
+*/
+const _lrc = new LinkRenderController(analyse_graph);
+
+/*
+Inject a call to _lrc.mark_list_link_outdated into a method with name methodname on all objects in the array
+If object is undefined, do nothing.
+The injection is added at the end of the existing method (if the method didn't exist, it is created).
+A Logger.trace call is added at the start with 'tracetext'
+*/
+function inject_outdating_into_objects(array, methodname, tracetext) {
+    if (array) {
+        array.forEach((object) => { inject_outdating_into_object_method(object, methodname, tracetext); })
     }
 }
-
-const _lrc = new LinkRenderController(analyse_graph);
+function inject_outdating_into_object_method(object, methodname, tracetext) {
+    if (object) inject(object, methodname, tracetext, _lrc.mark_link_list_outdated, _lrc);
+}
 
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
@@ -58,7 +66,7 @@ app.registerExtension({
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {        
             Logger.trace("onConnectionsChange", arguments, this);
-            if (node.IS_UE) {
+            if (this.IS_UE) {
                 this.input_type[slot] = (connect && link_info) ? this.graph?._nodes_by_id[link_info?.origin_id]?.outputs[link_info?.origin_slot]?.type 
                                                                : undefined;
                 update_input_label(this, slot, app);
@@ -74,14 +82,7 @@ app.registerExtension({
         nodeType.prototype.getExtraMenuOptions = function(_, options) {
             Logger.trace("getExtraMenuOptions", arguments, this);
             getExtraMenuOptions?.apply(this, arguments);
-            options.forEach((o) => {
-                const callback = o.callback;
-                o.callback = function() {
-                    Logger.trace("Node right-click action called", arguments, this)
-                    callback?.apply(this, arguments);
-                    _lrc.mark_link_list_outdated();
-                }
-            })
+            inject_outdating_into_objects(options,'callback',`menu option on ${this.id}`);
         }
     },
 
@@ -101,16 +102,13 @@ app.registerExtension({
             }
 
             // If a widget on a UE node is edited, link list is dirty
-            node.widgets?.forEach((w)=>{
-                const callback = w.callback;
-                w.callback = function () {
-                    Logger.trace("widget callback", arguments, node);
-                    callback?.apply(this, arguments);
-                    _lrc.mark_link_list_outdated();
-                }
-            });
+            inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
         }
-        // Any new node makes the link list dirty 
+
+        // removing a node makes the list dirty
+        inject_outdating_into_object_method(node, 'onRemoved', `node ${node.id} removed`)
+
+        // creating a node makes the link list dirty 
         _lrc.mark_link_list_outdated();
     },
 
@@ -160,15 +158,10 @@ app.registerExtension({
                     _lrc.toggle_ue_links_visible();
                 }
             });
-            //  Play it safe - any menu option might make our list dirty
-            options.forEach((o)=> {
-                const callback = o.callback;
-                o.callback = function() {
-                    Logger.trace("Canvas right-click option called", arguments);
-                    callback?.apply(this, arguments);
-                    _lrc.mark_link_list_outdated();
-                }
-            })
+
+            //  every menu item makes our list dirty
+            inject_outdating_into_objects(options,'callback',`menu option on canvas`);
+
             return options;
         }
 	},

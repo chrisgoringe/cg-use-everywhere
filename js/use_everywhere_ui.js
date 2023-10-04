@@ -45,9 +45,9 @@ class LinkRenderController {
         if (this.ue_list) {
             this.ue_list = undefined;
             this.request_link_list_update();
-            Logger.log(Logger.DETAILS, "link_list marked outdated");
+            Logger.log(Logger.INFORMATION, "link_list marked outdated");
         } else {
-            Logger.log(Logger.DETAILS, "link_list was already outdated");
+            Logger.log(Logger.INFORMATION, "link_list was already outdated");
         }
     }
 
@@ -55,15 +55,16 @@ class LinkRenderController {
     reload_resolve = function (value) {
         this.ue_list_reloading=false;
         this.ue_list = value;
-        Logger.log(Logger.DETAILS, "reload_resolve");
-        Logger.log_call(Logger.EVERYTHING, this.ue_list.print_all);
+        Logger.log(Logger.INFORMATION, "link list update completed");
+        Logger.log_call(Logger.DETAIL, this.ue_list.print_all);
         if (this._ue_links_visible) app.graph.setDirtyCanvas(true,true);
     }.bind(this)
 
     // callback for when the_graph_analyser fails - note reloading is false and log
     reload_reject = function(reason) {
         this.ue_list_reloading=false;
-        Logger.log_error(Logger.ALWAYS, reason);
+        Logger.log(Logger.ERROR, "link list update failed");
+        Logger.log_error(Logger.ERROR, reason);
     }.bind(this)
 
     // request an update to the ue_list. 
@@ -71,12 +72,12 @@ class LinkRenderController {
         if (this.ue_list_reloading) return;                            // already doing it
         this.ue_list_reloading = true;                                 // stop any more requests
         this.the_graph_analyser().then(this.reload_resolve, this.reload_reject); // an async call is a promise; pass it two callbacks
-        Logger.log(Logger.DETAILS, "reload_request");
+        Logger.log(Logger.INFORMATION, "link list update started");
     } 
 
     async toggle_ue_links_visible() {
         this._ue_links_visible = !this._ue_links_visible;
-        Logger.log(Logger.BASIC, "toggle ue links visible ${this._ue_links_visible}");
+        Logger.log(Logger.INFORMATION, `toggle ue links visible ${this._ue_links_visible}`);
         app.graph.setDirtyCanvas(true,true);
     }
 
