@@ -1,6 +1,11 @@
-import { is_UEnode, DEBUG_LEVEL } from "./use_everywhere_utilities.js";
+import { Logger, node_is_live } from "./use_everywhere_utilities.js";
 
-function display_name(node) { return (node?.title) ? node.title : node.properties['Node name for S&R']; }
+function display_name(node) { 
+    if (node?.title) return node.title;
+    if (node?.type) return node.type;
+    if (node?.properties['Node name for S&R']) return node.properties['Node name for S&R'];
+    return "un-nameable node";
+}
 
 class UseEverywhere {
     constructor() {
@@ -34,6 +39,12 @@ class UseEverywhere {
     }
 }
 
+function validity_errors(params) {
+    if (!node_is_live(params.controller)) return `UE node ${params.output[0]} is not alive`;
+    if (!node_is_live(app.graph._nodes_by_id[params.output[0]])) return `upstream node ${params.output[0]} is not alive`;
+    return "";
+}
+
 class UseEverywhereList {
     constructor() { this.ues = []; }
 
@@ -48,27 +59,32 @@ class UseEverywhereList {
             priority: priority
         }
         const ue = new UseEverywhere(params);
-        this.ues.push(ue);
-        if (DEBUG_LEVEL>1) console.log(`Added ${ue.description}`)
+        const error = validity_errors(params);
+        if (error==="") { 
+            this.ues.push(ue);
+            Logger.log(Logger.INFORMATION, `Added ${ue.description}`)
+        } else {
+            Logger.log(Logger.PROBLEM, `Rejected ${ue.description} because ${error}`, params);
+        }
     }
 
     find_best_match(node, input) {
         var matches = this.ues.filter((candidate) => (  
             candidate.matches(node, input)
         ));
-        if (matches.length==0) { 
-            if (DEBUG_LEVEL>1) console.log(`'${display_name(node)}' input '${input.name}' unmatched`)
+        if (matches.length==0) {
+            Logger.log(Logger.PROBLEM, `'${display_name(node)}' optional input '${input.name}' unmatched`)
             return undefined; 
         }
         if (matches.length>1) {
             matches.sort((a,b) => b.priority-a.priority);
             if(matches[0].priority == matches[1].priority) {
-                if (DEBUG_LEVEL>1) console.log(`Ambiguous matches for '${display_name(node)}' input '${input.name}'`);
+                Logger.log(Logger.PROBLEM, `Ambiguous matches for '${display_name(node)}' input '${input.name}'`);
                 return undefined;
             }
         }
         matches[0].note_sending_to(node, input);
-        if (DEBUG_LEVEL>1) console.log(`'${display_name(node)}' input '${input.name}' matched to ${matches[0].description}`);
+        Logger.log(Logger.INFORMATION,`'${display_name(node)}' input '${input.name}' matched to ${matches[0].description}`);
         return matches[0];        
     }
 

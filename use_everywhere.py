@@ -9,6 +9,7 @@ class UseEverywhere():
     FUNCTION = "func"
     CATEGORY = "everywhere/deprecated"
     OUTPUT_NODE = True
+    RETURN_TYPES = ()
 
     def func(self, **kwargs):
         return tuple([kwargs.get(t.lower(),None) for t in self.RETURN_TYPES])   
@@ -35,7 +36,7 @@ class SeedEverywhere():
     CATEGORY = "everywhere"
 
     def func(self, seed):
-        return (seed,f"Seed : INT : {seed}")
+        return (seed, f"Seed : INT : {seed}",)
 
 @ui_signal('display_text')
 class AnythingEverywhere(UseEverywhere):
@@ -44,7 +45,6 @@ class AnythingEverywhere(UseEverywhere):
         return {"required":{}, 
                 "optional": { "anything" : ("*", {}), } }
 
-    RETURN_TYPES = ()
     CATEGORY = "everywhere"
 
     def func(self, **kwargs):
@@ -58,7 +58,6 @@ class AnythingEverywhereTriplet(UseEverywhere):
         return {"required":{}, 
                 "optional": { "anything" : ("*", {}), "anything2" : ("*", {}), "anything3" : ("*", {}),} }
     
-    RETURN_TYPES = ()
     CATEGORY = "everywhere"
     
     def func(self, **kwargs):
@@ -75,7 +74,6 @@ class AnythingSomewhere(UseEverywhere):
                     "input_regex" : ("STRING", {"default":".*"}),
                     } }
 
-    RETURN_TYPES = ()
     CATEGORY = "everywhere"
 
     def func(self, title_regex=None, input_regex=None, **kwargs):
