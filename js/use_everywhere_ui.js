@@ -89,6 +89,10 @@ class LinkRenderController {
         if (this.ue_list_reloading) return;     // if we don't have one, return. This method gets called frequently!
 
         this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
+            if (!ue_connection.control_node) { // control node deleted...
+                this.mark_link_list_outdated();
+                return; 
+            }
             /* we're on the end node; get the position of the input */
             var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
 

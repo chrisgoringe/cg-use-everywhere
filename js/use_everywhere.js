@@ -108,8 +108,9 @@ app.registerExtension({
         // removing a node makes the list dirty
         inject_outdating_into_object_method(node, 'onRemoved', `node ${node.id} removed`)
 
-        // creating a node makes the link list dirty 
-        _lrc.mark_link_list_outdated();
+        // creating a node makes the link list dirty - but give the system a moment to finish
+        setTimeout( ()=>{_lrc.mark_link_list_outdated()}, 100 );
+        
     },
 
 	async setup() {

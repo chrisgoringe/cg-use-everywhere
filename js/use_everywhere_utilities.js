@@ -4,7 +4,7 @@ class Logger {
     static INFORMATION = 2; // record of good things
     static DETAIL      = 3; // details
 
-    static LEVEL = Logger.PROBLEM;
+    static LEVEL = Logger.INFORMATION;
     static TRACE = true;
 
     static log(level, message, array) {
@@ -38,6 +38,7 @@ class Logger {
 Is a node alive (ie not bypassed or set to never)
 */
 function node_is_live(node){
+    if (!node) return false;
     if (node.mode===0) return true;
     if (node.mode===2 || node.mode===4) return false;
     Logger.log(Logger.ERROR, `node ${node.id} has mode ${node.mode} - I only understand modes 0, 2 and 4`);
