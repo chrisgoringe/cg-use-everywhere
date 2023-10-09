@@ -10,6 +10,10 @@ Shameless plug for my other nodes -> Check out [Image Picker](https://github.com
 
 # v3 - 10th October 2023
 
+## Installing
+
+Use Comfy Manager. If you really want to do it manually, just clone this repository in your custom_nodes directory.
+
 ## Anything Everywhere (start here!)
 
 The `Anything Everywhere` node has a single input, initially labelled 'anything'. Connect anything to it (directly - not via a reroute), and the input name changes to match the input type. Disconnect and it goes back to 'anything'.
