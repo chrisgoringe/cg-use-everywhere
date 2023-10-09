@@ -4,80 +4,93 @@ Shameless plug for my other nodes -> Check out [Image Picker](https://github.com
 
 ---
 
-## v2.5 update
-
-Main addition is visualising the virtual nodes - right click on the background (like when you add a node) and `Toggle UE Link Visibility`.
-
-Also added `Anything Everywhere3` which is just 3 `Anything Everywhere` nodes in one - designed for when you load a checkpoint.
-
-Under the hood a big refactor to make the visualisation work cleanly, and lots of logging (optional) added.
-
-## v2 Update
-
-The whole zoo of UE nodes has been replaced by `Anything Everywhere` nodes which take any input.
-
-For backward compatibility, all the old nodes are still supported for the time being - you can find them in everywhere/deprecated. The only one still in the main folder is Seed Everywhere, which plays a slightly special role. Below are the instructions for the new nodes - then further down you can find the old documentation.
-
 |Separate your workflow logically without spaghetti|This image has a simple example workflow you can drop onto Comfy|
 |-|-|
 |![separate](docs/separate.png)|![simple](docs/girl.png)|
 
-## Anything Everywhere - send data to every unconnected input of the same type
-<details><summary>Details</summary>
-The Anything Everywhere node has a single input, initially labelled 'anything'. Connect anything to it (you probably can't connect via a reroute, but you shouldn't need to anyway), and the input name changes to match the input type. Disconnect and it goes back to 'anything'.
+# v3 - 10th October 2023
 
-When you run the prompt, any unconnected input, anywhere in the workflow, which matches that type, will act as if it were connected to the same input. The node can also gain a text box showing exactly what passed through the node (you need to turn this on if you want it - it's in the main settings, 'Anything Everywhere node details')
+## Anything Everywhere (start here!)
 
-|Unconnected|Connected|Run|
-|-|-|-|
-|![Unconnected](docs/unconnected.png)|![Connected](docs/connected.png)|![Run](docs/run.png)|
-</details>
+The `Anything Everywhere` node has a single input, initially labelled 'anything'. Connect anything to it (directly - not via a reroute), and the input name changes to match the input type. Disconnect and it goes back to 'anything'.
+
+When you run the prompt, any unconnected input, anywhere in the workflow, which matches that type, will act as if it were connected to the same input. 
+
+To visualise what it's being connected to, right-click on the background canvas and select `Toggle UE Link Visibility`.
 
 ## Anything Everywhere? - control matching with regex rules
-<details><summary>Details</summary>
+
 This node adds two widgets - title_regex and input_regex. It will only send to input which match. So in the example, title_regex is 'Preview' so the image is sent to the Preview Image node but not the Save Image node.
 
 ![regex](docs/regex.png)
 
-## Help! How do I connect to prompt but not negative_prompt?
+*The matches are regular expressions, not string matches.* Most simple strings will work (matching any part of the title or input name), but some characters have special meanings (including various sorts of brackets, ^, $, /, and . in particular) so just avoid them if you aren't regex-inclined.
 
-The matches are regular expressions, not straight string matches. So `^prompt` will match `prompt` at the beginning of the title only.
+Using regex means you can use `^prompt` to match `prompt` at the beginning of the title only, to avoid matching `negative_prompt`.
 
-Regex 101 - ^ means 'the start', $ means 'the end', '.' matches anything, '.*' matches any number of anything. For more than that, visit [regex101](https://regex101.com/) (the flavour you want is ECMAScript, though that probably won't matter).
-</details>
+Regex 101 - `^` means 'the start', `$` means 'the end', `.` matches any single character, `.*` matches anything of any length (including zero). For more than that, visit [regex101](https://regex101.com/) (the flavour you want is ECMAScript, though that probably won't matter).
+
+## Seed Everywhere
+
+Seed Everywhere connects to any unconnected INT input with `seed` in the input name (seed, noise_seed, etc), and it has the control_after_generate feature. So if you convert the seed widgets to inputs you can use the same seed everywhere.
 
 ## Anything Everywhere3 - One node, three inputs.
-Really just three `Anything Everywhere` nodes packaged together.  Designed for the outputs of Checkpoint Loader.
 
-## Seed Everywhere - Send data to unconnected inputs with 'seed' in the input name
-Seed Everywhere connects to any unconnected INT input with 'seed' in the input name. So you can use the same seed everywhere.
+Really just three `Anything Everywhere` nodes packaged together.  Designed for the outputs of Checkpoint Loader. 
 
-## What if there is more than one match?
-<details><summary>Details</summary>
-What if there is more than one possible Everywhere node that an input could connect to? The nodes have priorities:
+![UE3](docs/UE3.png)
 
-|Node|Priority|
+## Prompts Everywhere - two strings or conditionings
+
+Prompt Everywhere has two inputs. They will be sent with regex matching rules of `(^prompt|^positive)` and `neg` respectively. These should match the various versions of names that get used for prompts and negative prompts or conditionings.
+
+|strings|conditionings|
 |-|-|
-|`Anything Everywhere?`|10|
-|`Seed Everywhere`|5|
-|`Anything Everywhere`|0|
+|![pe](docs/PE.png)|![pe](docs/conditioning.png)
 
-So a matching regex is highest, and a Seed is above a general INT. If this rule isn't enough to decide, *no connection is made* and there's a message in the Javascript log.
-</details>
+# Other features
 
-## Visualising the links - menu option to show all the virtual links
-<details><summary>Details</summary>
-Right-click on the canvas (like when you add a new node) and there is an option to visualise the links. The links thus shown will update dynamically as you change the graph, bypass nodes, edit regex's etc..
+## Priorities
 
+If there is more than one sending node that matches an input, the basic rules is that the more specific node wins. The order of priorities is:
+
+- `Anything Everywhere?` 
+- `Seed Everywhere` and `Prompts Everywhere`
+- `Anything Everywhere`
+- `Anything Everywhere3`
+
+If two nodes with the same priority both match *neither will connect* 
+
+## Visualise
+
+If something isn't working right, right click on the background canvas and `Toggle UE Link Visibility` to see all the links being made by the UE nodes.
 |Visualise off|Visualise on|
 |-|-|
 |![off](docs/off.png)|![on](docs/on.png)|
-</details>
+
+## See what is sent
+
+The nodes which only have one output can also gain a text box showing exactly what passed through the node. You need to turn this on if you want it - it's in the main settings, 'Anything Everywhere node details'.
+
+## Logging/Debugging
+
+The JavaScript console (press f12 in some browsers) has logging information about what is being connected. You can change the level of detail by finding the file `[comfy_install]/custom_nodes/cg-use-everywhere/js/use_everywhre_utilities.js` and near the top finding this bit:
+```javascript
+    static ERROR       = 0; // actual errors
+    static PROBLEM     = 1; // things that stop the workflow working
+    static INFORMATION = 2; // record of good things
+    static DETAIL      = 3; // details
+
+    static LEVEL = Logger.PROBLEM;
+    static TRACE = false;   // most of the method calls
+```
+Change the `LEVEL` to `Logger.INFORMATION` for more, or `Logger.DETAIL` for even more; set `TRACE` to `true` for some other debugging information.
 
 ## Caution
 
-It's possible to create a loop with UE, and that currently isn't detected ([issue](https://github.com/chrisgoringe/cg-use-everywhere/issues/6)). If you get a RecursionError that's probably what you've done. Remember, *every* unconnected input gets connected to the UE output, even optional ones... you might want to use Anything Everywhere? nodes if this is a problem.
+It's possible to create a loop with UE, and that currently isn't detected ([issue](https://github.com/chrisgoringe/cg-use-everywhere/issues/6), [PR for ComfyUI](https://github.com/comfyanonymous/ComfyUI/pull/1652)). If you get a RecursionError that's probably what you've done. Remember, *every* unconnected input gets connected to the UE output, even optional ones... you might want to use `Anything Everywhere?` nodes if this is a problem.
 
-## Deprecated Nodes
 
-[Old documentation](docs/deprecated.md)
+# Deprecated nodes
+
+For backward compatibility, all the old nodes are still supported for the time being - you can find them in everywhere/deprecated. [Old documentation](docs/deprecated.md)

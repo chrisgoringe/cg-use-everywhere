@@ -1,4 +1,4 @@
-import os, git, sys
+import os, git, sys, shutil
 sys.path.insert(0,os.path.join(os.path.dirname(os.path.realpath(__file__)),"..",".."))
 
 def installer(custom_node_path):
@@ -17,6 +17,16 @@ def installer(custom_node_path):
         repo.git.clear_cache()
         repo.git.submodule('update','--init','--recursive')
         repo.close()
+
+    print("Removing deployed web extensions - this may mean you need to restart ComfyUI")
+    application_web_extensions_directory = os.path.join(custom_node_path, "..", "web", "extensions")
+    for thing in os.listdir(application_web_extensions_directory):
+        path = os.path.join(application_web_extensions_directory,thing)
+        if os.path.isdir(path):
+            if thing != 'core':
+                shutil.rmtree(path)
+        else:
+            os.remove(path)
 
 if 'custom_nodes' in os.getcwd():
     installer(os.path.join(os.getcwd(),".."))

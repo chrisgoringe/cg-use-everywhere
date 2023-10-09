@@ -10,9 +10,9 @@ except:
     application_root_directory = os.path.dirname(folder_paths.__file__)
     installer(os.path.join(application_root_directory,"custom_nodes"))
 
-from .use_everywhere import UseEverywhere, UseSomewhere, SeedEverywhere
+from .use_everywhere import UseEverywhere, UseSomewhere, SeedEverywhere, AnythingEverywherePrompts
 
-UE_VERSION = 2.6
+UE_VERSION = 3.0
 
 # Types and the UE {t} and UE? {t} nodes are deprecated in v2, will be hidden in v3 and removed in v4
 types = {
@@ -37,6 +37,7 @@ from .use_everywhere import AnythingEverywhere, AnythingSomewhere, AnythingEvery
 NODE_CLASS_MAPPINGS["Anything Everywhere"] = AnythingEverywhere
 NODE_CLASS_MAPPINGS["Anything Everywhere3"] = AnythingEverywhereTriplet
 NODE_CLASS_MAPPINGS["Anything Everywhere?"] = AnythingSomewhere
+NODE_CLASS_MAPPINGS["Prompts Everywhere"] = AnythingEverywherePrompts
 
 __all__ = ['NODE_CLASS_MAPPINGS']
 
@@ -44,6 +45,6 @@ import os, shutil
 import folder_paths
 module_js_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), "js")
 application_root_directory = os.path.dirname(folder_paths.__file__)
-application_web_extensions_directory = os.path.join(application_root_directory, "web", "extensions", "use_everywhere")
+extension_web_extensions_directory = os.path.join(application_root_directory, "web", "extensions", "use_everywhere")
 
-shutil.copytree(module_js_directory, application_web_extensions_directory, dirs_exist_ok=True)
+shutil.copytree(module_js_directory, extension_web_extensions_directory, dirs_exist_ok=True)

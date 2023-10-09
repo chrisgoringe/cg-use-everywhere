@@ -4,8 +4,8 @@ class Logger {
     static INFORMATION = 2; // record of good things
     static DETAIL      = 3; // details
 
-    static LEVEL = Logger.INFORMATION;
-    static TRACE = true;
+    static LEVEL = Logger.PROBLEM;
+    static TRACE = false;   // most of the method calls
 
     static log(level, message, array) {
         if (level <= Logger.LEVEL) {
@@ -69,7 +69,7 @@ function is_UEnode(node_or_nodeType) {
     if (title===undefined) title = node_or_nodeType.type;
     if (title===undefined) title = node_or_nodeType.comfyClass;
     if (title===undefined) return false;
-    return (title.startsWith("Anything Everywhere") || title==="Seed Everywhere")
+    return (title.startsWith("Anything Everywhere") || title==="Seed Everywhere" || title==="Prompts Everywhere")
 }
 
 /*

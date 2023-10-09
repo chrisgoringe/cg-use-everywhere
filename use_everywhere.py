@@ -7,7 +7,6 @@ class UseEverywhere():
                 "optional": { x.lower() : (x, {}) for x in s.RETURN_TYPES }
                 }
     FUNCTION = "func"
-    CATEGORY = "everywhere/deprecated"
     OUTPUT_NODE = True
     RETURN_TYPES = ()
 
@@ -51,7 +50,18 @@ class AnythingEverywhere(UseEverywhere):
         for key in kwargs:
             return (f"{key} : {kwargs[key]}",)
         return ("unconnected",)
+
+class AnythingEverywherePrompts(UseEverywhere):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required":{}, 
+                "optional": { "(^prompt|^positive)" : ("*", {}), "neg" : ("*", {}), } }
     
+    CATEGORY = "everywhere"
+    
+    def func(self, **kwargs):
+        return ()
+        
 class AnythingEverywhereTriplet(UseEverywhere):
     @classmethod
     def INPUT_TYPES(s):
