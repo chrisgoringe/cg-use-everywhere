@@ -109,12 +109,17 @@ The other thing worth trying is clearing out all the custom node javascript from
 - remove everything there EXCEPT for `core`. Leave `core` (it's ComfyUI stuff)
 - restart Comfy (all custom nodes will reinstall their javascript at startup)
 
-
-
-## Caution
+## Cautions
 
 It's possible to create a loop with UE, and that currently isn't detected ([issue](https://github.com/chrisgoringe/cg-use-everywhere/issues/6), [PR for ComfyUI](https://github.com/comfyanonymous/ComfyUI/pull/1652)). If you get a RecursionError that's probably what you've done. Remember, *every* unconnected input gets connected to the UE output, even optional ones... you might want to use `Anything Everywhere?` nodes if this is a problem.
 
+Bypassing and disabling nodes works, but with one catch. If you have a UE nodes that does matching (`Anything Everywhere?` and `Prompt Everywhere`) and you bypass the node it matches to, the link won't be made. So
+
+|If you use a ? node to send to a node...|...and bypass the recipient, it doesn't get connected |
+|-|-|
+|![1](docs/bypass_catch1.png)|![2](docs/bypass_catch2.png)|
+
+This is unlikely to be fixed, but should be fairly easy to avoid!
 
 # Deprecated nodes
 
