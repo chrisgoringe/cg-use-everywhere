@@ -48,3 +48,7 @@ application_root_directory = os.path.dirname(folder_paths.__file__)
 extension_web_extensions_directory = os.path.join(application_root_directory, "web", "extensions", "use_everywhere")
 
 shutil.copytree(module_js_directory, extension_web_extensions_directory, dirs_exist_ok=True)
+
+old_code_location = os.path.join(application_root_directory, "web", "extensions", "cg-nodes", "use_everywhere.js")
+if os.path.exists(old_code_location):
+    os.remove(old_code_location)
