@@ -45,6 +45,10 @@ function node_is_live(node){
     return true;
 }
 
+function node_is_bypassed(node) {
+    return (node.mode===4);
+}
+
 /*
 Given a link object, and the type of the link,
 go upstream, following links with the same type, until you find a parent node which isn't bypassed.
@@ -55,7 +59,7 @@ function handle_bypass(original_link, type) {
     var link = original_link;
     var parent = app.graph._nodes_by_id[link.origin_id];
     if (!parent) return null;
-    while (!node_is_live(parent)) {
+    while (node_is_bypassed(parent)) {
         const link_id = parent.inputs.find((input)=>input.type===type)?.link;
         if (!link_id) { return null; }
         link = app.graph.links[link_id];
