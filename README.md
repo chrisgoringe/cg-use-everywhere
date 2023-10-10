@@ -1,5 +1,7 @@
 # UE Nodes
 
+Problems? Jump down to [logging and debugging](https://github.com/chrisgoringe/cg-use-everywhere/edit/main/README.md#loggingdebugging)
+
 Shameless plug for my other nodes -> Check out [Image Picker](https://github.com/chrisgoringe/cg-image-picker) for another way to make some workflows smoother. And leave a star if you like something!
 
 ---
@@ -89,6 +91,25 @@ The JavaScript console (press f12 in some browsers) has logging information abou
     static TRACE = false;   // most of the method calls
 ```
 Change the `LEVEL` to `Logger.INFORMATION` for more, or `Logger.DETAIL` for even more; set `TRACE` to `true` for some other debugging information.
+
+If you have a problem, pressing f12 to see the JavaScript console can often help. The following steps are really helpful in making a good bug report:
+
+- update to the latest version
+- restart ComfyUI
+- clear the canvas
+- close the browser
+- open a new Comfy window (with no workflow), look in console (f12) to see if there were any errors as ComfyUI started up
+- load your workflow, and look again
+- run, and look again
+
+The other thing worth trying is clearing out all the custom node javascript from where it gets copied when ComfyUI starts:
+
+- stop Comfy
+- go to [comfy root]/web/extensions     (*not* under custom_nodes)
+- remove everything there EXCEPT for `core`. Leave `core` (it's ComfyUI stuff)
+- restart Comfy (all custom nodes will reinstall their javascript at startup)
+
+
 
 ## Caution
 
