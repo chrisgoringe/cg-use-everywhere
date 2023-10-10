@@ -46,6 +46,25 @@ function node_is_live(node){
 }
 
 /*
+Given a link object, and the type of the link,
+go upstream, following links with the same type, until you find a parent node which isn't bypassed.
+If either type or original link is null, or if the upstream thread ends, return null
+*/
+function handle_bypass(original_link, type) {
+    if (!type || !original_link) return null;
+    var link = original_link;
+    var parent = app.graph._nodes_by_id[link.origin_id];
+    if (!parent) return null;
+    while (!node_is_live(parent)) {
+        const link_id = parent.inputs.find((input)=>input.type===type)?.link;
+        if (!link_id) { return null; }
+        link = app.graph.links[link_id];
+        parent = app.graph._nodes_by_id[link.origin_id];
+    }
+    return link;
+}
+
+/*
 Does this input connect upstream to a live node?
 input.link is the link_id; the form of workflow.links is [id, upnode_id, upnode_output, downnode_id, downnode_input, type]
 */
@@ -87,4 +106,4 @@ function inject(object, methodname, tracetext, injection, injectionthis, injecti
 }
 
 
-export {node_is_live, is_connected, is_UEnode, inject, Logger}
+export { handle_bypass, node_is_live, is_connected, is_UEnode, inject, Logger}

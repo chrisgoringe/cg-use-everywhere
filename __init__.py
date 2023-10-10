@@ -12,7 +12,7 @@ except:
 
 from .use_everywhere import UseEverywhere, UseSomewhere, SeedEverywhere, AnythingEverywherePrompts
 
-UE_VERSION = 3.0
+UE_VERSION = 3.1
 
 # Types and the UE {t} and UE? {t} nodes are deprecated in v2, will be hidden in v3 and removed in v4
 types = {
