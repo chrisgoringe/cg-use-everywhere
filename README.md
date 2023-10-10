@@ -121,6 +121,8 @@ Bypassing and disabling nodes works, but with one catch. If you have a UE nodes 
 
 This is unlikely to be fixed, but should be fairly easy to avoid!
 
+Bypassing a node with more than one input of the same type is broken - see [#32](https://github.com/chrisgoringe/cg-use-everywhere/issues/32) - this one will get fixed.
+
 # Deprecated nodes
 
 For backward compatibility, all the old nodes are still supported for the time being - you can find them in everywhere/deprecated. [Old documentation](docs/deprecated.md)
