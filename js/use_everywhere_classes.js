@@ -17,10 +17,12 @@ class UseEverywhere {
         if (this.input_regex) this.description += ` - input name regex '${this.input_regex.source}'`;
     }
     matches(node, input) {
+        const input_label = input.label ? input.label : input.name;
+        const node_label = node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type)
         if (this.type != input.type) return false;
-        if (this.input_regex && !this.input_regex.test(input.name)) return false;
+        if (this.input_regex && !this.input_regex.test(input_label)) return false;
         if (this.title_regex) {
-            if (!(this.title_regex.test(node.properties['Node name for S&R']) || this.title_regex.test(node?.title))) return false;
+            if (!(this.title_regex.test(node_label))) return false;
         }
         return true;
     }

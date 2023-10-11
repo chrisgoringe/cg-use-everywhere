@@ -169,6 +169,12 @@ app.registerExtension({
 
             return options;
         }
+
+        /*
+        most things that change the graph call afterChange
+        */
+        inject_outdating_into_object_method(app.graph, "afterChange", "graph.afterChange")
+
 	},
 
 });
