@@ -70,17 +70,14 @@ function handle_bypass(original_link, type) {
 
 /*
 Does this input connect upstream to a live node?
-input.link is the link_id; the form of workflow.links is [id, upnode_id, upnode_output, downnode_id, downnode_input, type]
 */
 function is_connected(input, workflow) {
     const link_id = input.link;
     if (link_id === null) return false;                                    // no connection
-    const the_link = workflow.links.find((link) => link[0] === link_id);   // link[0] is the link_id
-    if (!the_link) return false;                                           // shouldn't happen: link with that id doesn't exist.
-    const source_node_id = the_link[1];                                    // link[1] is upstream node_id 
-    const source_node = workflow.nodes.find((n) => n.id === source_node_id);
-    if (!source_node) return false;                                        // shouldn't happen: node with that id doesn't exist
-    return node_is_live(source_node);                                      // is the upstream node alive?
+    var the_link = app.graph.links[link_id];            
+    the_link = handle_bypass(the_link, the_link.type);                       // find the link upstream of bypasses
+    if (!the_link) return false;                                           // no source for data.
+    return true;
 }
 
 /*
