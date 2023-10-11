@@ -85,8 +85,7 @@ Is this a UE node?
 */
 
 function is_UEnode(node_or_nodeType) {
-    var title = node_or_nodeType.title;
-    if (title===undefined) title = node_or_nodeType.type;
+    var title = node_or_nodeType.type;
     if (title===undefined) title = node_or_nodeType.comfyClass;
     if (title===undefined) return false;
     return (title.startsWith("Anything Everywhere") || title==="Seed Everywhere" || title==="Prompts Everywhere")
