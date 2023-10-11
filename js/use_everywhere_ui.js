@@ -1,14 +1,20 @@
 import { Logger } from "./use_everywhere_utilities.js";
+import { ComfyWidgets } from "../../../scripts/widgets.js";
+import { app } from "../../../scripts/app.js";
 
-function maybe_remove_text_display(node) {
-    if (!app.ui.settings.getSettingValue('AE.details', false)) {
-        const w = node.widgets?.findIndex((w) => w.name === "display_text_widget"); // created by cg_custom_nodes
-        if (w>=0) {
-            node.widgets.splice(w,1);   // remove it
-            node.widgets[w]?.onRemove(); // cleanly
+function displayMessage(id, message) {
+    const node = app.graph._nodes_by_id[id];
+    if (!node) return;
+    var w = node.widgets?.find((w) => w.name === "display_text_widget");
+    if (app.ui.settings.getSettingValue('AE.details', false) || w) {
+        if (!w) {
+            w = ComfyWidgets["STRING"](this, "display_text_widget", ["STRING", { multiline: true }], app).widget;
+            w.inputEl.readOnly = true;
+            w.inputEl.style.opacity = 0.6;
+            w.inputEl.style.fontSize = "9pt";
         }
-        node.size = node.computeSize(); // shrink the node
-        node.setDirtyCanvas(true, true);// mark for redrawing
+        w.value = message;
+        this.onResize?.(this.size);
     }
 }
 
@@ -126,5 +132,5 @@ class LinkRenderController {
     }
 }
 
-export {maybe_remove_text_display, update_input_label}
+export {displayMessage, update_input_label}
 export{ LinkRenderController}

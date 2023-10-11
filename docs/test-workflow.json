@@ -1,0 +1,785 @@
+{
+  "last_node_id": 185,
+  "last_link_id": 545,
+  "nodes": [
+    {
+      "id": 127,
+      "type": "String_",
+      "pos": [
+        590.4575888953123,
+        -189.9907653281249
+      ],
+      "size": {
+        "0": 271.6472473144531,
+        "1": 76.00000762939453
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "string",
+          "type": "STRING",
+          "links": [
+            514
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "title": "Negative",
+      "properties": {
+        "Node name for S&R": "String_"
+      },
+      "widgets_values": [
+        "blue"
+      ]
+    },
+    {
+      "id": 123,
+      "type": "String_",
+      "pos": [
+        595.3690411070307,
+        -311.33334784140686
+      ],
+      "size": {
+        "0": 264.0855407714844,
+        "1": 76.00000762939453
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "string",
+          "type": "STRING",
+          "links": [
+            513
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "title": "Prompt",
+      "properties": {
+        "Node name for S&R": "String_"
+      },
+      "widgets_values": [
+        "atmospheric photo of woman at night"
+      ]
+    },
+    {
+      "id": 162,
+      "type": "CLIPTextEncode",
+      "pos": [
+        889.3690411070307,
+        -304.33334784140686
+      ],
+      "size": {
+        "0": 247.4329071044922,
+        "1": 68.81269836425781
+      },
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 513,
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            535
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "id": 163,
+      "type": "CLIPTextEncode",
+      "pos": [
+        890.4575888953123,
+        -190.99076532812495
+      ],
+      "size": {
+        "0": 247.4329071044922,
+        "1": 68.81269836425781
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 514,
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            536
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "id": 180,
+      "type": "Prompts Everywhere",
+      "pos": [
+        1189,
+        -256
+      ],
+      "size": {
+        "0": 177.46200561523438,
+        "1": 46
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "*",
+          "link": 535,
+          "color_on": "#FFA931"
+        },
+        {
+          "name": "CONDITIONING",
+          "type": "*",
+          "link": 536,
+          "color_on": "#FFA931"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Prompts Everywhere"
+      }
+    },
+    {
+      "id": 148,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        -356,
+        -204
+      ],
+      "size": {
+        "0": 308.89697265625,
+        "1": 98
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            540
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            542
+          ],
+          "shape": 3,
+          "slot_index": 1
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            539
+          ],
+          "shape": 3,
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CheckpointLoaderSimple"
+      },
+      "widgets_values": [
+        "copaxVividXL_v2.safetensors"
+      ]
+    },
+    {
+      "id": 181,
+      "type": "Anything Everywhere3",
+      "pos": [
+        332,
+        -204
+      ],
+      "size": {
+        "0": 210,
+        "1": 66
+      },
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "MODEL",
+          "type": "*",
+          "link": 541,
+          "color_on": "#B39DDB"
+        },
+        {
+          "name": "CLIP",
+          "type": "*",
+          "link": 543,
+          "color_on": "#FFD500"
+        },
+        {
+          "name": "VAE",
+          "type": "*",
+          "link": 539,
+          "color_on": "#FF6E6E"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Anything Everywhere3"
+      }
+    },
+    {
+      "id": 178,
+      "type": "EmptyLatentImage",
+      "pos": [
+        -350,
+        1
+      ],
+      "size": {
+        "0": 269.2752990722656,
+        "1": 106
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            544
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "EmptyLatentImage"
+      },
+      "widgets_values": [
+        768,
+        1024,
+        1
+      ]
+    },
+    {
+      "id": 183,
+      "type": "Anything Everywhere",
+      "pos": [
+        -316,
+        179
+      ],
+      "size": {
+        "0": 210,
+        "1": 26
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "LATENT",
+          "type": "*",
+          "link": 544,
+          "color_on": "#FF9CF9"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Anything Everywhere"
+      }
+    },
+    {
+      "id": 5,
+      "type": "KSampler",
+      "pos": [
+        51,
+        -1
+      ],
+      "size": {
+        "0": 260.72747802734375,
+        "1": 249.28138732910156
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": null
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": null
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "seed",
+          "type": "INT",
+          "link": null,
+          "widget": {
+            "name": "seed"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            545
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        1125899906842624,
+        "increment",
+        35,
+        8,
+        "dpmpp_3m_sde",
+        "karras",
+        1
+      ],
+      "color": "#57571a",
+      "bgcolor": "#6b6b2e"
+    },
+    {
+      "id": 184,
+      "type": "Anything Everywhere?",
+      "pos": [
+        339,
+        0
+      ],
+      "size": [
+        210,
+        82
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "LATENT",
+          "type": "*",
+          "link": 545,
+          "color_on": "#FF9CF9"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Anything Everywhere?"
+      },
+      "widgets_values": [
+        ".*",
+        "samples"
+      ]
+    },
+    {
+      "id": 179,
+      "type": "Anything Everywhere",
+      "pos": [
+        624,
+        185
+      ],
+      "size": {
+        "0": 181.96005249023438,
+        "1": 26
+      },
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "IMAGE",
+          "type": "*",
+          "link": 534,
+          "color_on": "#64B5F6"
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Anything Everywhere"
+      }
+    },
+    {
+      "id": 7,
+      "type": "VAEDecode",
+      "pos": [
+        637,
+        74
+      ],
+      "size": {
+        "0": 140,
+        "1": 46
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            534
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      },
+      "color": "#2e571a",
+      "bgcolor": "#426b2e"
+    },
+    {
+      "id": 182,
+      "type": "LoraLoader",
+      "pos": [
+        15,
+        -290
+      ],
+      "size": [
+        273.7867,
+        126
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 540
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 542
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            541
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            543
+          ],
+          "shape": 3,
+          "slot_index": 1
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoader"
+      },
+      "widgets_values": [
+        "sd_xl_offset_example-lora_1.0.safetensors",
+        1,
+        1
+      ]
+    },
+    {
+      "id": 185,
+      "type": "Note",
+      "pos": [
+        396,
+        326
+      ],
+      "size": [
+        437.6109657226566,
+        131.4303524414065
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "properties": {
+        "text": ""
+      },
+      "widgets_values": [
+        "This workflow uses all the UE nodes, and can also test bypass (load LoRA)"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 169,
+      "type": "Seed Everywhere",
+      "pos": [
+        81,
+        345
+      ],
+      "size": {
+        "0": 210,
+        "1": 82
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Seed Everywhere"
+      },
+      "widgets_values": [
+        356735678581,
+        "fixed"
+      ]
+    },
+    {
+      "id": 144,
+      "type": "PreviewImage",
+      "pos": [
+        928,
+        -39
+      ],
+      "size": [
+        451.2563009765629,
+        624.1275524414066
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    }
+  ],
+  "links": [
+    [
+      513,
+      123,
+      0,
+      162,
+      1,
+      "STRING"
+    ],
+    [
+      514,
+      127,
+      0,
+      163,
+      1,
+      "STRING"
+    ],
+    [
+      534,
+      7,
+      0,
+      179,
+      0,
+      "*"
+    ],
+    [
+      535,
+      162,
+      0,
+      180,
+      0,
+      "*"
+    ],
+    [
+      536,
+      163,
+      0,
+      180,
+      1,
+      "*"
+    ],
+    [
+      539,
+      148,
+      2,
+      181,
+      2,
+      "*"
+    ],
+    [
+      540,
+      148,
+      0,
+      182,
+      0,
+      "MODEL"
+    ],
+    [
+      541,
+      182,
+      0,
+      181,
+      0,
+      "*"
+    ],
+    [
+      542,
+      148,
+      1,
+      182,
+      1,
+      "CLIP"
+    ],
+    [
+      543,
+      182,
+      1,
+      181,
+      1,
+      "*"
+    ],
+    [
+      544,
+      178,
+      0,
+      183,
+      0,
+      "*"
+    ],
+    [
+      545,
+      5,
+      0,
+      184,
+      0,
+      "*"
+    ]
+  ],
+  "groups": [
+    {
+      "title": "Model",
+      "bounding": [
+        -371,
+        -387,
+        926,
+        294
+      ],
+      "color": "#3f789e",
+      "font_size": 24
+    },
+    {
+      "title": "Conditioning",
+      "bounding": [
+        571,
+        -391,
+        836,
+        294
+      ],
+      "color": "#a1309b",
+      "font_size": 24
+    },
+    {
+      "title": "Sampling",
+      "bounding": [
+        -372,
+        -74,
+        1198,
+        343
+      ],
+      "color": "#b06634",
+      "font_size": 24
+    }
+  ],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

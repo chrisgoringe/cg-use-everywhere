@@ -1,20 +1,30 @@
 # UE Nodes
 
+Getting started? Download the test workflow below and see how it works.
+
 Problems? Jump down to [logging and debugging](https://github.com/chrisgoringe/cg-use-everywhere/blob/main/README.md#loggingdebugging)
 
 Shameless plug for my other nodes -> Check out [Image Picker](https://github.com/chrisgoringe/cg-image-picker) for another way to make some workflows smoother. And leave a star if you like something!
 
 ---
 
-|Separate your workflow logically without spaghetti|This image has a simple example workflow you can drop onto Comfy|
-|-|-|
-|![separate](docs/separate.png)|![simple](docs/girl.png)|
+## Test workflow
 
-# v3 - 10th October 2023
+|This workflow uses all five nodes, and can be used to test (and understand!) the nodes. You wouldn't build it like this, it's just an example...|Here's an image with the workflow in|
+|-|-|
+|![screen](docs/test-workflow-screenshot.png)|![image](docs/test-workflow.png)|
+
+Or [the workflow as json](docs/test-workflow.json)
+
+# v4 - 11th October 2023
+
+The v1 nodes have been fully removed. If you were using one, you can just replace it with an `Anything Everywhere` node.
 
 ## Installing
 
 Use Comfy Manager. If you really want to do it manually, just clone this repository in your custom_nodes directory.
+
+
 
 ## Anything Everywhere (start here!)
 
@@ -122,7 +132,3 @@ Bypassing and disabling nodes works, but with one catch. If you have a UE nodes 
 This is unlikely to be fixed, but should be fairly easy to avoid!
 
 Bypassing a node with more than one input of the same type is broken - see [#32](https://github.com/chrisgoringe/cg-use-everywhere/issues/32) - this one will get fixed.
-
-# Deprecated nodes
-
-For backward compatibility, all the old nodes are still supported for the time being - you can find them in everywhere/deprecated. [Old documentation](docs/deprecated.md)

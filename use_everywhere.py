@@ -1,80 +1,64 @@
-from custom_nodes.cg_custom_core.ui_decorator import ui_signal
+from server import PromptServer
+import torch
 
-class UseEverywhere():
-    @classmethod
-    def INPUT_TYPES(s):
-        return {"required":{},
-                "optional": { x.lower() : (x, {}) for x in s.RETURN_TYPES }
-                }
-    FUNCTION = "func"
+def message(id,message):
+    if isinstance(message, torch.Tensor):
+        string = f"Tensor shape {message.shape}"
+    elif isinstance(message, dict) and "samples" in message and isinstance(message["samples"], torch.Tensor):
+        string = f"Latent shape {message['samples'].shape}"
+    else:
+        string = f"{message}"
+    PromptServer.instance.send_sync("message-handler", {"id": id, "message":string})
+
+class Base():
     OUTPUT_NODE = True
-    RETURN_TYPES = ()
-
-    def func(self, **kwargs):
-        return tuple([kwargs.get(t.lower(),None) for t in self.RETURN_TYPES])   
-    
-class UseSomewhere(UseEverywhere):
-    @classmethod
-    def INPUT_TYPES(s):
-        it = {"required":{},
-                "optional": { x.lower() : (x, {}) for x in s.RETURN_TYPES }
-                }
-        it['optional']['title'] = ("STRING", {"default":".*"})
-        it['optional']['input'] = ("STRING", {"default":".*"})
-        return it
-
-@ui_signal('display_text')
-class SeedEverywhere():
-    @classmethod
-    def INPUT_TYPES(s):
-        return {"required":{ "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}) }}
-    OUTPUT_NODE = True
-
-    RETURN_TYPES = ("INT",)
     FUNCTION = "func"
     CATEGORY = "everywhere"
+    RETURN_TYPES = ()
 
-    def func(self, seed):
-        return (seed, f"Seed : INT : {seed}",)
+class SeedEverywhere(Base):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required":{ "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}) },
+                 "hidden": {"id":"UNIQUE_ID"} }
 
-@ui_signal('display_text')
-class AnythingEverywhere(UseEverywhere):
+    RETURN_TYPES = ("INT",)
+
+    def func(self, seed, id):
+        message(id, seed)
+        return (seed,)
+
+class AnythingEverywhere(Base):
     @classmethod
     def INPUT_TYPES(s):
         return {"required":{}, 
-                "optional": { "anything" : ("*", {}), } }
+                "optional": { "anything" : ("*", {}), },
+                 "hidden": {"id":"UNIQUE_ID"} }
 
-    CATEGORY = "everywhere"
-
-    def func(self, **kwargs):
+    def func(self, id, **kwargs):
         for key in kwargs:
-            return (f"{key} : {kwargs[key]}",)
-        return ("unconnected",)
+            message(id, kwargs[key],)
+        return ()
 
-class AnythingEverywherePrompts(UseEverywhere):
+class AnythingEverywherePrompts(Base):
     @classmethod
     def INPUT_TYPES(s):
         return {"required":{}, 
                 "optional": { "(^prompt|^positive)" : ("*", {}), "neg" : ("*", {}), } }
     
-    CATEGORY = "everywhere"
-    
     def func(self, **kwargs):
         return ()
         
-class AnythingEverywhereTriplet(UseEverywhere):
+class AnythingEverywhereTriplet(Base):
     @classmethod
     def INPUT_TYPES(s):
         return {"required":{}, 
                 "optional": { "anything" : ("*", {}), "anything2" : ("*", {}), "anything3" : ("*", {}),} }
     
-    CATEGORY = "everywhere"
-    
     def func(self, **kwargs):
         return ()
     
-@ui_signal('display_text')
-class AnythingSomewhere(UseEverywhere):
+class AnythingSomewhere(Base):
     @classmethod
     def INPUT_TYPES(s):
         return {"required":{}, 
@@ -82,11 +66,10 @@ class AnythingSomewhere(UseEverywhere):
                     "anything" : ("*", {}), 
                     "title_regex" : ("STRING", {"default":".*"}),
                     "input_regex" : ("STRING", {"default":".*"}),
-                    } }
+                    },
+                 "hidden": {"id":"UNIQUE_ID"} }
 
-    CATEGORY = "everywhere"
-
-    def func(self, title_regex=None, input_regex=None, **kwargs):
+    def func(self, id, title_regex=None, input_regex=None, **kwargs):
         for key in kwargs:
-            return (f"{key} : {kwargs[key]}",)
-        return ("unconnected",)
+            message(id, kwargs[key],)
+        return ()

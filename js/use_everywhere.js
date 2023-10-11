@@ -1,8 +1,9 @@
 import { app } from "../../../scripts/app.js";
+import { api } from "../../../scripts/api.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node } from "./use_everywhere_nodes.js";
 import { node_is_live, is_connected, is_UEnode, inject, Logger } from "./use_everywhere_utilities.js";
-import { maybe_remove_text_display, update_input_label } from "./use_everywhere_ui.js";
+import { displayMessage, update_input_label } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 
 var _original_graphToPrompt; // gets populated with the original method in setup()
@@ -90,16 +91,7 @@ app.registerExtension({
         node.IS_UE = is_UEnode(node);
         if (node.IS_UE) {
             node.input_type = [undefined, undefined, undefined]; // for dynamic input types
-            /*
-            cg_custom_core/ui_output.js inserts code to add a text display widget
-            remove that widget if the option isn't checked
-            */
-            const onExecuted = node.onExecuted;
-            node.onExecuted = function() {
-                Logger.trace("onExecuted", arguments, this);
-                onExecuted?.apply(this, arguments);
-                maybe_remove_text_display(node);
-            }
+            node.displayMessage = displayMessage;
 
             // If a widget on a UE node is edited, link list is dirty
             inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
@@ -114,6 +106,18 @@ app.registerExtension({
     },
 
 	async setup() {
+        /*
+        Listener for text to put on nodes
+        */
+        function messageHandler(event) {
+            const id = event.detail.id;
+            const message = event.detail.message;
+            const node = app.graph._nodes_by_id[id];
+            if (node && node.displayMessage) node.displayMessage(id, message);
+            else (console.log(`node ${id} couldn't handle a message`));
+        }
+        api.addEventListener("message-handler", messageHandler);
+
         /*
         The graphToPrompt method is called when the app is going to send a prompt to the server.
         We hijack it, call the original, and return a modified copy.
