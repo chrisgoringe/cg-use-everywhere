@@ -91,7 +91,7 @@ app.registerExtension({
         node.IS_UE = is_UEnode(node);
         if (node.IS_UE) {
             node.input_type = [undefined, undefined, undefined]; // for dynamic input types
-            node.displayMessage = displayMessage;
+            node.displayMessage = displayMessage;                // receive messages from the python code
 
             // If a widget on a UE node is edited, link list is dirty
             inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
@@ -102,12 +102,11 @@ app.registerExtension({
 
         // creating a node makes the link list dirty - but give the system a moment to finish
         setTimeout( ()=>{_lrc.mark_link_list_outdated()}, 100 );
-        
     },
 
 	async setup() {
         /*
-        Listener for text to put on nodes
+        Listen for message-handler event from python code
         */
         function messageHandler(event) {
             const id = event.detail.id;
@@ -116,7 +115,7 @@ app.registerExtension({
             if (node && node.displayMessage) node.displayMessage(id, message);
             else (console.log(`node ${id} couldn't handle a message`));
         }
-        api.addEventListener("message-handler", messageHandler);
+        api.addEventListener("ue-message-handler", messageHandler);
 
         /*
         The graphToPrompt method is called when the app is going to send a prompt to the server.
@@ -163,6 +162,7 @@ app.registerExtension({
                     _lrc.toggle_ue_links_visible();
                 }
             });
+            options.push(null); // divider
 
             //  every menu item makes our list dirty
             inject_outdating_into_objects(options,'callback',`menu option on canvas`);

@@ -8,7 +8,7 @@ def message(id,message):
         string = f"Latent shape {message['samples'].shape}"
     else:
         string = f"{message}"
-    PromptServer.instance.send_sync("message-handler", {"id": id, "message":string})
+    PromptServer.instance.send_sync("ue-message-handler", {"id": id, "message":string})
 
 class Base():
     OUTPUT_NODE = True
