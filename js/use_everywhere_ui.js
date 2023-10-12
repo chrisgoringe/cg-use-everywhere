@@ -2,6 +2,27 @@ import { Logger } from "./use_everywhere_utilities.js";
 import { ComfyWidgets } from "../../../scripts/widgets.js";
 import { app } from "../../../scripts/app.js";
 
+function nodes_in_my_group(node_id) {
+    const nodes_in = new Set();
+    app.graph._groups.forEach((group) => {
+        group.recomputeInsideNodes();
+        if (group._nodes?.find((node) => { return (node.id===node_id) } )) {
+            group._nodes.forEach((node) => { nodes_in.add(node.id) } )
+        }
+    });
+    return [...nodes_in];
+}
+
+function indicate_group_restriction(ctx, title_height) {
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#6F6";
+    ctx.beginPath();
+    ctx.roundRect(5,5-title_height,20,20,8);
+    ctx.stroke();
+    ctx.restore();
+}
+
 function displayMessage(id, message) {
     const node = app.graph._nodes_by_id[id];
     if (!node) return;
@@ -132,5 +153,5 @@ class LinkRenderController {
     }
 }
 
-export {displayMessage, update_input_label}
+export {displayMessage, update_input_label, nodes_in_my_group, indicate_group_restriction}
 export{ LinkRenderController}
