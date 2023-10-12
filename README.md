@@ -101,6 +101,7 @@ If something isn't working right, right click on the background canvas and `Togg
 |Visualise off|Visualise on|
 |-|-|
 |![off](docs/off.png)|![on](docs/on.png)|
+If the animation effects are too much for your graphics (esp. when the workflow is running) you can turn them off in the main settings menu.
 
 ## See what is sent
 

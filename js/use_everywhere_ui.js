@@ -110,6 +110,7 @@ class LinkRenderController {
 
     render_ue_links(node, ctx) {
         if (!this._ue_links_visible) return;    // switched off
+        const animate = (app.ui.settings.getSettingValue('AE.animate', true)) ? 1 : 0;
         if (this.ue_list===undefined) {
             this.request_link_list_update();    // list is out of date - ask for a new one
         }
@@ -147,7 +148,7 @@ class LinkRenderController {
             ctx.save();
             ctx.shadowColor = "red";
             ctx.shadowBlur = 15;
-            app.canvas.renderLink(ctx, pos1, pos2, undefined, true, 1, color, sta_direction, end_direction, undefined);
+            app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate, color, sta_direction, end_direction, undefined);
             ctx.restore();
         })
     }

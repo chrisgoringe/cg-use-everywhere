@@ -200,7 +200,12 @@ app.registerExtension({
             type: "boolean",
             defaultValue: true,
         });
-
+        app.ui.settings.addSetting({
+            id: "AE.animate",
+            name: "Anything Everywhere animate UE links",
+            type: "boolean",
+            defaultValue: true,
+        });
         /* 
         Canvas menu is the right click on backdrop.
         We need to add our option, and hijack the others.
