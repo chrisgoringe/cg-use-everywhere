@@ -4,6 +4,8 @@ Getting started? Download the test workflow below and see how it works.
 
 Problems? Jump down to [logging and debugging](https://github.com/chrisgoringe/cg-use-everywhere/blob/main/README.md#loggingdebugging)
 
+Ideas for how to improve the nodes (or bug reports) - [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues)
+
 Shameless plug for my other nodes -> Check out [Image Picker](https://github.com/chrisgoringe/cg-image-picker) for another way to make some workflows smoother. And leave a star if you like something!
 
 ---
@@ -23,8 +25,6 @@ The v1 nodes have been fully removed. If you were using one, you can just replac
 ## Installing
 
 Use Comfy Manager. If you really want to do it manually, just clone this repository in your custom_nodes directory.
-
-
 
 ## Anything Everywhere (start here!)
 
@@ -66,6 +66,14 @@ Prompt Everywhere has two inputs. They will be sent with regex matching rules of
 
 # Other features
 
+## Loop checking
+
+By default workflows are checked for loops before they are submitted (because UE can introduce them, and a loop results in a bad python outcome). If a loop is detected you'll get a JavaScript warning showing you the node ids involved. However, especially if there are other custom nodes involved, it's possible that the check will miss a loop, or flag one that isn't real.
+
+If you get a warning and don't believe there is a loop (having checked the node ids listed!) you can turn loop checking off in the main settings menu. If something flagged as a loop runs fine, please [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues) and include the workflow in the report (save the json and zip it, because GitHub doesn't accept .json files). Likewise if a loop doesn't get caught.
+
+I've written code for the core Comfy backend to catch loops, maybe it'll be included - [PR for ComfyUI](https://github.com/comfyanonymous/ComfyUI/pull/1652) - or maybe they have another plan.
+
 ## Priorities
 
 If there is more than one sending node that matches an input, the basic rules is that the more specific node wins. The order of priorities is:
@@ -75,7 +83,7 @@ If there is more than one sending node that matches an input, the basic rules is
 - `Anything Everywhere`
 - `Anything Everywhere3`
 
-If two nodes with the same priority both match *neither will connect* 
+If two nodes with the same priority both match *neither will connect* - better to fail fast than have an ambiguous outcome.
 
 ## Visualise
 
@@ -119,9 +127,9 @@ The other thing worth trying is clearing out all the custom node javascript from
 - remove everything there EXCEPT for `core`. Leave `core` (it's ComfyUI stuff)
 - restart Comfy (all custom nodes will reinstall their javascript at startup)
 
-## Cautions
+If you find a bug, please [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues) - if you can include the workflow, that's a huge help (you'll need to save it as .txt, or zip the .json file, because GitHub doesn't accept .json).
 
-It's possible to create a loop with UE, and that currently isn't detected ([issue](https://github.com/chrisgoringe/cg-use-everywhere/issues/6), [PR for ComfyUI](https://github.com/comfyanonymous/ComfyUI/pull/1652)). If you get a RecursionError that's probably what you've done. Remember, *every* unconnected input gets connected to the UE output, even optional ones... you might want to use `Anything Everywhere?` nodes if this is a problem.
+## Cautions
 
 Bypassing and disabling nodes works, but with one catch. If you have a UE nodes that does matching (`Anything Everywhere?` and `Prompt Everywhere`) and you bypass the node it matches to, the link won't be made. So
 

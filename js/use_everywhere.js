@@ -2,7 +2,7 @@ import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node } from "./use_everywhere_nodes.js";
-import { node_is_live, is_connected, is_UEnode, inject, Logger } from "./use_everywhere_utilities.js";
+import { node_in_loop, node_is_live, is_connected, is_UEnode, inject, Logger } from "./use_everywhere_utilities.js";
 import { displayMessage, update_input_label } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 
@@ -23,15 +23,35 @@ async function analyse_graph(modify_and_return_prompt=false) {
     const live_nodes = p.workflow.nodes.filter((node) => node_is_live(node))
     live_nodes.filter((node) => is_UEnode(node)).forEach(node => { add_ue_from_node(ues, node); })
 
+    const links_added = new Set();
     // Look for unconnected inputs and see if we can connect them
     live_nodes.filter((node) => !is_UEnode(node)).forEach(node => {
         node.inputs?.forEach(input => {
-            if (!is_connected(input,p.workflow)) {
+            if (!is_connected(input)) {
                 var ue = ues.find_best_match(node, input);
-                if (ue && modify_and_return_prompt) p.output[node.id].inputs[input.name] = ue.output;
+                if (ue && modify_and_return_prompt) {
+                    p.output[node.id].inputs[input.name] = ue.output;
+                    links_added.add({"downstream":node.id, "upstream":ue.output[0], "controller":ue.controller.id});
+                }
             }
         });
     });
+
+    // if there are loops report them and raise an exception
+    if (app.ui.settings.getSettingValue('AE.checkloops', true)) {
+        try {
+            node_in_loop(live_nodes, links_added);
+        } catch (e) {
+            if (!e.stack) throw e;
+            if (e.ues && e.ues.length > 0){
+                alert(`Loop (${e.stack}) with broadcast (${e.ues}) - not submitting workflow`);
+            } else {
+                alert(`Loop (${e.stack}) - not submitting workflow`);
+            }
+            throw new Error(`Loop Detected ${e.stack}, ${e.ues}`, {"cause":e});
+        }
+    }
+
     if (modify_and_return_prompt) return p;
     else return ues;
 }
@@ -141,9 +161,15 @@ app.registerExtension({
         */
         app.ui.settings.addSetting({
             id: "AE.details",
-            name: "Anything Everywhere node details",
+            name: "Anything Everywhere show node details",
             type: "boolean",
             defaultValue: false,
+        });
+        app.ui.settings.addSetting({
+            id: "AE.checkloops",
+            name: "Anything Everywhere check loops",
+            type: "boolean",
+            defaultValue: true,
         });
 
         /* 
