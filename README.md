@@ -138,5 +138,3 @@ Bypassing and disabling nodes works, but with one catch. If you have a UE nodes 
 |![1](docs/bypass_catch1.png)|![2](docs/bypass_catch2.png)|
 
 This is unlikely to be fixed, but should be fairly easy to avoid!
-
-Bypassing a node with more than one input of the same type is broken - see [#32](https://github.com/chrisgoringe/cg-use-everywhere/issues/32) - this one will get fixed.
