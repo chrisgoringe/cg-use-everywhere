@@ -20,7 +20,7 @@ Or [the workflow as json](docs/test-workflow.json)
 
 # v4.1 - 12th October 2023
 
-Added loop detection and group restriction.
+Added [loop detection](https://github.com/chrisgoringe/cg-use-everywhere#loop-checking) and [group restriction](https://github.com/chrisgoringe/cg-use-everywhere#group-restriction).
 
 The v1 nodes have been fully removed. If you were using one, you can just replace it with an `Anything Everywhere` node.
 
