@@ -1,3 +1,4 @@
+import { nodes_in_my_group } from "./use_everywhere_ui.js";
 import { Logger, node_is_live } from "./use_everywhere_utilities.js";
 
 function display_name(node) { 
@@ -17,6 +18,7 @@ class UseEverywhere {
         if (this.input_regex) this.description += ` - input name regex '${this.input_regex.source}'`;
     }
     matches(node, input) {
+        if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;
         const input_label = input.label ? input.label : input.name;
         const node_label = node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type)
         if (this.type != input.type) return false;
@@ -59,7 +61,12 @@ class UseEverywhereList {
             title_regex: title_regex,
             input_regex: input_regex,
             priority: priority
+        };
+        if (app.graph._nodes_by_id[node.id].properties.group_restricted) {
+            params.restrict_to = nodes_in_my_group(node.id);
+            params.priority += 1;
         }
+        
         const ue = new UseEverywhere(params);
         const error = validity_errors(params);
         if (error==="") { 

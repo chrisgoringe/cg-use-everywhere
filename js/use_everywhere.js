@@ -1,10 +1,12 @@
 import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
+import { ComfyWidgets } from "../../../scripts/widgets.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node } from "./use_everywhere_nodes.js";
 import { node_in_loop, node_is_live, is_connected, is_UEnode, inject, Logger } from "./use_everywhere_utilities.js";
-import { displayMessage, update_input_label } from "./use_everywhere_ui.js";
+import { displayMessage, update_input_label, indicate_group_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
+
 
 var _original_graphToPrompt; // gets populated with the original method in setup()
 /*
@@ -97,13 +99,33 @@ app.registerExtension({
         };
 
         /*
+        Toggle the group restriction.
         Any right click action on a node might make the link list dirty.
         */
         const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
         nodeType.prototype.getExtraMenuOptions = function(_, options) {
             Logger.trace("getExtraMenuOptions", arguments, this);
             getExtraMenuOptions?.apply(this, arguments);
+            if (is_UEnode(this)) {
+                options.push(null,
+                    {
+                        content: (this.properties.group_restricted) ? "Remove group restriction" : "Send only within my group(s)",
+                        callback: () => { this.properties.group_restricted = !this.properties.group_restricted; }
+                    }, 
+                null)
+            }
+            // any right click action can make the list dirty
             inject_outdating_into_objects(options,'callback',`menu option on ${this.id}`);
+        }
+
+        if (is_UEnode(nodeType)) {
+            const onNodeCreated = nodeType.prototype.onNodeCreated;
+            nodeType.prototype.onNodeCreated = function () {
+                const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
+                if (!this.properties) this.properties = {}
+                this.properties.group_restricted = false;
+                return r;
+            }
         }
     },
 
@@ -111,10 +133,17 @@ app.registerExtension({
         node.IS_UE = is_UEnode(node);
         if (node.IS_UE) {
             node.input_type = [undefined, undefined, undefined]; // for dynamic input types
-            node.displayMessage = displayMessage;                // receive messages from the python code
+            node.displayMessage = displayMessage;                // receive messages from the python code           
 
             // If a widget on a UE node is edited, link list is dirty
             inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
+
+            // draw the indication of group restrictions
+            const original_onDrawTitleBar = node.onDrawTitleBar;
+            node.onDrawTitleBar = function(ctx, title_height) {
+                original_onDrawTitleBar?.apply(this, arguments);
+                if (node.properties.group_restricted) indicate_group_restriction(ctx, title_height);
+            }
         }
 
         // removing a node makes the list dirty
@@ -155,7 +184,7 @@ app.registerExtension({
             original_drawNode.apply(this, arguments);
             _lrc.render_ue_links(node, ctx);
         }
-        
+
         /* 
         Add to the settings menu 
         */

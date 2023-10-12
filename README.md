@@ -18,7 +18,9 @@ Shameless plug for my other nodes -> Check out [Image Picker](https://github.com
 
 Or [the workflow as json](docs/test-workflow.json)
 
-# v4 - 11th October 2023
+# v4.1 - 12th October 2023
+
+Added loop detection and group restriction.
 
 The v1 nodes have been fully removed. If you were using one, you can just replace it with an `Anything Everywhere` node.
 
@@ -74,6 +76,12 @@ If you get a warning and don't believe there is a loop (having checked the node 
 
 I've written code for the core Comfy backend to catch loops, maybe it'll be included - [PR for ComfyUI](https://github.com/comfyanonymous/ComfyUI/pull/1652) - or maybe they have another plan.
 
+## Group restriction
+
+Any UE node can be set to only send within the group(s) it is part of. Right-click on the node and select `Send only within my group(s)` or `Remove group restriction`. UE nodes which are group restricted have a green circle in the top-left corner. Here's part of a workflow that compares two models using this feature:
+
+![screen](docs/group.png)
+
 ## Priorities
 
 If there is more than one sending node that matches an input, the basic rules is that the more specific node wins. The order of priorities is:
@@ -82,6 +90,8 @@ If there is more than one sending node that matches an input, the basic rules is
 - `Seed Everywhere` and `Prompts Everywhere`
 - `Anything Everywhere`
 - `Anything Everywhere3`
+
+Within each group, UE nodes with group restriction are prioritised over those without.
 
 If two nodes with the same priority both match *neither will connect* - better to fail fast than have an ambiguous outcome.
 
