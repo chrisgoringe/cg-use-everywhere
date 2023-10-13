@@ -3,165 +3,29 @@
   "last_link_id": 545,
   "nodes": [
     {
-      "id": 127,
-      "type": "String_",
+      "id": 144,
+      "type": "PreviewImage",
       "pos": [
-        590.4575888953123,
-        -189.9907653281249
+        928,
+        -39
       ],
       "size": {
-        "0": 271.6472473144531,
-        "1": 76.00000762939453
+        "0": 430.8935546875,
+        "1": 533.0433349609375
       },
       "flags": {},
       "order": 0,
       "mode": 0,
-      "outputs": [
-        {
-          "name": "string",
-          "type": "STRING",
-          "links": [
-            514
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "title": "Negative",
-      "properties": {
-        "Node name for S&R": "String_"
-      },
-      "widgets_values": [
-        "blue"
-      ]
-    },
-    {
-      "id": 123,
-      "type": "String_",
-      "pos": [
-        595.3690411070307,
-        -311.33334784140686
-      ],
-      "size": {
-        "0": 264.0855407714844,
-        "1": 76.00000762939453
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "string",
-          "type": "STRING",
-          "links": [
-            513
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "title": "Prompt",
-      "properties": {
-        "Node name for S&R": "String_"
-      },
-      "widgets_values": [
-        "atmospheric photo of woman at night"
-      ]
-    },
-    {
-      "id": 162,
-      "type": "CLIPTextEncode",
-      "pos": [
-        889.3690411070307,
-        -304.33334784140686
-      ],
-      "size": {
-        "0": 247.4329071044922,
-        "1": 68.81269836425781
-      },
-      "flags": {},
-      "order": 10,
-      "mode": 0,
       "inputs": [
         {
-          "name": "clip",
-          "type": "CLIP",
+          "name": "images",
+          "type": "IMAGE",
           "link": null
-        },
-        {
-          "name": "text",
-          "type": "STRING",
-          "link": 513,
-          "widget": {
-            "name": "text"
-          }
-        }
-      ],
-      "outputs": [
-        {
-          "name": "CONDITIONING",
-          "type": "CONDITIONING",
-          "links": [
-            535
-          ],
-          "shape": 3,
-          "slot_index": 0
         }
       ],
       "properties": {
-        "Node name for S&R": "CLIPTextEncode"
-      },
-      "widgets_values": [
-        ""
-      ]
-    },
-    {
-      "id": 163,
-      "type": "CLIPTextEncode",
-      "pos": [
-        890.4575888953123,
-        -190.99076532812495
-      ],
-      "size": {
-        "0": 247.4329071044922,
-        "1": 68.81269836425781
-      },
-      "flags": {},
-      "order": 9,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "clip",
-          "type": "CLIP",
-          "link": null
-        },
-        {
-          "name": "text",
-          "type": "STRING",
-          "link": 514,
-          "widget": {
-            "name": "text"
-          }
-        }
-      ],
-      "outputs": [
-        {
-          "name": "CONDITIONING",
-          "type": "CONDITIONING",
-          "links": [
-            536
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "CLIPTextEncode"
-      },
-      "widgets_values": [
-        ""
-      ]
+        "Node name for S&R": "PreviewImage"
+      }
     },
     {
       "id": 180,
@@ -175,7 +39,7 @@
         "1": 46
       },
       "flags": {},
-      "order": 15,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -192,7 +56,8 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "Prompts Everywhere"
+        "Node name for S&R": "Prompts Everywhere",
+        "group_restricted": false
       }
     },
     {
@@ -207,7 +72,7 @@
         "1": 98
       },
       "flags": {},
-      "order": 2,
+      "order": 1,
       "mode": 0,
       "outputs": [
         {
@@ -257,7 +122,7 @@
         "1": 66
       },
       "flags": {},
-      "order": 16,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {
@@ -280,7 +145,8 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "Anything Everywhere3"
+        "Node name for S&R": "Anything Everywhere3",
+        "group_restricted": false
       }
     },
     {
@@ -295,7 +161,7 @@
         "1": 106
       },
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
@@ -329,7 +195,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 12,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
@@ -340,7 +206,8 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "Anything Everywhere"
+        "Node name for S&R": "Anything Everywhere",
+        "group_restricted": false
       }
     },
     {
@@ -355,7 +222,7 @@
         "1": 249.28138732910156
       },
       "flags": {},
-      "order": 4,
+      "order": 3,
       "mode": 0,
       "inputs": [
         {
@@ -420,12 +287,12 @@
         339,
         0
       ],
-      "size": [
-        210,
-        82
-      ],
+      "size": {
+        "0": 210,
+        "1": 82
+      },
       "flags": {},
-      "order": 13,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
@@ -436,7 +303,8 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "Anything Everywhere?"
+        "Node name for S&R": "Anything Everywhere?",
+        "group_restricted": false
       },
       "widgets_values": [
         ".*",
@@ -455,7 +323,7 @@
         "1": 26
       },
       "flags": {},
-      "order": 14,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -466,7 +334,8 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "Anything Everywhere"
+        "Node name for S&R": "Anything Everywhere",
+        "group_restricted": false
       }
     },
     {
@@ -481,7 +350,7 @@
         "1": 46
       },
       "flags": {},
-      "order": 5,
+      "order": 4,
       "mode": 0,
       "inputs": [
         {
@@ -519,12 +388,12 @@
         15,
         -290
       ],
-      "size": [
-        273.7867,
-        126
-      ],
+      "size": {
+        "0": 273.7867126464844,
+        "1": 126
+      },
       "flags": {},
-      "order": 11,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -574,12 +443,12 @@
         396,
         326
       ],
-      "size": [
-        437.6109657226566,
-        131.4303524414065
-      ],
+      "size": {
+        "0": 437.6109619140625,
+        "1": 131.43035888671875
+      },
       "flags": {},
-      "order": 6,
+      "order": 5,
       "mode": 0,
       "properties": {
         "text": ""
@@ -602,7 +471,7 @@
         "1": 82
       },
       "flags": {},
-      "order": 7,
+      "order": 6,
       "mode": 0,
       "outputs": [
         {
@@ -613,7 +482,8 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "Seed Everywhere"
+        "Node name for S&R": "Seed Everywhere",
+        "group_restricted": false
       },
       "widgets_values": [
         356735678581,
@@ -621,48 +491,85 @@
       ]
     },
     {
-      "id": 144,
-      "type": "PreviewImage",
+      "id": 162,
+      "type": "CLIPTextEncode",
       "pos": [
-        928,
-        -39
+        599,
+        -303
       ],
-      "size": [
-        451.2563009765629,
-        624.1275524414066
+      "size": {
+        "0": 247.4329071044922,
+        "1": 96
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": null
+        }
       ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            535
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "atmospheric photo of woman at night"
+      ]
+    },
+    {
+      "id": 163,
+      "type": "CLIPTextEncode",
+      "pos": [
+        873,
+        -210
+      ],
+      "size": {
+        "0": 247.4329071044922,
+        "1": 96
+      },
       "flags": {},
       "order": 8,
       "mode": 0,
       "inputs": [
         {
-          "name": "images",
-          "type": "IMAGE",
+          "name": "clip",
+          "type": "CLIP",
           "link": null
         }
       ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            536
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
       "properties": {
-        "Node name for S&R": "PreviewImage"
-      }
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "blue"
+      ]
     }
   ],
   "links": [
-    [
-      513,
-      123,
-      0,
-      162,
-      1,
-      "STRING"
-    ],
-    [
-      514,
-      127,
-      0,
-      163,
-      1,
-      "STRING"
-    ],
     [
       534,
       7,
