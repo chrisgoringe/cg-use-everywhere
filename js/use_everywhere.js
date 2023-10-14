@@ -33,7 +33,12 @@ async function analyse_graph(modify_and_return_prompt=false) {
                 var ue = ues.find_best_match(node, input);
                 if (ue && modify_and_return_prompt) {
                     p.output[node.id].inputs[input.name] = ue.output;
-                    links_added.add({"downstream":node.id, "upstream":ue.output[0], "controller":ue.controller.id});
+                    links_added.add({
+                        "downstream":node.id, "downstream_slot":node.inputs.findIndex((i)=>i===input),
+                        "upstream":ue.output[0], "upstream_slot":ue.output[1], 
+                        "controller":ue.controller.id,
+                        "type":ue.type
+                    });
                 }
             }
         });
@@ -54,7 +59,13 @@ async function analyse_graph(modify_and_return_prompt=false) {
         }
     }
 
-    if (modify_and_return_prompt) return p;
+    if (modify_and_return_prompt) {
+        [...links_added].forEach((l)=>{
+            p.workflow.last_link_id += 1;
+            p.workflow.links.push([p.workflow.last_link_id, parseInt(l.upstream), l.upstream_slot, l.downstream, l.downstream_slot, l.type])
+        })
+        return p;
+    }
     else return ues;
 }
 
