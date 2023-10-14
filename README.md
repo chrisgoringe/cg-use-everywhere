@@ -18,6 +18,15 @@ Shameless plug for my other nodes -> Check out [Image Picker](https://github.com
 
 Or [the workflow as json](docs/test-workflow.json)
 
+## Latest updates
+
+4.1.2
+- tweaks to improve handling of bypass 
+- fixed connecting to Seed Everywhere 
+
+4.1.1
+- added option to turn animation off
+
 # v4.1 - 12th October 2023
 
 Added [loop detection](https://github.com/chrisgoringe/cg-use-everywhere#loop-checking) and [group restriction](https://github.com/chrisgoringe/cg-use-everywhere#group-restriction).
@@ -38,7 +47,7 @@ To visualise what it's being connected to, right-click on the background canvas 
 
 ## Anything Everywhere? - control matching with regex rules
 
-This node adds two widgets - title_regex and input_regex. It will only send to input which match. So in the example, title_regex is 'Preview' so the image is sent to the Preview Image node but not the Save Image node.
+This node adds two widgets - title_regex and input_regex. It will only send to inputs which match. So in the example, title_regex is 'Preview' so the image is sent to the Preview Image node but not the Save Image node. Note that you can rename node and input titles, which can help! 
 
 ![regex](docs/regex.png)
 
