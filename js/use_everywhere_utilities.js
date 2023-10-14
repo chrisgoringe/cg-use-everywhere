@@ -108,6 +108,7 @@ function handle_bypass(original_link, type) {
     var parent = app.graph._nodes_by_id[link.origin_id];
     if (!parent) return null;
     while (node_is_bypassed(parent)) {
+        if (!parent.inputs) return null;
         var link_id;
         if (parent?.inputs[link.origin_slot]?.type == type) link_id = parent.inputs[link.origin_slot].link; // try matching number first
         else link_id = parent.inputs.find((input)=>input.type==type)?.link;
