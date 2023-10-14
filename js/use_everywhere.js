@@ -106,7 +106,7 @@ app.registerExtension({
                 update_input_label(this, slot, app);
             }
             _lrc.mark_link_list_outdated();
-            onConnectionsChange?.apply(side,slot,connect,link_info,output);
+            onConnectionsChange?.apply(this, arguments);
         };
 
         /*
