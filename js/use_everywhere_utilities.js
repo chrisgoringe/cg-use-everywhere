@@ -43,26 +43,27 @@ class LoopError extends Error {
     }
 }
 
-function recursive_follow(node_id, start_node_id, links_added, stack, nodes_seen, ues, count) {
+function recursive_follow(node_id, start_node_id, links_added, stack, nodes_cleared, ues, count) {
     count += 1;
-    if (stack.includes(node_id)) throw new LoopError(node_id, new Set(stack), new Set(ues));
+    if (stack.includes(node_id.toString())) throw new LoopError(node_id, new Set(stack), new Set(ues));
+    if (nodes_cleared.has(node_id.toString())) return;
     stack.push(node_id.toString());
-    nodes_seen.add(node_id);
     const node = app.graph._nodes_by_id[node_id];
     node?.inputs?.forEach((input) => {
         const link_id = input.link;
         if (link_id) {
             const link = app.graph.links[link_id];
-            if (link) recursive_follow(link.origin_id, start_node_id, links_added, stack, nodes_seen, ues, count);
+            if (link) recursive_follow(link.origin_id, start_node_id, links_added, stack, nodes_cleared, ues, count);
         }
     });
     links_added.forEach((la)=>{
         if (la.downstream==node_id) {
             ues.push(la.controller.toString());
-            recursive_follow(la.upstream, start_node_id, links_added, stack, nodes_seen, ues, count);
+            recursive_follow(la.upstream, start_node_id, links_added, stack, nodes_cleared, ues, count);
             ues.pop();
         }
     });
+    nodes_cleared.add(node_id.toString());
     stack.pop();
 }
 
@@ -71,13 +72,13 @@ Throw a LoopError if there is a loop
 */
 function node_in_loop(live_nodes, links_added) {
     var nodes_to_check = [];
+    const nodes_cleared = new Set();
     live_nodes.forEach((n)=>nodes_to_check.push(n.id));
     while (nodes_to_check.length>0) {
         const node_id = nodes_to_check.pop();
-        const nodes_seen = new Set();
         var count = 0;
-        recursive_follow(node_id, node_id, links_added, [], nodes_seen, [], count);
-        nodes_to_check = nodes_to_check.filter((nid)=>!nodes_seen.has(nid));
+        recursive_follow(node_id, node_id, links_added, [], nodes_cleared, [], count);
+        nodes_to_check = nodes_to_check.filter((nid)=>!nodes_cleared.has(nid.toString()));
     }
     console.log(`node_in_loop made ${count} checks`)
 }
