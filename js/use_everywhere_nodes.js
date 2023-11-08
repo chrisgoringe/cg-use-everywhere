@@ -10,9 +10,15 @@ function add_ue_from_node(ues, node) {
             const type = app.graph._nodes_by_id[node.id.toString()]?.input_type[0];
             const link = handle_bypass(app.graph.links[in_link], type);
             if (link) {
-                ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot],
-                            new RegExp(node.widgets_values[0]), 
-                            new RegExp(node.widgets_values[1]), 10);
+                if (node.widgets_values[1].startsWith('+')) {  // special case for Highway Nodes
+                    ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot],
+                    new RegExp(node.widgets_values[0]), 
+                    node.widgets_values[1], 10);
+                } else {
+                    ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot],
+                                new RegExp(node.widgets_values[0]), 
+                                new RegExp(node.widgets_values[1]), 10);
+                }
             }
         }
     }

@@ -20,6 +20,9 @@ Or [the workflow as json](docs/test-workflow.json)
 
 ## Latest updates
 
+4.3
+- added support for targetting [Highway nodes](https://github.com/chrisgoringe/cg-use-everywhere#highway-nodes) 
+
 4.2
 - improved performance of loop detection, especially with [highway nodes](https://github.com/Trung0246/ComfyUI-0246)
 - updated docs to not use other custom nodes in examples
@@ -31,9 +34,10 @@ Or [the workflow as json](docs/test-workflow.json)
 4.1.1
 - added option to turn animation off
 
-# v4.1 - 12th October 2023
+4.1 
 
-Added [loop detection](https://github.com/chrisgoringe/cg-use-everywhere#loop-checking) and [group restriction](https://github.com/chrisgoringe/cg-use-everywhere#group-restriction).
+- added [loop detection](https://github.com/chrisgoringe/cg-use-everywhere#loop-checking) 
+- added [group restriction](https://github.com/chrisgoringe/cg-use-everywhere#group-restriction).
 
 The v1 nodes have been fully removed. If you were using one, you can just replace it with an `Anything Everywhere` node.
 
@@ -80,6 +84,13 @@ Prompt Everywhere has two inputs. They will be sent with regex matching rules of
 |![pe](docs/PE.png)|![pe](docs/conditioning.png)
 
 # Other features
+
+## Highway nodes
+
+Trung 0246's [Highway nodes](https://github.com/Trung0246/ComfyUI-0246) are a pretty cool way of piping data around. You can target them with an `Anything Everywhere?` node by using an `input_regex` which matches the unconnected input name with the '+', like this:
+![highway](docs/highway.png)
+
+This is new, so please report any issues!
 
 ## Loop checking
 
