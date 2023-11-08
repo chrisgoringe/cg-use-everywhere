@@ -1,6 +1,6 @@
 {
   "last_node_id": 185,
-  "last_link_id": 545,
+  "last_link_id": 555,
   "nodes": [
     {
       "id": 144,
@@ -649,6 +649,86 @@
       184,
       0,
       "*"
+    ],
+    [
+      546,
+      7,
+      0,
+      144,
+      0,
+      "IMAGE"
+    ],
+    [
+      547,
+      182,
+      0,
+      5,
+      0,
+      "MODEL"
+    ],
+    [
+      548,
+      162,
+      0,
+      5,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      549,
+      163,
+      0,
+      5,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      550,
+      178,
+      0,
+      5,
+      3,
+      "LATENT"
+    ],
+    [
+      551,
+      169,
+      0,
+      5,
+      4,
+      "INT"
+    ],
+    [
+      552,
+      5,
+      0,
+      7,
+      0,
+      "LATENT"
+    ],
+    [
+      553,
+      148,
+      2,
+      7,
+      1,
+      "VAE"
+    ],
+    [
+      554,
+      182,
+      1,
+      162,
+      0,
+      "CLIP"
+    ],
+    [
+      555,
+      182,
+      1,
+      163,
+      0,
+      "CLIP"
     ]
   ],
   "groups": [
@@ -661,7 +741,8 @@
         294
       ],
       "color": "#3f789e",
-      "font_size": 24
+      "font_size": 24,
+      "locked": false
     },
     {
       "title": "Conditioning",
@@ -672,7 +753,8 @@
         294
       ],
       "color": "#a1309b",
-      "font_size": 24
+      "font_size": 24,
+      "locked": false
     },
     {
       "title": "Sampling",
@@ -683,7 +765,8 @@
         343
       ],
       "color": "#b06634",
-      "font_size": 24
+      "font_size": 24,
+      "locked": false
     }
   ],
   "config": {},

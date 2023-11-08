@@ -20,6 +20,10 @@ Or [the workflow as json](docs/test-workflow.json)
 
 ## Latest updates
 
+4.2
+- improved performance of loop detection, especially with [highway nodes](https://github.com/Trung0246/ComfyUI-0246)
+- updated docs to not use other custom nodes in examples
+
 4.1.2
 - tweaks to improve handling of bypass 
 - fixed connecting to Seed Everywhere 
