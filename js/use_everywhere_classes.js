@@ -21,7 +21,11 @@ class UseEverywhere {
         if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;
         const input_label = input.label ? input.label : input.name;
         const node_label = node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type);
+        if (this.title_regex) {
+            if (!(this.title_regex.test(node_label))) return false;
+        }
         if (node.type=="Highway" && typeof this.input_regex==='string') { // Highway nodes
+
             const input_label_split = input_label.split(':');
             if (input_label_split.length==1) {
                 if (input_label==this.input_regex) {
@@ -38,9 +42,7 @@ class UseEverywhere {
         if (this.type != input.type) return false;
         if (this.input_regex && typeof this.input_regex==='string') return false; // input_regex started '+', which targets Highway nodes only
         if (this.input_regex && !this.input_regex.test(input_label)) return false;
-        if (this.title_regex) {
-            if (!(this.title_regex.test(node_label))) return false;
-        }
+        
         return true;
     }
     note_sending_to(node, input) {
