@@ -13,7 +13,22 @@ function nodes_in_my_group(node_id) {
     return [...nodes_in];
 }
 
-function indicate_group_restriction(ctx, title_height) {
+function nodes_my_color(node_id, already_limited_to) {
+    const nodes_in = new Set();
+    const color = app.graph._nodes_by_id[node_id].color;
+    if (already_limited_to) {
+        already_limited_to.forEach((nid) => {
+            if (app.graph._nodes_by_id[nid].color==color) nodes_in.add(nid)
+        })
+    } else {
+        app.graph._nodes.forEach((node) => {
+            if (node.color==color) nodes_in.add(node.id)
+        })
+    }
+    return [...nodes_in];
+}
+
+function indicate_restriction(ctx, title_height) {
     ctx.save();
     ctx.lineWidth = 2;
     ctx.strokeStyle = "#6F6";
@@ -154,5 +169,5 @@ class LinkRenderController {
     }
 }
 
-export {displayMessage, update_input_label, nodes_in_my_group, indicate_group_restriction}
+export {displayMessage, update_input_label, nodes_in_my_group, nodes_my_color, indicate_restriction}
 export{ LinkRenderController}

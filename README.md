@@ -85,6 +85,12 @@ Prompt Everywhere has two inputs. They will be sent with regex matching rules of
 
 # Other features
 
+## Group and color restriction
+
+Any UE node can be restricted to only send within the group(s) it is part of, or only to nodes of the same color (or both). Right-click on the node and select `Send only within my group(s)`/`Remove group restriction` or `Send only to matching color`/`Remove color restriction`. UE nodes which are restricted (in either or both ways) have a green circle in the top-left corner. Here's part of a workflow that compares two models using this feature:
+
+![screen](docs/group.png)
+
 ## Highway nodes
 
 Trung 0246's [Highway nodes](https://github.com/Trung0246/ComfyUI-0246) are a pretty cool way of piping data around. You can target them with an `Anything Everywhere?` node by using an `input_regex` which matches the unconnected input name with the '+', like this:
@@ -99,12 +105,6 @@ By default workflows are checked for loops before they are submitted (because UE
 If you get a warning and don't believe there is a loop (having checked the node ids listed!) you can turn loop checking off in the main settings menu. If something flagged as a loop runs fine, please [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues) and include the workflow in the report (save the json and zip it, because GitHub doesn't accept .json files). Likewise if a loop doesn't get caught.
 
 I've written code for the core Comfy backend to catch loops, maybe it'll be included - [PR for ComfyUI](https://github.com/comfyanonymous/ComfyUI/pull/1652) - or maybe they have another plan.
-
-## Group restriction
-
-Any UE node can be set to only send within the group(s) it is part of. Right-click on the node and select `Send only within my group(s)` or `Remove group restriction`. UE nodes which are group restricted have a green circle in the top-left corner. Here's part of a workflow that compares two models using this feature:
-
-![screen](docs/group.png)
 
 ## Priorities
 

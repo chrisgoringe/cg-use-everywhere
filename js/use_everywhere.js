@@ -1,10 +1,9 @@
 import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
-import { ComfyWidgets } from "../../../scripts/widgets.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node } from "./use_everywhere_nodes.js";
 import { node_in_loop, node_is_live, is_connected, is_UEnode, inject, Logger } from "./use_everywhere_utilities.js";
-import { displayMessage, update_input_label, indicate_group_restriction } from "./use_everywhere_ui.js";
+import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 
 
@@ -123,6 +122,10 @@ app.registerExtension({
                         content: (this.properties.group_restricted) ? "Remove group restriction" : "Send only within my group(s)",
                         callback: () => { this.properties.group_restricted = !this.properties.group_restricted; }
                     }, 
+                    {
+                        content: (this.properties.color_restricted) ? "Remove color restriction" : "Send only to matching color",
+                        callback: () => { this.properties.color_restricted = !this.properties.color_restricted; }
+                    },
                 null)
             }
             // any right click action can make the list dirty
@@ -135,6 +138,7 @@ app.registerExtension({
                 const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
                 if (!this.properties) this.properties = {}
                 this.properties.group_restricted = false;
+                this.properties.color_restricted = false;
                 return r;
             }
         }
@@ -153,7 +157,7 @@ app.registerExtension({
             const original_onDrawTitleBar = node.onDrawTitleBar;
             node.onDrawTitleBar = function(ctx, title_height) {
                 original_onDrawTitleBar?.apply(this, arguments);
-                if (node.properties.group_restricted) indicate_group_restriction(ctx, title_height);
+                if (node.properties.group_restricted || node.properties.color_restricted) indicate_restriction(ctx, title_height);
             }
         }
 
@@ -162,6 +166,12 @@ app.registerExtension({
 
         // creating a node makes the link list dirty - but give the system a moment to finish
         setTimeout( ()=>{_lrc.mark_link_list_outdated()}, 100 );
+
+        // mark outdated when changing the color of a node
+        Object.defineProperty(node, 'color', {
+            get : function() { return this._color; },
+            set : function(v) { this._color = v; _lrc.mark_link_list_outdated(); }
+        });
     },
 
 	async setup() {
@@ -227,7 +237,7 @@ app.registerExtension({
             const options = original_getCanvasMenuOptions.apply(this, arguments);
             options.push(null); // divider
             options.push({
-                content: `Toggle UE link visibility`,
+                content: (_lrc._ue_links_visible) ? "Hide UE links" : "Show UE links",
                 callback: () => {
                     Logger.trace("Toggle visibility called", arguments);
                     _lrc.toggle_ue_links_visible();

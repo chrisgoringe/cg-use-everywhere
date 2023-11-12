@@ -1,4 +1,4 @@
-import { nodes_in_my_group } from "./use_everywhere_ui.js";
+import { nodes_in_my_group, nodes_my_color } from "./use_everywhere_ui.js";
 import { Logger, node_is_live } from "./use_everywhere_utilities.js";
 
 function display_name(node) { 
@@ -24,8 +24,7 @@ class UseEverywhere {
         if (this.title_regex) {
             if (!(this.title_regex.test(node_label))) return false;
         }
-        if (node.type=="Highway" && typeof this.input_regex==='string') { // Highway nodes
-
+        if (node.type=="Highway" && typeof this.input_regex==='string') { // Highway nodes - broken if there are two matches...
             const input_label_split = input_label.split(':');
             if (input_label_split.length==1) {
                 if (input_label==this.input_regex) {
@@ -38,6 +37,17 @@ class UseEverywhere {
                 if ((input_label_split[0]==this.input_regex) && input_label_split[1]==input.type) return true;
                 return false;
             }
+        }
+        if (node.type=="Junction" && typeof this.input_regex==='string') {
+            if (!this.input_regex=="+...") return false;
+            // check if we are already connected, if so return false. If not, we need this_target_slot_index to point to the '...' input
+            // not yet implemented
+            return false;
+
+            // otherwise:
+            input.type = this.type;
+            input.name = `${this_target_slot_index - 1}:${curr_pin.type}:UE${this.controller.id}`;
+            node.addInput("...", "*");
         }
         if (this.type != input.type) return false;
         if (this.input_regex && typeof this.input_regex==='string') return false; // input_regex started '+', which targets Highway nodes only
@@ -81,6 +91,10 @@ class UseEverywhereList {
         };
         if (app.graph._nodes_by_id[node.id].properties.group_restricted) {
             params.restrict_to = nodes_in_my_group(node.id);
+            params.priority += 1;
+        }
+        if (app.graph._nodes_by_id[node.id].properties.color_restricted) {
+            params.restrict_to = nodes_my_color(node.id, params.restrict_to);
             params.priority += 1;
         }
         
