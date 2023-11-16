@@ -280,7 +280,7 @@ app.registerExtension({
         }
 
         /*
-        When you drag from a node, showConnectionMenu is called. If meta key is pressed (optiopn/clover) call ours
+        When you drag from a node, showConnectionMenu is called. If shift key is pressed call ours
         */
         const original_showConnectionMenu = LGraphCanvas.prototype.showConnectionMenu;
         LGraphCanvas.prototype.showConnectionMenu = function (optPass) {
@@ -291,6 +291,10 @@ app.registerExtension({
             }
         }
 
+        /*
+        To allow us to use the shift drag above, we need to intercept 'allow_searchbox' sometimes
+        (because searchbox is the default behaviour when shift dragging)
+        */
         var original_allow_searchbox = app.canvas.allow_searchbox;
         Object.defineProperty(app.canvas, 'allow_searchbox', {
             get : function() { 
@@ -300,6 +304,7 @@ app.registerExtension({
             },
             set : function(v) { original_allow_searchbox = v; }
         });
+        
         /*
         most things that change the graph call afterChange
         */
