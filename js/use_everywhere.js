@@ -139,7 +139,7 @@ app.registerExtension({
                 if (!this.properties) this.properties = {}
                 this.properties.group_restricted = false;
                 this.properties.color_restricted = false;
-                // Primitives try to set the widget value; give them something to target 
+                /* Primitives try to set the widget value; give them something to target 
                 if (this.inputs) {
                     if (!this.widgets) this.widgets = [];
                     for (var i=0; i<this.inputs.length; i++) {
@@ -147,7 +147,7 @@ app.registerExtension({
                         this.widgets.push(w);
                         this.inputs[i].widget = w;
                     }
-                }
+                }*/
                 return r;
             }
         }
@@ -198,7 +198,7 @@ app.registerExtension({
 
         /*
         Allow primitives to connect if they have a type already defined. 
-        */
+        
         const primitiveOnConnectOutput = LiteGraph.registered_node_types.PrimitiveNode.prototype.onConnectOutput;
         LiteGraph.registered_node_types.PrimitiveNode.prototype.onConnectOutput = function(slot, type, input, target_node, target_slot) {
             if (target_node.IS_UE) {
@@ -207,7 +207,7 @@ app.registerExtension({
             } else {
                 return primitiveOnConnectOutput.apply(this, arguments);
             }
-        }
+        }*/
 
         /*
         The graphToPrompt method is called when the app is going to send a prompt to the server.
