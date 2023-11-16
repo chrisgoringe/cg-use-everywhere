@@ -5,7 +5,7 @@ import { add_ue_from_node } from "./use_everywhere_nodes.js";
 import { node_in_loop, node_is_live, is_connected, is_UEnode, inject, Logger } from "./use_everywhere_utilities.js";
 import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
-
+import { autoCreateMenu } from "./use_everywhere_autocreate.js";
 
 var _original_graphToPrompt; // gets populated with the original method in setup()
 /*
@@ -249,6 +249,12 @@ app.registerExtension({
             type: "boolean",
             defaultValue: true,
         });
+        app.ui.settings.addSetting({
+            id: "AE.replacesearch",
+            name: "Anything Everywhere replace search",
+            type: "boolean",
+            defaultValue: true,
+        });
         /* 
         Canvas menu is the right click on backdrop.
         We need to add our option, and hijack the others.
@@ -273,6 +279,27 @@ app.registerExtension({
             return options;
         }
 
+        /*
+        When you drag from a node, showConnectionMenu is called. If meta key is pressed (optiopn/clover) call ours
+        */
+        const original_showConnectionMenu = LGraphCanvas.prototype.showConnectionMenu;
+        LGraphCanvas.prototype.showConnectionMenu = function (optPass) {
+            if (optPass.e.shiftKey) {
+                autoCreateMenu.apply(this, arguments);
+            } else {
+                original_showConnectionMenu.apply(this, arguments);
+            }
+        }
+
+        var original_allow_searchbox = app.canvas.allow_searchbox;
+        Object.defineProperty(app.canvas, 'allow_searchbox', {
+            get : function() { 
+                if(app.ui.settings.getSettingValue('AE.replacesearch', true) && this.connecting_output) {
+                    return false;
+                } else { return original_allow_searchbox; }
+            },
+            set : function(v) { original_allow_searchbox = v; }
+        });
         /*
         most things that change the graph call afterChange
         */
