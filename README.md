@@ -85,6 +85,12 @@ Prompt Everywhere has two inputs. They will be sent with regex matching rules of
 
 # Other features
 
+## Shift drag
+
+Shift click on an output node and drag then release to get an autocreate menu. This replaces the default behaviour (which gives you a search box), so you can disable it with the `Anything Everywhere replace search` setting.
+
+![auto](docs/auto.gif)
+
 ## Group and color restriction
 
 Any UE node can be restricted to only send within the group(s) it is part of, or only to nodes of the same color (or both). Right-click on the node and select `Send only within my group(s)`/`Remove group restriction` or `Send only to matching color`/`Remove color restriction`. UE nodes which are restricted (in either or both ways) have a green circle in the top-left corner. Here's part of a workflow that compares two models using this feature:
