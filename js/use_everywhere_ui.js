@@ -123,13 +123,46 @@ class LinkRenderController {
         app.graph.setDirtyCanvas(true,true);
     }
 
+    highlight_ue_connections(node, ctx) {
+        this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
+            if (!ue_connection.control_node) { // control node deleted...
+                this.mark_link_list_outdated();
+                return; 
+            }
+            var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
+            pos2[0] -= node.pos[0];
+            pos2[1] -= node.pos[1];
+            ctx.save();
+            ctx.lineWidth = 1;
+            var radius=6
+            ctx.strokeStyle = LGraphCanvas.link_type_colors[ue_connection.type];
+            ctx.beginPath();
+            //ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
+            radius = radius - 1;
+            ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.strokeStyle = "black";
+            radius = radius - 1;
+            ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
+            ctx.stroke();
+            ctx.restore();
+        });
+    }
+
     render_ue_links(node, ctx) {
-        if (!this._ue_links_visible) return;    // switched off
+        
         const animate = (app.ui.settings.getSettingValue('AE.animate', true)) ? 1 : 0;
         if (this.ue_list===undefined) {
             this.request_link_list_update();    // list is out of date - ask for a new one
         }
         if (this.ue_list_reloading) return;     // if we don't have one, return. This method gets called frequently!
+
+        if (app.ui.settings.getSettingValue('AE.highlight', true)) {
+            this.highlight_ue_connections(node, ctx)
+        }
+
+        if (!this._ue_links_visible) return;    // switched off
 
         this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
             if (!ue_connection.control_node) { // control node deleted...

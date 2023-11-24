@@ -250,6 +250,12 @@ app.registerExtension({
             defaultValue: true,
         });
         app.ui.settings.addSetting({
+            id: "AE.highlight",
+            name: "Anything Everywhere highlight connected nodes",
+            type: "boolean",
+            defaultValue: true,
+        });
+        app.ui.settings.addSetting({
             id: "AE.replacesearch",
             name: "Anything Everywhere replace search",
             type: "boolean",

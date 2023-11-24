@@ -133,6 +133,10 @@ If something isn't working right, right click on the background canvas and `Togg
 |![off](docs/off.png)|![on](docs/on.png)|
 If the animation effects are too much for your graphics (esp. when the workflow is running) you can turn them off in the main settings menu.
 
+Connected inputs are also subtly marked as such - here the model, positive, and negative inputs are connected by UI, there is no connection to the latent, and the seed has a traditional connection. You can turn this effect off in the main preferences.
+
+![con](docs/connection-ui.png) 
+
 ## See what is sent
 
 The nodes which only have one output can also gain a text box showing exactly what passed through the node. You need to turn this on if you want it - it's in the main settings, 'Anything Everywhere node details'.
