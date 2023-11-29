@@ -13,7 +13,7 @@ Get the graph and analyse it.
 If modify_and_return_prompt is true, apply UE modifications and return the prompt (for hijack)
 If modify_and_return_prompt is false, jsut return the UseEverywhereList (for UI highlights etc) 
 */
-async function analyse_graph(modify_and_return_prompt=false) {
+async function analyse_graph(modify_and_return_prompt=false, check_for_loops=false) {
     var p = await _original_graphToPrompt.apply(app);
     if (modify_and_return_prompt) {
         p = structuredClone(p);
@@ -44,7 +44,7 @@ async function analyse_graph(modify_and_return_prompt=false) {
     });
 
     // if there are loops report them and raise an exception
-    if (app.ui.settings.getSettingValue('AE.checkloops', true)) {
+    if (check_for_loops && app.ui.settings.getSettingValue('AE.checkloops', true)) {
         try {
             node_in_loop(live_nodes, links_added);
         } catch (e) {
@@ -215,7 +215,7 @@ app.registerExtension({
         */
         _original_graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
-            return analyse_graph(true);
+            return analyse_graph(true, true);
         }
 
         /* 
