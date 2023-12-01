@@ -134,18 +134,22 @@ class LinkRenderController {
             pos2[1] -= node.pos[1];
             ctx.save();
             ctx.lineWidth = 1;
-            var radius=6
+            var radius=5
             ctx.strokeStyle = LGraphCanvas.link_type_colors[ue_connection.type];
+            ctx.shadowColor = "white"; 
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
             ctx.beginPath();
-            //ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
-            radius = radius - 1;
             ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
             ctx.stroke();
             ctx.beginPath();
             ctx.strokeStyle = "black";
+            ctx.shadowBlur = 0;
             radius = radius - 1;
             ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
             ctx.stroke();
+
             ctx.restore();
         });
     }
