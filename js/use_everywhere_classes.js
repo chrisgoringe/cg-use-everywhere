@@ -89,6 +89,10 @@ class UseEverywhereList {
             input_regex: input_regex,
             priority: priority
         };
+        if (!app.graph._nodes_by_id[node.id]) {
+            Logger.log(Logger.PROBLEM, `Node ${node.id} not found`, params);
+            return;
+        }
         if (app.graph._nodes_by_id[node.id].properties.group_restricted) {
             params.restrict_to = nodes_in_my_group(node.id);
             params.priority += 1;
