@@ -212,12 +212,36 @@ app.registerExtension({
         /*
         The graphToPrompt method is called when the app is going to send a prompt to the server.
         We hijack it, call the original, and return a modified copy.
+        _original_graphToPrompt defined as a var above
         */
+        var do_modify = true;
         _original_graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
-            return analyse_graph(true, true);
+            if (do_modify) {
+                return analyse_graph(true, true);
+            } else {
+                return _original_graphToPrompt.apply(app)
+            }
         }
 
+        /*
+        We don't want to do that if we are saving the workflow or api:
+        */
+        const _original_save_onclick = document.getElementById('comfy-save-button').onclick;
+        document.getElementById('comfy-save-button').onclick = function() {
+            const do_modify_was = do_modify
+            do_modify = false;
+            _original_save_onclick();
+            do_modify = do_modify_was;
+        }
+        const _original_save_api_onclick = document.getElementById('comfy-dev-save-api-button').onclick;
+        document.getElementById('comfy-dev-save-api-button').onclick = function() {
+            const do_modify_was = do_modify
+            do_modify = false;
+            _original_save_api_onclick();
+            do_modify = do_modify_was;
+        }
+        
         /* 
         Hijack drawNode to render the virtual links if requested
         */
