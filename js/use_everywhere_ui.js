@@ -1,6 +1,6 @@
 import { Logger } from "./use_everywhere_utilities.js";
-import { ComfyWidgets } from "../../../scripts/widgets.js";
-import { app } from "../../../scripts/app.js";
+import { ComfyWidgets } from "../../scripts/widgets.js";
+import { app } from "../../scripts/app.js";
 
 function nodes_in_my_group(node_id) {
     const nodes_in = new Set();

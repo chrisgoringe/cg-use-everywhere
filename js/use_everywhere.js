@@ -1,5 +1,5 @@
-import { app } from "../../../scripts/app.js";
-import { api } from "../../../scripts/api.js";
+import { app } from "../../scripts/app.js";
+import { api } from "../../scripts/api.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node } from "./use_everywhere_nodes.js";
 import { node_in_loop, node_is_live, is_connected, is_UEnode, inject, Logger } from "./use_everywhere_utilities.js";
