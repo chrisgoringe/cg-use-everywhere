@@ -1,5 +1,12 @@
 import { handle_bypass } from "./use_everywhere_utilities.js";
 
+function find_connected_link(node_id, input_id) {
+    
+}
+
+/*
+Add UseEverywhere broadcasts from this node to the list
+*/
 function add_ue_from_node(ues, node) {
     if (node.type === "Seed Everywhere") ues.add_ue(node, -1, "INT", [node.id.toString(),0], 
                                                     undefined, new RegExp("seed"), 5);

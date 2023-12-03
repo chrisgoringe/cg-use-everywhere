@@ -68,7 +68,9 @@ function recursive_follow(node_id, start_node_id, links_added, stack, nodes_clea
 }
 
 /*
-Throw a LoopError if there is a loop
+Throw a LoopError if there is a loop.
+live_nodes is a list of all live (ie not bypassed) nodes in the graph
+links_added is a list of the UE virtuals links 
 */
 function node_in_loop(live_nodes, links_added) {
     var nodes_to_check = [];

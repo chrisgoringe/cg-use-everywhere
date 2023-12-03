@@ -8,6 +8,15 @@ function display_name(node) {
     return "un-nameable node";
 }
 
+/*
+The UseEverywhere object represents a single 'broadcast'. It generally contains
+    controller                  - the UE node that controls the broadcase
+    control_node_input_index    - the input on that node 
+    type                        - the data type
+    output                      - the output that is being rebroadcast as a list (node_id, output_index)
+    title_regex, input_regex    - the UE? matching rules
+    priority                    - priorty :)
+*/
 class UseEverywhere {
     constructor() {
         this.sending_to = [];
@@ -17,6 +26,9 @@ class UseEverywhere {
         if (this.title_regex) this.description += ` - node title regex '${this.title_regex.source}'`;
         if (this.input_regex) this.description += ` - input name regex '${this.input_regex.source}'`;
     }
+    /*
+    Does this broadcast match a given node,input?
+    */
     matches(node, input) {
         if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;
         const input_label = input.label ? input.label : input.name;
@@ -37,17 +49,6 @@ class UseEverywhere {
                 if ((input_label_split[0]==this.input_regex) && input_label_split[1]==input.type) return true;
                 return false;
             }
-        }
-        if (node.type=="Junction" && typeof this.input_regex==='string') {
-            if (!this.input_regex=="+...") return false;
-            // check if we are already connected, if so return false. If not, we need this_target_slot_index to point to the '...' input
-            // not yet implemented
-            return false;
-
-            // otherwise:
-            input.type = this.type;
-            input.name = `${this_target_slot_index - 1}:${curr_pin.type}:UE${this.controller.id}`;
-            node.addInput("...", "*");
         }
         if (this.type != input.type) return false;
         if (this.input_regex && typeof this.input_regex==='string') return false; // input_regex started '+', which targets Highway nodes only
