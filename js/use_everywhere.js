@@ -100,9 +100,13 @@ app.registerExtension({
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {        
             Logger.trace("onConnectionsChange", arguments, this);
             if (this.IS_UE && side==1) { // side 1 is input
-                this.input_type[slot] = (connect && link_info) ? this.graph?._nodes_by_id[link_info?.origin_id]?.outputs[link_info?.origin_slot]?.type 
-                                                               : undefined;
-                update_input_label(this, slot, app);
+                if (this.type=="Anything Everywhere?" && slot!=0) {
+                    // don't do anything for the regexs
+                } else {
+                    this.input_type[slot] = (connect && link_info) ? this.graph?._nodes_by_id[link_info?.origin_id]?.outputs[link_info?.origin_slot]?.type 
+                                                                : undefined;
+                    update_input_label(this, slot, app);
+                }
             }
             _lrc.mark_link_list_outdated();
             onConnectionsChange?.apply(this, arguments);

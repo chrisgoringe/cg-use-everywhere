@@ -5,6 +5,22 @@ function find_connected_link(node_id, input_id) {
 }
 
 /*
+If a widget hasn't been converted, just get it's value
+If it has, *try* to go upstream
+*/
+function get_widget_or_input_values(node_obj, widget_id) {
+    if (node_obj.widgets[widget_id].type=='text') { return node_obj.widgets[widget_id].value }
+    try {
+        const name = node_obj.widgets[widget_id].name;
+        const input = node_obj.inputs.find((input)=>input?.widget?.name==name);
+        const link = app.graph.links[input.link];
+        const upstream_node_obj = app.graph._nodes_by_id[link.origin_id.toString()];
+        return upstream_node_obj.widgets_values[0];
+    } catch (error) {
+        return "NOT CONNECTED DONT MATCH";
+    }
+}
+/*
 Add UseEverywhere broadcasts from this node to the list
 */
 function add_ue_from_node(ues, node) {
@@ -13,18 +29,19 @@ function add_ue_from_node(ues, node) {
 
     if (node.type === "Anything Everywhere?") {
         const in_link = node?.inputs[0].link;
-        if (in_link) {
-            const type = app.graph._nodes_by_id[node.id.toString()]?.input_type[0];
+        const node_obj = app.graph._nodes_by_id[node.id.toString()];
+        if (in_link && node_obj) {
+            const w0 = get_widget_or_input_values(node_obj,0);
+            const w1 = get_widget_or_input_values(node_obj,1);
+            const type = node_obj.input_type[0];
             const link = handle_bypass(app.graph.links[in_link], type);
             if (link) {
-                if (node.widgets_values[1].startsWith('+')) {  // special case for Highway Nodes
+                if (w1.startsWith('+')) {  // special case for Highway Nodes
                     ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot],
-                    new RegExp(node.widgets_values[0]), 
-                    node.widgets_values[1], 10);
+                                new RegExp(w0), w1, 10);
                 } else {
                     ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot],
-                                new RegExp(node.widgets_values[0]), 
-                                new RegExp(node.widgets_values[1]), 10);
+                                new RegExp(w0), new RegExp(w1), 10);
                 }
             }
         }

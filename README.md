@@ -20,6 +20,9 @@ Or [the workflow as json](docs/test-workflow.json)
 
 ## Latest updates
 
+4.4
+- add (limited) support for converting regex in the `Anything Everywhere?` node with inputs (only works if the link is from a node that is a simple string source)
+
 4.3
 - added support for targetting [Highway nodes](https://github.com/chrisgoringe/cg-use-everywhere#highway-nodes) 
 
