@@ -15,7 +15,8 @@ function get_widget_or_input_values(node_obj, widget_id) {
         const input = node_obj.inputs.find((input)=>input?.widget?.name==name);
         const link = app.graph.links[input.link];
         const upstream_node_obj = app.graph._nodes_by_id[link.origin_id.toString()];
-        return upstream_node_obj.widgets_values[0];
+        if (upstream_node_obj.widgets_values) return upstream_node_obj.widgets_values[0];
+        return upstream_node_obj.widgets[0].value;
     } catch (error) {
         return "NOT CONNECTED DONT MATCH";
     }

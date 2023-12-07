@@ -1,5 +1,7 @@
 # UE Nodes
 
+Love this node? [Buy me a coffee!](https://www.buymeacoffee.com/chrisgoringe)
+
 Getting started? Download the test workflow below and see how it works.
 
 Problems? Jump down to [logging and debugging](https://github.com/chrisgoringe/cg-use-everywhere/blob/main/README.md#loggingdebugging)

@@ -16,6 +16,16 @@ class Base():
     CATEGORY = "everywhere"
     RETURN_TYPES = ()
 
+class SimpleString(Base):
+    OUTPUT_NODE = False
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required":{ "string": ("STRING", {"default": ""}) }}
+    RETURN_TYPES = ("STRING",)
+
+    def func(self,string):
+        return (string,)
+
 class SeedEverywhere(Base):
     @classmethod
     def INPUT_TYPES(s):

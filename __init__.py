@@ -4,11 +4,12 @@ UE_VERSION = "4.4"
 
 NODE_CLASS_MAPPINGS = { "Seed Everywhere": SeedEverywhere }
 
-from .use_everywhere import AnythingEverywhere, AnythingSomewhere, AnythingEverywhereTriplet
+from .use_everywhere import AnythingEverywhere, AnythingSomewhere, AnythingEverywhereTriplet, SimpleString
 NODE_CLASS_MAPPINGS["Anything Everywhere"] = AnythingEverywhere
 NODE_CLASS_MAPPINGS["Anything Everywhere3"] = AnythingEverywhereTriplet
 NODE_CLASS_MAPPINGS["Anything Everywhere?"] = AnythingSomewhere
 NODE_CLASS_MAPPINGS["Prompts Everywhere"] = AnythingEverywherePrompts
+NODE_CLASS_MAPPINGS["Simple String"] = SimpleString
 
 import os, shutil
 import folder_paths
