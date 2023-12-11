@@ -124,7 +124,12 @@ class UseEverywhereList {
         if (matches.length>1) {
             matches.sort((a,b) => b.priority-a.priority);
             if(matches[0].priority == matches[1].priority) {
-                Logger.log(Logger.PROBLEM, `Ambiguous matches for '${display_name(node)}' input '${input.name}'`);
+                Logger.log(Logger.PROBLEM, `'${display_name(node)}' (${node.id}) input '${input.name}' matches multiple Use Everwhere sources:`)
+                for (var i=0; i<matches.length; i++) {
+                    if (matches[0].priority == matches[i].priority) {
+                        Logger.log(Logger.PROBLEM, ` - ${matches[i].controller.type} (${matches[i].controller.id}) input ${matches[i].control_node_input_index}`)
+                    }
+                }
                 return undefined;
             }
         }
