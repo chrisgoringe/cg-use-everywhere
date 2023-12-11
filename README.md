@@ -70,6 +70,20 @@ Using regex means you can use `^prompt` to match `prompt` at the beginning of th
 
 Regex 101 - `^` means 'the start', `$` means 'the end', `.` matches any single character, `.*` matches anything of any length (including zero). For more than that, visit [regex101](https://regex101.com/) (the flavour you want is ECMAScript, though that probably won't matter).
 
+### Can I make the regex an input instead of a widget?
+
+Sort of.
+
+Because the regex needs to be known before the workflow is submitted (in order to calculate the links), you can't pass a string into the `Anything Everywhere?` node and expect it to work. The *only* thing that is supported is if the input comes *directly* from an node which consists solely of a string widget. The `Simple String` node that is included in this pack will work. The same `Simple String` can be connected to multiple `Anything Everywhere?` nodes, but no other structures will work.
+
+|This works|This doesn't. And never will.|
+|-|-|
+|![Alt text](docs/image.png)|![no](docs/imagex.png)|
+
+
+
+
+
 ## Seed Everywhere
 
 Seed Everywhere connects to any unconnected INT input with `seed` in the input name (seed, noise_seed, etc), and it has the control_after_generate feature. So if you convert the seed widgets to inputs you can use the same seed everywhere.
