@@ -300,7 +300,9 @@ app.registerExtension({
             if (optPass.e.shiftKey) {
                 autoCreateMenu.apply(this, arguments);
             } else {
+                this.use_original_menu = true;
                 original_showConnectionMenu.apply(this, arguments);
+                this.use_original_menu = false;
             }
         }
 
@@ -311,6 +313,7 @@ app.registerExtension({
         var original_allow_searchbox = app.canvas.allow_searchbox;
         Object.defineProperty(app.canvas, 'allow_searchbox', {
             get : function() { 
+                if (this.use_original_menu) { return original_allow_searchbox; }
                 if(app.ui.settings.getSettingValue('AE.replacesearch', true) && this.connecting_output) {
                     return false;
                 } else { return original_allow_searchbox; }
