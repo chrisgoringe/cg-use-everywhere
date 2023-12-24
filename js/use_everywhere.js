@@ -31,9 +31,25 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
             if (!is_connected(input)) {
                 var ue = ues.find_best_match(node, input);
                 if (ue && modify_and_return_prompt) {
-                    p.output[node.id].inputs[input.name] = ue.output;
+                    var effective_node = node;
+                    if (!p.output[node.id]) { // the node we are looking at is probably a group node
+                        const the_inner_node = app.graph._nodes_by_id[node.id].getInnerNodes().find( 
+                            (inner_node) => inner_node.inputs.find( 
+                                (inner_node_input) => inner_node_input.name==input.name && inner_node_input.link===null));
+                        effective_node = the_inner_node;
+                    }
+                    if (app.graph._nodes_by_id[ue.output[0]].getInnerNodes) { // the upstream node is probably a group node
+                        const the_upstream_inner_node_index = app.graph._nodes_by_id[ue.output[0]].getInnerNodes().findIndex( 
+                            (inner_node) => inner_node.outputs?.find( 
+                                (inner_node_outputs) => inner_node_outputs.type==input.type));
+                        const the_upstream_inner_node_slot = app.graph._nodes_by_id[ue.output[0]].getInnerNodes()[the_upstream_inner_node_index].outputs.findIndex( 
+                            (inner_node_outputs) => inner_node_outputs.type==input.type)
+                            p.output[effective_node.id].inputs[input.name] = [`${ue.output[0]}:${the_upstream_inner_node_index}`, the_upstream_inner_node_slot];
+                    } else {
+                        p.output[effective_node.id].inputs[input.name] = ue.output;
+                    }
                     links_added.add({
-                        "downstream":node.id, "downstream_slot":node.inputs.findIndex((i)=>i===input),
+                        "downstream":effective_node.id, "downstream_slot":effective_node.inputs.findIndex((i)=>i===input),
                         "upstream":ue.output[0], "upstream_slot":ue.output[1], 
                         "controller":ue.controller.id,
                         "type":ue.type
