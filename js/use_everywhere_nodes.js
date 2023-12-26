@@ -26,7 +26,7 @@ Add UseEverywhere broadcasts from this node to the list
 */
 function add_ue_from_node(ues, node) {
     if (node.type === "Seed Everywhere") ues.add_ue(node, -1, "INT", [node.id.toString(),0], 
-                                                    undefined, new RegExp("seed"), 5);
+                                                    undefined, new RegExp("seed|随机种"), 5);
 
     if (node.type === "Anything Everywhere?") {
         const in_link = node?.inputs[0].link;
