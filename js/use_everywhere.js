@@ -1,5 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
+import { GroupNodeHandler } from "../core/groupNode.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node } from "./use_everywhere_nodes.js";
 import { node_in_loop, node_is_live, is_connected, is_UEnode, inject, Logger } from "./use_everywhere_utilities.js";
@@ -27,36 +28,44 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
     const links_added = new Set();
     // Look for unconnected inputs and see if we can connect them
     live_nodes.filter((node) => !is_UEnode(node)).forEach(node => {
-        node.inputs?.forEach(input => {
-            if (!is_connected(input)) {
-                var ue = ues.find_best_match(node, input);
-                if (ue && modify_and_return_prompt) {
-                    var effective_node = node;
-                    if (!p.output[node.id]) { // the node we are looking at is probably a group node
-                        const the_inner_node = app.graph._nodes_by_id[node.id].getInnerNodes().find( 
-                            (inner_node) => inner_node.inputs.find( 
-                                (inner_node_input) => inner_node_input.name==input.name && inner_node_input.link===null));
-                        effective_node = the_inner_node;
+        const nd = app.graph._nodes_by_id[node.id];
+        if (!nd) {
+            console.log(`Node ${node.id} not located`);
+        } else {
+            var gpData = GroupNodeHandler.getGroupData(nd);
+            const isGrp = !!gpData;
+            const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;
+            node.inputs?.forEach(input => {
+                if (!is_connected(input)) {
+                    var ue = ues.find_best_match(node, input);
+                    if (ue && modify_and_return_prompt) {
+                        var effective_node = node;
+                        if (isGrp) { // the node we are looking at is a group node
+                            const in_index = node.inputs.findIndex((i)=>i==input);
+                            const inner_node_index = o2n.findIndex((l)=>Object.values(l[1]).includes(in_index));
+                            effective_node = nd.getInnerNodes()[inner_node_index];
+                        }
+                        const upNode = app.graph._nodes_by_id[ue.output[0]];
+                        var effective_output = [ue.output[0], ue.output[1]];
+                        if (GroupNodeHandler.isGroupNode(upNode)) { // the upstream node is a group node
+                            const upGpData = GroupNodeHandler.getGroupData(upNode);
+                            const up_inner_node = upGpData.newToOldOutputMap[ue.output[1]].node;
+                            const up_inner_node_index = up_inner_node.index;
+                            const up_inner_node_id = upNode.getInnerNodes()[up_inner_node_index].id;
+                            const up_inner_node_slot = upGpData.newToOldOutputMap[ue.output[1]].slot;
+                            effective_output = [up_inner_node_id, up_inner_node_slot];
+                        } 
+                        p.output[effective_node.id].inputs[input.name] = effective_output;
+                        links_added.add({
+                            "downstream":effective_node.id, "downstream_slot":effective_node.inputs.findIndex((i)=>i?.name===input?.name),
+                            "upstream":effective_output[0], "upstream_slot":effective_output[1], 
+                            "controller":ue.controller.id,
+                            "type":ue.type
+                        });
                     }
-                    if (app.graph._nodes_by_id[ue.output[0]].getInnerNodes) { // the upstream node is probably a group node
-                        const the_upstream_inner_node_index = app.graph._nodes_by_id[ue.output[0]].getInnerNodes().findIndex( 
-                            (inner_node) => inner_node.outputs?.find( 
-                                (inner_node_outputs) => inner_node_outputs.type==input.type));
-                        const the_upstream_inner_node_slot = app.graph._nodes_by_id[ue.output[0]].getInnerNodes()[the_upstream_inner_node_index].outputs.findIndex( 
-                            (inner_node_outputs) => inner_node_outputs.type==input.type)
-                            p.output[effective_node.id].inputs[input.name] = [`${ue.output[0]}:${the_upstream_inner_node_index}`, the_upstream_inner_node_slot];
-                    } else {
-                        p.output[effective_node.id].inputs[input.name] = ue.output;
-                    }
-                    links_added.add({
-                        "downstream":effective_node.id, "downstream_slot":effective_node.inputs.findIndex((i)=>i===input),
-                        "upstream":ue.output[0], "upstream_slot":ue.output[1], 
-                        "controller":ue.controller.id,
-                        "type":ue.type
-                    });
                 }
-            }
-        });
+            });
+        }
     });
 
     // if there are loops report them and raise an exception
