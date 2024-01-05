@@ -53,7 +53,7 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
                             const up_inner_node_index = up_inner_node.index;
                             const up_inner_node_id = upNode.getInnerNodes()[up_inner_node_index].id;
                             const up_inner_node_slot = upGpData.newToOldOutputMap[ue.output[1]].slot;
-                            effective_output = [up_inner_node_id, up_inner_node_slot];
+                            effective_output = [`${up_inner_node_id}`, up_inner_node_slot];
                         } 
                         p.output[effective_node.id].inputs[input.name] = effective_output;
                         links_added.add({

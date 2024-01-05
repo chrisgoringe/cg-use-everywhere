@@ -118,7 +118,7 @@ class UseEverywhereList {
             candidate.matches(node, input)
         ));
         if (matches.length==0) {
-            Logger.log(Logger.PROBLEM, `'${display_name(node)}' optional input '${input.name}' unmatched`)
+            Logger.log(Logger.INFORMATION, `'${display_name(node)}' optional input '${input.name}' unmatched`)
             return undefined; 
         }
         if (matches.length>1) {
