@@ -7,6 +7,7 @@ import { node_in_loop, node_is_live, is_connected, is_UEnode, inject, Logger } f
 import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { autoCreateMenu } from "./use_everywhere_autocreate.js";
+import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
 
 var _original_graphToPrompt; // gets populated with the original method in setup()
 /*
@@ -154,6 +155,14 @@ app.registerExtension({
                     {
                         content: (this.properties.color_restricted) ? "Remove color restriction" : "Send only to matching color",
                         callback: () => { this.properties.color_restricted = !this.properties.color_restricted; }
+                    },
+                    {
+                        content: "Convert to real links",
+                        callback: async () => {
+                            const ues = await analyse_graph();
+                            convert_to_links(ues, this.id);
+                            app.graph.remove(this);
+                        }
                     },
                 null)
             }
@@ -307,6 +316,14 @@ app.registerExtension({
                 callback: () => {
                     Logger.trace("Toggle visibility called", arguments);
                     _lrc.toggle_ue_links_visible();
+                }
+            },
+            {
+                content: "Convert all UEs to real links",
+                callback: async () => {
+                    const ues = await analyse_graph();
+                    convert_to_links(ues, -1);
+                    remove_all_ues();
                 }
             });
             options.push(null); // divider
