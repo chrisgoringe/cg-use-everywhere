@@ -26,7 +26,7 @@ Add UseEverywhere broadcasts from this node to the list
 */
 function add_ue_from_node(ues, node) {
     if (node.type === "Seed Everywhere") ues.add_ue(node, -1, "INT", [node.id.toString(),0], 
-                                                    undefined, new RegExp("seed"), 5);
+                                                    undefined, new RegExp("seed|随机种"), 5);
 
     if (node.type === "Anything Everywhere?") {
         const in_link = node?.inputs[0].link;
@@ -53,7 +53,7 @@ function add_ue_from_node(ues, node) {
             if (in_link) {
                 const type = app.graph._nodes_by_id[node.id.toString()]?.input_type[i];
                 const link = handle_bypass(app.graph.links[in_link], type);
-                if (link) ues.add_ue(node, i, type, [link.origin_id.toString(), link.origin_slot], undefined, new RegExp(["(^prompt|^positive)","neg"][i]), 5);
+                if (link) ues.add_ue(node, i, type, [link.origin_id.toString(), link.origin_slot], undefined, new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]), 5);
             }
         }
     }
