@@ -54,7 +54,7 @@ class AnythingEverywherePrompts(Base):
     @classmethod
     def INPUT_TYPES(s):
         return {"required":{}, 
-                "optional": { "(_|\\b)pos(itive|_|\\b)|^prompt|正面" : ("*", {}), "(_|\\b)neg(ative|_|\\b)|负面" : ("*", {}), } }
+                "optional": { "+ve" : ("*", {}), "-ve" : ("*", {}), } }
     
     def func(self, **kwargs):
         return ()
