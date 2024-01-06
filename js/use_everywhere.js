@@ -10,12 +10,14 @@ import { autoCreateMenu } from "./use_everywhere_autocreate.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
 
 var _original_graphToPrompt; // gets populated with the original method in setup()
+var _ambiguity_messages = [];
 /*
 Get the graph and analyse it.
 If modify_and_return_prompt is true, apply UE modifications and return the prompt (for hijack)
 If modify_and_return_prompt is false, jsut return the UseEverywhereList (for UI highlights etc) 
 */
 async function analyse_graph(modify_and_return_prompt=false, check_for_loops=false) {
+    _ambiguity_messages = [];
     var p = await _original_graphToPrompt.apply(app);
     if (modify_and_return_prompt) {
         p = structuredClone(p);
@@ -38,7 +40,7 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
             const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;
             node.inputs?.forEach(input => {
                 if (!is_connected(input)) {
-                    var ue = ues.find_best_match(node, input);
+                    var ue = ues.find_best_match(node, input, _ambiguity_messages);
                     if (ue && modify_and_return_prompt) {
                         var effective_node = node;
                         if (isGrp) { // the node we are looking at is a group node
@@ -326,6 +328,14 @@ app.registerExtension({
                     remove_all_ues();
                 }
             });
+            if (_ambiguity_messages.length) {
+                options.push({
+                    content: "Show UE broadcast clashes",
+                    callback: async () => { 
+                        alert(_ambiguity_messages.join("\n")) 
+                    }
+                })
+            }
             options.push(null); // divider
 
             //  every menu item makes our list dirty
