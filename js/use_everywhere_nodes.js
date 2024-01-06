@@ -26,7 +26,7 @@ Add UseEverywhere broadcasts from this node to the list
 */
 function add_ue_from_node(ues, node) {
     if (node.type === "Seed Everywhere") ues.add_ue(node, -1, "INT", [node.id.toString(),0], 
-                                                    undefined, new RegExp("seed|随机种"), 5);
+                                                    undefined, new RegExp("seed|随机种"), undefined, 5);
 
     if (node.type === "Anything Everywhere?") {
         const in_link = node?.inputs[0].link;
@@ -34,15 +34,16 @@ function add_ue_from_node(ues, node) {
         if (in_link && node_obj) {
             const w0 = get_widget_or_input_values(node_obj,0);
             const w1 = get_widget_or_input_values(node_obj,1);
+            const w2 = get_widget_or_input_values(node_obj,2);
             const type = node_obj.input_type[0];
             const link = handle_bypass(app.graph.links[in_link], type);
             if (link) {
                 if (w1.startsWith('+')) {  // special case for Highway Nodes
                     ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot],
-                                new RegExp(w0), w1, 10);
+                                new RegExp(w0), w1, new RegExp(w2), 10);
                 } else {
                     ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot],
-                                new RegExp(w0), new RegExp(w1), 10);
+                                new RegExp(w0), new RegExp(w1), new RegExp(w2), 10);
                 }
             }
         }
@@ -53,7 +54,8 @@ function add_ue_from_node(ues, node) {
             if (in_link) {
                 const type = app.graph._nodes_by_id[node.id.toString()]?.input_type[i];
                 const link = handle_bypass(app.graph.links[in_link], type);
-                if (link) ues.add_ue(node, i, type, [link.origin_id.toString(), link.origin_slot], undefined, new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]), 5);
+                if (link) ues.add_ue(node, i, type, [link.origin_id.toString(), link.origin_slot], 
+                undefined, new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]), undefined, 5);
             }
         }
     }
@@ -62,7 +64,7 @@ function add_ue_from_node(ues, node) {
         if (in_link) {
             const type = app.graph._nodes_by_id[node.id.toString()]?.input_type[0];
             const link = handle_bypass(app.graph.links[in_link], type);
-            if (link) ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot], undefined, undefined, 2);
+            if (link) ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot], undefined, undefined, undefined, 2);
         }
     }
     if (node.type === "Anything Everywhere3") {

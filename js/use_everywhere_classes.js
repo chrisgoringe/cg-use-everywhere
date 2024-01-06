@@ -1,4 +1,4 @@
-import { nodes_in_my_group, nodes_my_color } from "./use_everywhere_ui.js";
+import { nodes_in_my_group, nodes_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
 import { Logger, node_is_live } from "./use_everywhere_utilities.js";
 
 function display_name(node) { 
@@ -80,7 +80,7 @@ function validity_errors(params) {
 class UseEverywhereList {
     constructor() { this.ues = []; }
 
-    add_ue(node, control_node_input_index, type, output, title_regex, input_regex, priority) {
+    add_ue(node, control_node_input_index, type, output, title_regex, input_regex, group_regex, priority) {
         const params = {
             controller: node,
             control_node_input_index: control_node_input_index, 
@@ -88,6 +88,7 @@ class UseEverywhereList {
             output: output,
             title_regex: title_regex,
             input_regex: input_regex,
+            group_regex: group_regex,
             priority: priority
         };
         if (!app.graph._nodes_by_id[node.id]) {
@@ -101,6 +102,9 @@ class UseEverywhereList {
         if (app.graph._nodes_by_id[node.id].properties.color_restricted) {
             params.restrict_to = nodes_my_color(node.id, params.restrict_to);
             params.priority += 1;
+        }
+        if (group_regex) {
+            params.restrict_to = nodes_in_groups_matching(group_regex, params.restrict_to);
         }
         
         const ue = new UseEverywhere(params);

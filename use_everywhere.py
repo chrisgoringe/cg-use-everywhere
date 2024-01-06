@@ -76,10 +76,11 @@ class AnythingSomewhere(Base):
                     "anything" : ("*", {}), 
                     "title_regex" : ("STRING", {"default":".*"}),
                     "input_regex" : ("STRING", {"default":".*"}),
+                    "group_regex" : ("STRING", {"default":".*"}),
                     },
                  "hidden": {"id":"UNIQUE_ID"} }
 
-    def func(self, id, title_regex=None, input_regex=None, **kwargs):
+    def func(self, id, title_regex=None, input_regex=None, group_regex=None, **kwargs):
         for key in kwargs:
             message(id, kwargs[key],)
         return ()
