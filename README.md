@@ -22,6 +22,9 @@ Or [the workflow as json](docs/test-workflow.json)
 
 ## Latest updates
 
+4.6
+- add Group Regex to `Anything Everywhere?` node
+
 4.5
 - add support for Comfy UI Group Nodes (UE nodes can be used to connect to group node inputs and outputs, but not within a group node)
 - add `convert to real links`
@@ -65,6 +68,8 @@ To visualise what it's being connected to, right-click on the background canvas 
 ## Anything Everywhere? - control matching with regex rules
 
 This node adds two widgets - title_regex and input_regex. It will only send to inputs which match. So in the example, title_regex is 'Preview' so the image is sent to the Preview Image node but not the Save Image node. Note that you can rename node and input titles, which can help! 
+
+(From 4.6 you can also specify a group regex to only match inputs on nodes which are in groups that match the regex.)
 
 ![regex](docs/regex.png)
 
