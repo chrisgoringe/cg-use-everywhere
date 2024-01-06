@@ -21,9 +21,11 @@ function convert_to_links(ues, control_node_id) {
 }
 
 function remove_all_ues() {
-    app.graph._nodes.forEach((node)=>{
-        if (is_UEnode(node)) app.graph.remove(node)
-    });
+    var match = app.graph._nodes.find((node)=>is_UEnode(node));
+    while (match) {
+        app.graph.remove(match);
+        match = app.graph._nodes.find((node)=>is_UEnode(node));
+    }
 }
 
 export {convert_to_links, remove_all_ues}
