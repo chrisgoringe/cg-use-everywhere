@@ -22,6 +22,10 @@ Or [the workflow as json](docs/test-workflow.json)
 
 ## Latest updates
 
+4.5
+- add support for Comfy UI Group Nodes (UE nodes can be used to connect to group node inputs and outputs, but not within a group node)
+- add `convert to real links`
+
 4.4
 - add (limited) support for converting regex in the `Anything Everywhere?` node with inputs (only works if the link is from a node that is a simple string source)
 
@@ -81,9 +85,6 @@ Because the regex needs to be known before the workflow is submitted (in order t
 |![Alt text](docs/image.png)|![no](docs/imagex.png)|
 
 
-
-
-
 ## Seed Everywhere
 
 Seed Everywhere connects to any unconnected INT input with `seed` in the input name (seed, noise_seed, etc), and it has the control_after_generate feature. So if you convert the seed widgets to inputs you can use the same seed everywhere.
@@ -103,6 +104,12 @@ Prompt Everywhere has two inputs. They will be sent with regex matching rules of
 |![pe](docs/PE.png)|![pe](docs/conditioning.png)
 
 # Other features
+
+## Convert to real links
+
+If you want to share a workflow without UE nodes being required, or to save an API version of a workflow, you can replace the virtual links created by UE nodes with real links (and remove the UE nodes).
+
+This can be done for a single node by right-clicking on it and selecting `Convert to real links`, or for all UE nodes in a workflow by right-clicking the background and selecting `Convert all UEs to real links`.
 
 ## Shift drag
 
