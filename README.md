@@ -149,7 +149,7 @@ If there is more than one sending node that matches an input, the basic rules is
 
 Within each group, UE nodes with group restriction are prioritised over those without.
 
-If two nodes with the same priority both match *neither will connect* - better to fail fast than have an ambiguous outcome.
+If two nodes with the same priority both match *neither will connect* - better to fail fast than have an ambiguous outcome. If there are ambiguous matches you can display them using `Show UE broadcast clashes` (right-click on background - the option only appears if there are clashes).
 
 ## Visualise
 
