@@ -147,7 +147,8 @@ app.registerExtension({
         const onConnectInput = nodeType.prototype.onConnectInput;
         nodeType.prototype.onConnectInput = function (targetSlot, type, output, originNode, originSlot) {
             if (this.IS_UE && type === "COMBO") return true;
-			return onConnectInput?.(this, arguments);
+			return onConnectInput ? onConnectInput.apply(this, arguments) : true;
+            
         }
 
         /*
@@ -228,7 +229,7 @@ app.registerExtension({
         const onConnectOutput = LiteGraph.Nodes.PrimitiveNode.prototype.onConnectOutput;
         LiteGraph.Nodes.PrimitiveNode.prototype.onConnectOutput = function (slot, type, input, target_node, target_slot) {
             if (target_node.IS_UE) return true;
-            return onConnectOutput?.(this, arguments);
+            return onConnectOutput ? onConnectOutput.apply(this, arguments) : true;
         }
 
         /*
