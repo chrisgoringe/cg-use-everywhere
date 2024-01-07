@@ -134,6 +134,7 @@ app.registerExtension({
                     this.input_type[slot] = (connect && link_info) ? this.graph?._nodes_by_id[link_info?.origin_id]?.outputs[link_info?.origin_slot]?.type 
                                                                 : undefined;
                     update_input_label(this, slot, app);
+                    this.inputs[slot].widget = {}; 
                 }
             }
             _lrc.mark_link_list_outdated();
