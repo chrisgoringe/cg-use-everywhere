@@ -32,19 +32,16 @@ function add_ue_from_node(ues, node) {
         const in_link = node?.inputs[0].link;
         const node_obj = app.graph._nodes_by_id[node.id.toString()];
         if (in_link && node_obj) {
-            const w0 = get_widget_or_input_values(node_obj,0);
-            const w1 = get_widget_or_input_values(node_obj,1);
-            const w2 = get_widget_or_input_values(node_obj,2);
             const type = node_obj.input_type[0];
             const link = handle_bypass(app.graph.links[in_link], type);
             if (link) {
-                if (w1.startsWith('+')) {  // special case for Highway Nodes
-                    ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot],
-                                new RegExp(w0), w1, new RegExp(w2), 10);
-                } else {
-                    ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot],
-                                new RegExp(w0), new RegExp(w1), new RegExp(w2), 10);
-                }
+                const w0 = get_widget_or_input_values(node_obj,0);
+                const r0 = new RegExp(w0);
+                const w1 = get_widget_or_input_values(node_obj,1);
+                const r1 = (w1.startsWith('+')) ? w1 : new RegExp(w1);
+                const w2 = get_widget_or_input_values(node_obj,2);
+                const r2 = (w2 && w2!=".*") ? new RegExp(w2) : null;
+                ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot], r0, r1, r2, 10);
             }
         }
     }
