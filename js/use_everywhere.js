@@ -141,6 +141,15 @@ app.registerExtension({
         };
 
         /*
+        Allow UE nodes to take a COMBO input (see also setup() for onConnectOutput for Primitive)
+        */
+        const onConnectInput = nodeType.prototype.onConnectInput;
+        nodeType.prototype.onConnectInput = function (targetSlot, type, output, originNode, originSlot) {
+            if (this.IS_UE && type === "COMBO") return true;
+			return onConnectInput?.(this, arguments);
+        }
+
+        /*
         Toggle the group restriction.
         Any right click action on a node might make the link list dirty.
         */
@@ -215,6 +224,12 @@ app.registerExtension({
     },
 
 	async setup() {
+        const onConnectOutput = LiteGraph.Nodes.PrimitiveNode.prototype.onConnectOutput;
+        LiteGraph.Nodes.PrimitiveNode.prototype.onConnectOutput = function (slot, type, input, target_node, target_slot) {
+            if (target_node.IS_UE) return true;
+            return onConnectOutput?.(this, arguments);
+        }
+
         /*
         Listen for message-handler event from python code
         */
