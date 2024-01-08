@@ -58,9 +58,11 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
                             const up_inner_node_slot = upGpData.newToOldOutputMap[ue.output[1]].slot;
                             effective_output = [`${up_inner_node_id}`, up_inner_node_slot];
                         } 
-                        p.output[effective_node.id].inputs[input.name] = effective_output;
+                        const down_slot = effective_node.inputs.findIndex((i)=>(i?.label ? i?.label : i?.name)===input?.name);
+                        const true_input_name = effective_node.inputs[down_slot].name;
+                        p.output[effective_node.id].inputs[true_input_name] = effective_output;
                         links_added.add({
-                            "downstream":effective_node.id, "downstream_slot":effective_node.inputs.findIndex((i)=>i?.name===input?.name),
+                            "downstream":effective_node.id, "downstream_slot":down_slot,
                             "upstream":effective_output[0], "upstream_slot":effective_output[1], 
                             "controller":ue.controller.id,
                             "type":ue.type
