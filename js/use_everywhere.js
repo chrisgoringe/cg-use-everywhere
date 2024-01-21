@@ -43,9 +43,12 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
                     var ue = ues.find_best_match(node, input, _ambiguity_messages);
                     if (ue && modify_and_return_prompt) {
                         var effective_node = node;
+                        var effective_node_slot = -1;
                         if (isGrp) { // the node we are looking at is a group node
                             const in_index = node.inputs.findIndex((i)=>i==input);
                             const inner_node_index = o2n.findIndex((l)=>Object.values(l[1]).includes(in_index));
+                            const inner_node_slot_index = Object.values(o2n[inner_node_index][1]).findIndex((l)=>l==in_index);
+                            effective_node_slot = Object.keys(o2n[inner_node_index][1])[inner_node_slot_index];
                             effective_node = nd.getInnerNodes()[inner_node_index];
                         }
                         const upNode = app.graph._nodes_by_id[ue.output[0]];
@@ -58,9 +61,10 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
                             const up_inner_node_slot = upGpData.newToOldOutputMap[ue.output[1]].slot;
                             effective_output = [`${up_inner_node_id}`, up_inner_node_slot];
                         } 
-                        p.output[effective_node.id].inputs[input.name] = effective_output;
+                        if (effective_node_slot==-1) effective_node_slot = effective_node.inputs.findIndex((i)=>(i.label ? i.label : i.name)===(input.label ? input.label : input.name));
+                        p.output[effective_node.id].inputs[effective_node.inputs[effective_node_slot].name] = effective_output;
                         links_added.add({
-                            "downstream":effective_node.id, "downstream_slot":effective_node.inputs.findIndex((i)=>i?.name===input?.name),
+                            "downstream":effective_node.id, "downstream_slot":effective_node_slot,
                             "upstream":effective_output[0], "upstream_slot":effective_output[1], 
                             "controller":ue.controller.id,
                             "type":ue.type
