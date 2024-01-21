@@ -24,6 +24,7 @@ Or [the workflow as json](docs/test-workflow.json)
 
 4.6
 - add Group Regex to `Anything Everywhere?` node
+- if you have workflow json files saved that now don't work, try 'workflow_fixer.py'
 
 4.5
 - add support for Comfy UI Group Nodes (UE nodes can be used to connect to group node inputs and outputs, but not within a group node)
