@@ -109,6 +109,16 @@ Prompt Everywhere has two inputs. They will be sent with regex matching rules of
 |-|-|
 |![pe](docs/PE.png)|![pe](docs/conditioning.png)
 
+# Primitives and COMBOs and the like
+
+UE nodes don't work with primitives and COMBOs (the data type used for dropdown lists, which are also a type of primitive within Comfy). It's unlikely they ever will. 
+
+If you want to use UE to control sampler or sigma, you can do this with the built in `SamplerCustom` nodes:
+
+![sample and sigma](docs/sampler%20and%20sigma.png)
+
+For more on this, see [this discussion](https://github.com/chrisgoringe/cg-use-everywhere/issues/69)
+
 # Other features
 
 ## Convert to real links
