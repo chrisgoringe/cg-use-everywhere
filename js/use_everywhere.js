@@ -288,6 +288,12 @@ app.registerExtension({
             name: "Anything Everywhere check loops",
             type: "boolean",
             defaultValue: true,
+        });        
+        app.ui.settings.addSetting({
+            id: "AE.mouseover",
+            name: "Anything Everywhere show links on mouse over",
+            type: "boolean",
+            defaultValue: false,
         });
         app.ui.settings.addSetting({
             id: "AE.animate",

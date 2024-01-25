@@ -121,6 +121,12 @@ For more on this, see [this discussion](https://github.com/chrisgoringe/cg-use-e
 
 # Other features
 
+## Show links on mouse over
+
+This is off by default - enable it in the main settings menu. If `Anything Everywhere show links on mouse over` is enabled, UE links to and from nodes are shown when you move the mouse over the node.
+
+![mouseover](docs/mouseOver.gif)
+
 ## Convert to real links
 
 If you want to share a workflow without UE nodes being required, or to save an API version of a workflow, you can replace the virtual links created by UE nodes with real links (and remove the UE nodes).

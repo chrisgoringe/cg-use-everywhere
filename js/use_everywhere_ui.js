@@ -182,42 +182,45 @@ class LinkRenderController {
             this.highlight_ue_connections(node, ctx)
         }
 
-        if (!this._ue_links_visible) return;    // switched off
+        if (!(this._ue_links_visible || app.ui.settings.getSettingValue('AE.mouseover'))) return;    // switched off
 
         this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
             if (!ue_connection.control_node) { // control node deleted...
                 this.mark_link_list_outdated();
                 return; 
             }
-            /* we're on the end node; get the position of the input */
-            var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
 
-            /* get the position of the *input* that is being echoed - except for the Seed Anywhere node, 
-            which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
-            const input_source = (ue_connection.control_node_input_index >= 0); 
-            const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
-            const pos1 = ue_connection.control_node.getConnectionPos(input_source, source_index, this.slot_pos2);    
-            
-            /* our drawing context is relative to the node we are on, so shift */
-            pos2[0] -= node.pos[0];
-            pos2[1] -= node.pos[1];
-            pos1[0] -= node.pos[0];
-            pos1[1] -= node.pos[1];
+            if (this._ue_links_visible || node.mouseOver || ue_connection.control_node.mouseOver) {
+                /* we're on the end node; get the position of the input */
+                var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
 
-            /* get the direction that we start and end */
-            const delta_x = pos2[0] - pos1[0];
-            const delta_y = pos2[1] - pos1[1];
-            const end_direction = LiteGraph.LEFT; // always end going into an input
-            const sta_direction = ((Math.abs(delta_y) > Math.abs(delta_x))) ? 
-                                        ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
-                                        ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
+                /* get the position of the *input* that is being echoed - except for the Seed Anywhere node, 
+                which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
+                const input_source = (ue_connection.control_node_input_index >= 0); 
+                const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
+                const pos1 = ue_connection.control_node.getConnectionPos(input_source, source_index, this.slot_pos2);    
+                
+                /* our drawing context is relative to the node we are on, so shift */
+                pos2[0] -= node.pos[0];
+                pos2[1] -= node.pos[1];
+                pos1[0] -= node.pos[0];
+                pos1[1] -= node.pos[1];
 
-            const color = LGraphCanvas.link_type_colors[ue_connection.type];
-            ctx.save();
-            ctx.shadowColor = "red";
-            ctx.shadowBlur = 15;
-            app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate, color, sta_direction, end_direction, undefined);
-            ctx.restore();
+                /* get the direction that we start and end */
+                const delta_x = pos2[0] - pos1[0];
+                const delta_y = pos2[1] - pos1[1];
+                const end_direction = LiteGraph.LEFT; // always end going into an input
+                const sta_direction = ((Math.abs(delta_y) > Math.abs(delta_x))) ? 
+                                            ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
+                                            ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
+
+                const color = LGraphCanvas.link_type_colors[ue_connection.type];
+                ctx.save();
+                ctx.shadowColor = "red";
+                ctx.shadowBlur = 15;
+                app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate, color, sta_direction, end_direction, undefined);
+                ctx.restore();
+            }
         })
     }
 }
