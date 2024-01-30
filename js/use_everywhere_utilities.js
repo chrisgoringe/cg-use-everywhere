@@ -143,6 +143,12 @@ function is_UEnode(node_or_nodeType) {
     if (title===undefined) return false;
     return (title.startsWith("Anything Everywhere") || title==="Seed Everywhere" || title==="Prompts Everywhere")
 }
+function is_helper(node_or_nodeType) {
+    var title = node_or_nodeType.type;
+    if (title===undefined) title = node_or_nodeType.comfyClass;
+    if (title===undefined) return false;
+    return (title.startsWith("Simple String"))
+}
 
 /*
 Inject a call into a method on object with name methodname.
@@ -159,4 +165,4 @@ function inject(object, methodname, tracetext, injection, injectionthis, injecti
 }
 
 
-export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, inject, Logger}
+export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger}

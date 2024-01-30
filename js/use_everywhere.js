@@ -3,7 +3,7 @@ import { api } from "../../scripts/api.js";
 import { GroupNodeHandler } from "../core/groupNode.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node } from "./use_everywhere_nodes.js";
-import { node_in_loop, node_is_live, is_connected, is_UEnode, inject, Logger } from "./use_everywhere_utilities.js";
+import { node_in_loop, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger } from "./use_everywhere_utilities.js";
 import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { autoCreateMenu } from "./use_everywhere_autocreate.js";
@@ -33,7 +33,7 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
     live_nodes.filter((node) => !is_UEnode(node)).forEach(node => {
         const nd = app.graph._nodes_by_id[node.id];
         if (!nd) {
-            console.log(`Node ${node.id} not located`);
+            Logger.log(Logger.INFORMATION, `Node ${node.id} not located`);
         } else {
             var gpData = GroupNodeHandler.getGroupData(nd);
             const isGrp = !!gpData;
@@ -203,6 +203,10 @@ app.registerExtension({
                 original_onDrawTitleBar?.apply(this, arguments);
                 if (node.properties.group_restricted || node.properties.color_restricted) indicate_restriction(ctx, title_height);
             }
+        }
+
+        if (is_helper(node)) { // editing a helper node makes the list dirty
+            inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
         }
 
         // removing a node makes the list dirty
