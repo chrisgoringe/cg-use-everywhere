@@ -186,6 +186,22 @@ app.registerExtension({
                 return r;
             }
         }
+
+        /*
+        onGraphConfigured looks for inputs with converted widgets to fix them.
+        */
+        if (is_UEnode(nodeType)) {
+            const onGraphConfigured = nodeType.prototype.onGraphConfigured;
+            nodeType.prototype.onGraphConfigured = function() {
+                if (this.inputs) {
+                    if (!this.widgets) this.widgets = [];
+                    for (const input of this.inputs) {
+                        if (input.widget && !this.widgets.find((w) => w.name === input.widget.name)) this.widgets.push(input.widget)
+                    }
+                }
+                onGraphConfigured?.apply(this, arguments);
+            }
+        }
     },
 
     async nodeCreated(node) {
