@@ -1,4 +1,4 @@
-import { Logger, get_real_node } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, get_group_node } from "./use_everywhere_utilities.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 
@@ -190,7 +190,7 @@ class LinkRenderController {
                 return; 
             }
 
-            if (this._ue_links_visible || node.mouseOver || ue_connection.control_node.mouseOver) {
+            if (this._ue_links_visible || node.mouseOver || get_group_node(ue_connection.control_node.id).mouseOver) {
                 /* we're on the end node; get the position of the input */
                 var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
 
@@ -198,7 +198,7 @@ class LinkRenderController {
                 which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
                 const input_source = (ue_connection.control_node_input_index >= 0); 
                 const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
-                const pos1 = ue_connection.control_node.getConnectionPos(input_source, source_index, this.slot_pos2);    
+                const pos1 = get_group_node(ue_connection.control_node.id).getConnectionPos(input_source, source_index, this.slot_pos2);    
                 
                 /* our drawing context is relative to the node we are on, so shift */
                 pos2[0] -= node.pos[0];

@@ -125,6 +125,15 @@ function handle_bypass(original_link, type) {
     return link;
 }
 
+function get_group_node(node_id) {
+    const nid = (typeof node_id === 'string' || node_id instanceof String) ? node_id : toString(node_id);
+    if (nid.includes(':')) {
+        return app.graph._nodes_by_id[nid.split(':')[0]];
+    } else {
+        return app.graph._nodes_by_id[node_id];
+    }
+}
+
 function get_real_node(node_id) {
     if (app.graph._nodes_by_id[node_id]) return app.graph._nodes_by_id[node_id]
 
@@ -187,4 +196,4 @@ function inject(object, methodname, tracetext, injection, injectionthis, injecti
 }
 
 
-export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node}
+export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node, get_group_node}
