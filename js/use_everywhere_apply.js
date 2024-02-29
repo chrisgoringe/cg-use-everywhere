@@ -1,14 +1,14 @@
 import { app } from "../../scripts/app.js";
-import { is_UEnode } from "./use_everywhere_utilities.js";
+import { is_UEnode, get_real_node } from "./use_everywhere_utilities.js";
 
 
 function _convert_to_links(ue) {
     const output_node_id = ue.output[0];
     const output_index = ue.output[1];
-    const output_node = app.graph._nodes_by_id[output_node_id];
+    const output_node = get_real_node(output_node_id);
     ue.sending_to.forEach((st) => {
         const input_node_id = st.node.id;
-        const input_node = app.graph._nodes_by_id[input_node_id];
+        const input_node = get_real_node(input_node_id);
         const input_index = st.input_index;
         output_node.connect(output_index, input_node, input_index);
     });

@@ -1,3 +1,6 @@
+import { app } from "../../scripts/app.js";
+import { GroupNodeHandler } from "../core/groupNode.js";
+
 class Logger {
     static ERROR       = 0; // actual errors
     static PROBLEM     = 1; // things that stop the workflow working
@@ -48,7 +51,7 @@ function recursive_follow(node_id, start_node_id, links_added, stack, nodes_clea
     if (stack.includes(node_id.toString())) throw new LoopError(node_id, new Set(stack), new Set(ues));
     if (nodes_cleared.has(node_id.toString())) return;
     stack.push(node_id.toString());
-    const node = app.graph._nodes_by_id[node_id];
+    const node = get_real_node(node_id);
     node?.inputs?.forEach((input) => {
         const link_id = input.link;
         if (link_id) {
@@ -108,7 +111,7 @@ If either type or original link is null, or if the upstream thread ends, return 
 function handle_bypass(original_link, type) {
     if (!type || !original_link) return null;
     var link = original_link;
-    var parent = app.graph._nodes_by_id[link.origin_id];
+    var parent = get_real_node(link.origin_id);
     if (!parent) return null;
     while (node_is_bypassed(parent)) {
         if (!parent.inputs) return null;
@@ -117,9 +120,28 @@ function handle_bypass(original_link, type) {
         else link_id = parent.inputs.find((input)=>input.type==type)?.link;
         if (!link_id) { return null; }
         link = app.graph.links[link_id];
-        parent = app.graph._nodes_by_id[link.origin_id];
+        parent = get_real_node(link.origin_id);
     }
     return link;
+}
+
+function get_real_node(node_id) {
+    if (app.graph._nodes_by_id[node_id]) return app.graph._nodes_by_id[node_id]
+
+    const nid = (typeof node_id === 'string' || node_id instanceof String) ? node_id : toString(node_id);
+    if (nid.includes(':')) {
+        const group_node = app.graph._nodes_by_id[nid.split(':')[0]];
+        const index = nid.split(':')[1];
+        return group_node.getInnerNodes()[index]
+    } 
+    
+    app.graph._nodes_by_id.forEach((node) => {
+        if (GroupNodeHandler.isGroupNode(node)) {
+            node.getInnerNodes().forEach((inner_node) => {
+                if (inner_node.id===node_id) { return inner_node}
+            })
+        }
+    })
 }
 
 /*
@@ -165,4 +187,4 @@ function inject(object, methodname, tracetext, injection, injectionthis, injecti
 }
 
 
-export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger}
+export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node}

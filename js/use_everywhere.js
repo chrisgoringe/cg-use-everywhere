@@ -2,8 +2,8 @@ import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { GroupNodeHandler } from "../core/groupNode.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
-import { add_ue_from_node } from "./use_everywhere_nodes.js";
-import { node_in_loop, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger } from "./use_everywhere_utilities.js";
+import { add_ue_from_node, add_ue_from_node_in_group } from "./use_everywhere_nodes.js";
+import { node_in_loop, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node } from "./use_everywhere_utilities.js";
 import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { autoCreateMenu } from "./use_everywhere_autocreate.js";
@@ -27,11 +27,17 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
     const ues = new UseEverywhereList();
     const live_nodes = p.workflow.nodes.filter((node) => node_is_live(node))
     live_nodes.filter((node) => is_UEnode(node)).forEach(node => { add_ue_from_node(ues, node); })
+    live_nodes.filter((node) => GroupNodeHandler.isGroupNode(get_real_node(node.id))).forEach( groupNode => {
+        const group_data = GroupNodeHandler.getGroupData(get_real_node(groupNode.id));
+        group_data.nodeData.nodes.filter((node) => is_UEnode(node)).forEach(node => { 
+            add_ue_from_node_in_group(ues, node, groupNode.id, group_data); 
+        })
+    })
 
     const links_added = new Set();
     // Look for unconnected inputs and see if we can connect them
     live_nodes.filter((node) => !is_UEnode(node)).forEach(node => {
-        const nd = app.graph._nodes_by_id[node.id];
+        const nd = get_real_node(node.id);
         if (!nd) {
             Logger.log(Logger.INFORMATION, `Node ${node.id} not located`);
         } else {
@@ -51,7 +57,7 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
                             effective_node_slot = Object.keys(o2n[inner_node_index][1])[inner_node_slot_index];
                             effective_node = nd.getInnerNodes()[inner_node_index];
                         }
-                        const upNode = app.graph._nodes_by_id[ue.output[0]];
+                        const upNode = get_real_node(ue.output[0]);
                         var effective_output = [ue.output[0], ue.output[1]];
                         if (GroupNodeHandler.isGroupNode(upNode)) { // the upstream node is a group node
                             const upGpData = GroupNodeHandler.getGroupData(upNode);
@@ -135,7 +141,7 @@ app.registerExtension({
                 if (this.type=="Anything Everywhere?" && slot!=0) {
                     // don't do anything for the regexs
                 } else {
-                    this.input_type[slot] = (connect && link_info) ? this.graph?._nodes_by_id[link_info?.origin_id]?.outputs[link_info?.origin_slot]?.type 
+                    this.input_type[slot] = (connect && link_info) ? get_real_node(link_info?.origin_id)?.outputs[link_info?.origin_slot]?.type 
                                                                 : undefined;
                     update_input_label(this, slot, app);
                 }
@@ -183,13 +189,19 @@ app.registerExtension({
                 if (!this.properties) this.properties = {}
                 this.properties.group_restricted = false;
                 this.properties.color_restricted = false;
+                if (this.inputs) {
+                    if (!this.widgets) this.widgets = [];
+                    for (const input of this.inputs) {
+                        if (input.widget && !this.widgets.find((w) => w.name === input.widget.name)) this.widgets.push(input.widget)
+                    }
+                }
                 return r;
             }
         }
 
         /*
         onGraphConfigured looks for inputs with converted widgets to fix them.
-        */
+        moved to onNodeCreated
         if (is_UEnode(nodeType)) {
             const onGraphConfigured = nodeType.prototype.onGraphConfigured;
             nodeType.prototype.onGraphConfigured = function() {
@@ -201,7 +213,7 @@ app.registerExtension({
                 }
                 onGraphConfigured?.apply(this, arguments);
             }
-        }
+        }*/
     },
 
     async nodeCreated(node) {
@@ -245,7 +257,7 @@ app.registerExtension({
         function messageHandler(event) {
             const id = event.detail.id;
             const message = event.detail.message;
-            const node = app.graph._nodes_by_id[id];
+            const node = get_real_node(id);
             if (node && node.displayMessage) node.displayMessage(id, message);
             else (console.log(`node ${id} couldn't handle a message`));
         }
