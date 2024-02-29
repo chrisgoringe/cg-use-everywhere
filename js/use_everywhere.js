@@ -27,7 +27,7 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
     const ues = new UseEverywhereList();
     const live_nodes = p.workflow.nodes.filter((node) => node_is_live(node))
     live_nodes.filter((node) => is_UEnode(node)).forEach(node => { add_ue_from_node(ues, node); })
-    live_nodes.filter((node) => GroupNodeHandler.isGroupNode(get_real_node(node.id))).forEach( groupNode => {
+    live_nodes.filter((node) => (get_real_node(node.id, Logger.INFORMATION) && GroupNodeHandler.isGroupNode(get_real_node(node.id)))).forEach( groupNode => {
         const group_data = GroupNodeHandler.getGroupData(get_real_node(groupNode.id));
         group_data.nodeData.nodes.filter((node) => is_UEnode(node)).forEach(node => { 
             add_ue_from_node_in_group(ues, node, groupNode.id, group_data); 
@@ -37,10 +37,8 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
     const links_added = new Set();
     // Look for unconnected inputs and see if we can connect them
     live_nodes.filter((node) => !is_UEnode(node)).forEach(node => {
-        const nd = get_real_node(node.id);
-        if (!nd) {
-            Logger.log(Logger.INFORMATION, `Node ${node.id} not located`);
-        } else {
+        const nd = get_real_node(node.id, Logger.INFORMATION);
+        if (nd) {
             var gpData = GroupNodeHandler.getGroupData(nd);
             const isGrp = !!gpData;
             const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;

@@ -125,32 +125,44 @@ function handle_bypass(original_link, type) {
     return link;
 }
 
-function get_group_node(node_id) {
-    const nid = (typeof node_id === 'string' || node_id instanceof String) ? node_id : toString(node_id);
-    if (nid.includes(':')) {
-        return app.graph._nodes_by_id[nid.split(':')[0]];
-    } else {
-        return app.graph._nodes_by_id[node_id];
-    }
+function all_group_nodes() {
+    return app.graph._nodes.filter((node) => GroupNodeHandler.isGroupNode(node));
 }
 
-function get_real_node(node_id) {
-    if (app.graph._nodes_by_id[node_id]) return app.graph._nodes_by_id[node_id]
+function is_in_group(node_id, group_node) {
+    return group_node.getInnerNodes().find((inner_node) => (inner_node.id==node_id));
+}
 
-    const nid = (typeof node_id === 'string' || node_id instanceof String) ? node_id : toString(node_id);
-    if (nid.includes(':')) {
-        const group_node = app.graph._nodes_by_id[nid.split(':')[0]];
-        const index = nid.split(':')[1];
-        return group_node.getInnerNodes()[index]
-    } 
-    
-    app.graph._nodes_by_id.forEach((node) => {
-        if (GroupNodeHandler.isGroupNode(node)) {
-            node.getInnerNodes().forEach((inner_node) => {
-                if (inner_node.id===node_id) { return inner_node}
-            })
-        }
-    })
+/*
+Return the group node if this node_id is part of a group, else return the node itself.
+Returns a full node object
+*/
+function get_group_node(node_id, level=Logger.ERROR) {
+    const nid = node_id.toString();
+    var gn = app.graph._nodes_by_id[nid];
+    if (!gn && nid.includes(':')) gn = app.graph._nodes_by_id[nid.split(':')[0]];
+    if (!gn) gn = all_group_nodes().find((group_node) => is_in_group(nid, group_node));
+    if (!gn) Logger.log(level, `get_group node couldn't find ${nid}`)
+    return gn;
+}
+
+/*
+Return the node object for this node_id. 
+- if it's in _nodes_by_id return it
+- if it is of the form x:y find it in group node x
+- if it is the real node number of something in a group, get it from the group
+*/
+function get_real_node(node_id, level=Logger.ERROR) {
+    const nid = node_id.toString();
+    var rn = app.graph._nodes_by_id[nid];
+    if (!rn && nid.includes(':')) rn = app.graph._nodes_by_id[nid.split(':')[0]]?.getInnerNodes()[nid.split(':')[1]]
+    if (!rn) {
+        all_group_nodes().forEach((node) => {
+            if (!rn) rn = node.getInnerNodes().find((inner_node) => (inner_node.id==nid));
+        })
+    }
+    if (!rn) Logger.log(level, `get_real_node couldn't find ${node_id}`)
+    return rn;
 }
 
 /*
