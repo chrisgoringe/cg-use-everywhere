@@ -22,6 +22,9 @@ Or [the workflow as json](docs/test-workflow.json)
 
 ## Latest updates
 
+4.7 (1st March 2024)
+- UE now works in group nodes
+
 4.6
 - add Group Regex to `Anything Everywhere?` node
 - if you have workflow json files saved that now don't work, try 'workflow_fixer.py'
