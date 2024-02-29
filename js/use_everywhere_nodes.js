@@ -1,4 +1,4 @@
-import { handle_bypass } from "./use_everywhere_utilities.js";
+import { handle_bypass, get_real_node } from "./use_everywhere_utilities.js";
 
 function find_connected_link(node_id, input_id) {
     
@@ -14,12 +14,21 @@ function get_widget_or_input_values(node_obj, widget_id) {
         const name = node_obj.widgets[widget_id].name;
         const input = node_obj.inputs.find((input)=>input?.widget?.name==name);
         const link = app.graph.links[input.link];
-        const upstream_node_obj = app.graph._nodes_by_id[link.origin_id.toString()];
+        const upstream_node_obj = get_real_node(link.origin_id.toString());
         //if (upstream_node_obj.widgets_values) return upstream_node_obj.widgets_values[0];
         return upstream_node_obj.widgets[0].value;
     } catch (error) {
         return "NOT CONNECTED DONT MATCH";
     }
+}
+
+
+function add_ue_from_node_in_group(ues, node, group_node_id, group_data) {
+    const group_node = get_real_node(group_node_id);
+    const ue_node = group_node.getInnerNodes()[node.index];
+    ue_node.in_group_with_data = group_data;
+    ue_node.getInnerNodesOfGroup = group_node.getInnerNodes;
+    add_ue_from_node(ues, ue_node)
 }
 /*
 Add UseEverywhere broadcasts from this node to the list
@@ -30,50 +39,74 @@ function add_ue_from_node(ues, node) {
 
     if (node.type === "Anything Everywhere?") {
         const in_link = node?.inputs[0].link;
-        const node_obj = app.graph._nodes_by_id[node.id.toString()];
-        if (in_link && node_obj) {
-            const type = node_obj.input_type[0];
-            const link = handle_bypass(app.graph.links[in_link], type);
-            if (link) {
-                const w0 = get_widget_or_input_values(node_obj,0);
-                const r0 = new RegExp(w0);
-                const w1 = get_widget_or_input_values(node_obj,1);
-                const r1 = (w1.startsWith('+')) ? w1 : new RegExp(w1);
-                const w2 = get_widget_or_input_values(node_obj,2);
-                const r2 = (w2 && w2!=".*") ? new RegExp(w2) : null;
-                ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot], r0, r1, r2, 10);
-            }
+        let type;
+        var link = undefined;
+        if (in_link) {
+            type = get_real_node(node.id.toString()).input_type[0];
+            link = handle_bypass(app.graph.links[in_link], type);
+        } else if (node.in_group_with_data) {
+            const group_style_link = node.in_group_with_data.linksTo[node.index][0];
+            link = { "origin_id":node.getInnerNodesOfGroup()[group_style_link[0]].id, "origin_slot" : group_style_link[1] };
+            type = group_style_link[5];
+        }
+        if (link) {
+            const node_obj = get_real_node(node.id.toString());
+            const w0 = get_widget_or_input_values(node_obj,0);
+            const r0 = new RegExp(w0);
+            const w1 = get_widget_or_input_values(node_obj,1);
+            const r1 = (w1.startsWith('+')) ? w1 : new RegExp(w1);
+            const w2 = get_widget_or_input_values(node_obj,2);
+            const r2 = (w2 && w2!=".*") ? new RegExp(w2) : null;
+            ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot], r0, r1, r2, 10);
         }
     }
     if (node.type === "Prompts Everywhere") {
         for (var i=0; i<2; i++) {
             const in_link = node?.inputs[i].link;
+            let type;
+            var link = undefined;
             if (in_link) {
-                const type = app.graph._nodes_by_id[node.id.toString()]?.input_type[i];
-                const link = handle_bypass(app.graph.links[in_link], type);
-                if (link) ues.add_ue(node, i, type, [link.origin_id.toString(), link.origin_slot], 
-                undefined, new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]), undefined, 5);
+                type = get_real_node(node.id.toString())?.input_type[i];
+                link = handle_bypass(app.graph.links[in_link], type);
+            } else if (node.in_group_with_data) {
+                const group_style_link = node.in_group_with_data.linksTo[node.index][i];
+                link = { "origin_id":node.getInnerNodesOfGroup()[group_style_link[0]].id, "origin_slot" : group_style_link[1] };
+                type = group_style_link[5];
             }
+            if (link) ues.add_ue(node, i, type, [link.origin_id.toString(), link.origin_slot], 
+                undefined, new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]), undefined, 5);
         }
     }
     if (node.type === "Anything Everywhere") {
         const in_link = node?.inputs[0].link;
+        let type;
+        var link = undefined;
         if (in_link) {
-            const type = app.graph._nodes_by_id[node.id.toString()]?.input_type[0];
-            const link = handle_bypass(app.graph.links[in_link], type);
-            if (link) ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot], undefined, undefined, undefined, 2);
+            type = get_real_node(node.id.toString())?.input_type[0];
+            link = handle_bypass(app.graph.links[in_link], type);
+        } else if (node.in_group_with_data) {
+            const group_style_link = node.in_group_with_data.linksTo[node.index][0];
+            link = { "origin_id":node.getInnerNodesOfGroup()[group_style_link[0]].id, "origin_slot" : group_style_link[1] };
+            type = group_style_link[5];
         }
+        if (link) ues.add_ue(node, 0, type, [link.origin_id.toString(), link.origin_slot], undefined, undefined, undefined, 2);
     }
     if (node.type === "Anything Everywhere3") {
         for (var i=0; i<3; i++) {
             const in_link = node?.inputs[i].link;
+            let type;
+            var link = undefined;
             if (in_link) {
-                const type = app.graph._nodes_by_id[node.id.toString()]?.input_type[i];
-                const link = handle_bypass(app.graph.links[in_link],type);
-                if (link) ues.add_ue(node, i, type, [link.origin_id.toString(), link.origin_slot]);
+                type = get_real_node(node.id.toString())?.input_type[i];
+                link = handle_bypass(app.graph.links[in_link],type);
+            } else if (node.in_group_with_data) {
+                const group_style_link = node.in_group_with_data.linksTo[node.index][i];
+                link = { "origin_id":node.getInnerNodesOfGroup()[group_style_link[0]].id, "origin_slot" : group_style_link[1] };
+                type = group_style_link[5];
             }
+            if (link) ues.add_ue(node, i, type, [link.origin_id.toString(), link.origin_slot]);
         }
     }
 }
 
-export {add_ue_from_node}
+export {add_ue_from_node, add_ue_from_node_in_group}

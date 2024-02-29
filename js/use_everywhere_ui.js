@@ -1,4 +1,4 @@
-import { Logger } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, get_group_node } from "./use_everywhere_utilities.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 
@@ -31,10 +31,10 @@ function nodes_in_groups_matching(regex, already_limited_to) {
 
 function nodes_my_color(node_id, already_limited_to) {
     const nodes_in = new Set();
-    const color = app.graph._nodes_by_id[node_id].color;
+    const color = get_real_node(node_id).color;
     if (already_limited_to) {
         already_limited_to.forEach((nid) => {
-            if (app.graph._nodes_by_id[nid].color==color) nodes_in.add(nid)
+            if (get_real_node(nid).color==color) nodes_in.add(nid)
         })
     } else {
         app.graph._nodes.forEach((node) => {
@@ -55,7 +55,7 @@ function indicate_restriction(ctx, title_height) {
 }
 
 function displayMessage(id, message) {
-    const node = app.graph._nodes_by_id[id];
+    const node = get_real_node(id);
     if (!node) return;
     var w = node.widgets?.find((w) => w.name === "display_text_widget");
     if (app.ui.settings.getSettingValue('AE.details', false) || w) {
@@ -190,7 +190,7 @@ class LinkRenderController {
                 return; 
             }
 
-            if (this._ue_links_visible || node.mouseOver || ue_connection.control_node.mouseOver) {
+            if (this._ue_links_visible || node.mouseOver || get_group_node(ue_connection.control_node.id).mouseOver) {
                 /* we're on the end node; get the position of the input */
                 var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
 
@@ -198,7 +198,7 @@ class LinkRenderController {
                 which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
                 const input_source = (ue_connection.control_node_input_index >= 0); 
                 const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
-                const pos1 = ue_connection.control_node.getConnectionPos(input_source, source_index, this.slot_pos2);    
+                const pos1 = get_group_node(ue_connection.control_node.id).getConnectionPos(input_source, source_index, this.slot_pos2);    
                 
                 /* our drawing context is relative to the node we are on, so shift */
                 pos2[0] -= node.pos[0];

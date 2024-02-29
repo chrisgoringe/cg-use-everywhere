@@ -1,3 +1,6 @@
+import { app } from "../../scripts/app.js";
+import { GroupNodeHandler } from "../core/groupNode.js";
+
 class Logger {
     static ERROR       = 0; // actual errors
     static PROBLEM     = 1; // things that stop the workflow working
@@ -48,7 +51,7 @@ function recursive_follow(node_id, start_node_id, links_added, stack, nodes_clea
     if (stack.includes(node_id.toString())) throw new LoopError(node_id, new Set(stack), new Set(ues));
     if (nodes_cleared.has(node_id.toString())) return;
     stack.push(node_id.toString());
-    const node = app.graph._nodes_by_id[node_id];
+    const node = get_real_node(node_id);
     node?.inputs?.forEach((input) => {
         const link_id = input.link;
         if (link_id) {
@@ -108,7 +111,7 @@ If either type or original link is null, or if the upstream thread ends, return 
 function handle_bypass(original_link, type) {
     if (!type || !original_link) return null;
     var link = original_link;
-    var parent = app.graph._nodes_by_id[link.origin_id];
+    var parent = get_real_node(link.origin_id);
     if (!parent) return null;
     while (node_is_bypassed(parent)) {
         if (!parent.inputs) return null;
@@ -117,9 +120,49 @@ function handle_bypass(original_link, type) {
         else link_id = parent.inputs.find((input)=>input.type==type)?.link;
         if (!link_id) { return null; }
         link = app.graph.links[link_id];
-        parent = app.graph._nodes_by_id[link.origin_id];
+        parent = get_real_node(link.origin_id);
     }
     return link;
+}
+
+function all_group_nodes() {
+    return app.graph._nodes.filter((node) => GroupNodeHandler.isGroupNode(node));
+}
+
+function is_in_group(node_id, group_node) {
+    return group_node.getInnerNodes().find((inner_node) => (inner_node.id==node_id));
+}
+
+/*
+Return the group node if this node_id is part of a group, else return the node itself.
+Returns a full node object
+*/
+function get_group_node(node_id, level=Logger.ERROR) {
+    const nid = node_id.toString();
+    var gn = app.graph._nodes_by_id[nid];
+    if (!gn && nid.includes(':')) gn = app.graph._nodes_by_id[nid.split(':')[0]];
+    if (!gn) gn = all_group_nodes().find((group_node) => is_in_group(nid, group_node));
+    if (!gn) Logger.log(level, `get_group node couldn't find ${nid}`)
+    return gn;
+}
+
+/*
+Return the node object for this node_id. 
+- if it's in _nodes_by_id return it
+- if it is of the form x:y find it in group node x
+- if it is the real node number of something in a group, get it from the group
+*/
+function get_real_node(node_id, level=Logger.ERROR) {
+    const nid = node_id.toString();
+    var rn = app.graph._nodes_by_id[nid];
+    if (!rn && nid.includes(':')) rn = app.graph._nodes_by_id[nid.split(':')[0]]?.getInnerNodes()[nid.split(':')[1]]
+    if (!rn) {
+        all_group_nodes().forEach((node) => {
+            if (!rn) rn = node.getInnerNodes().find((inner_node) => (inner_node.id==nid));
+        })
+    }
+    if (!rn) Logger.log(level, `get_real_node couldn't find ${node_id}`)
+    return rn;
 }
 
 /*
@@ -165,4 +208,4 @@ function inject(object, methodname, tracetext, injection, injectionthis, injecti
 }
 
 
-export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger}
+export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node, get_group_node}

@@ -1,5 +1,5 @@
 import { nodes_in_my_group, nodes_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
-import { Logger, node_is_live } from "./use_everywhere_utilities.js";
+import { Logger, node_is_live, get_real_node } from "./use_everywhere_utilities.js";
 
 function display_name(node) { 
     if (node?.title) return node.title;
@@ -73,7 +73,7 @@ class UseEverywhere {
 
 function validity_errors(params) {
     if (!node_is_live(params.controller)) return `UE node ${params.output[0]} is not alive`;
-    if (!node_is_live(app.graph._nodes_by_id[params.output[0]])) return `upstream node ${params.output[0]} is not alive`;
+    if (!node_is_live(get_real_node(params.output[0]))) return `upstream node ${params.output[0]} is not alive`;
     return "";
 }
 
@@ -91,15 +91,15 @@ class UseEverywhereList {
             group_regex: group_regex,
             priority: priority
         };
-        if (!app.graph._nodes_by_id[node.id]) {
+        if (!get_real_node(node.id)) {
             Logger.log(Logger.PROBLEM, `Node ${node.id} not found`, params);
             return;
         }
-        if (app.graph._nodes_by_id[node.id].properties.group_restricted) {
+        if (get_real_node(node.id).properties.group_restricted) {
             params.restrict_to = nodes_in_my_group(node.id);
             params.priority += 1;
         }
-        if (app.graph._nodes_by_id[node.id].properties.color_restricted) {
+        if (get_real_node(node.id).properties.color_restricted) {
             params.restrict_to = nodes_my_color(node.id, params.restrict_to);
             params.priority += 1;
         }
@@ -158,7 +158,7 @@ class UseEverywhereList {
                     ue_connections.push({
                         type : ue.type, 
                         input_index : st.input_index,
-                        control_node : app.graph._nodes_by_id[ue.controller.id],
+                        control_node : get_real_node(ue.controller.id),
                         control_node_input_index : ue.control_node_input_index,
                     });
                 }
