@@ -3,7 +3,7 @@ import { api } from "../../scripts/api.js";
 import { GroupNodeHandler } from "../core/groupNode.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node, add_ue_from_node_in_group } from "./use_everywhere_nodes.js";
-import { node_in_loop, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node } from "./use_everywhere_utilities.js";
+import { node_in_loop, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node, get_group_node } from "./use_everywhere_utilities.js";
 import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { autoCreateMenu } from "./use_everywhere_autocreate.js";
@@ -302,21 +302,12 @@ app.registerExtension({
             // don't trace - this is called way too often!
             original_drawNode.apply(this, arguments);
             _lrc.highlight_ue_connections(node, ctx);
+            if (get_group_node(node.id).mouseOver) _lrc.render_mouseover(node, ctx);
         }
 
         /*
-        Whenever the canvas is redrawn, draw ue links
-
-        const draw = LGraphCanvas.prototype.draw;
-        LGraphCanvas.prototype.draw = function() {
-            draw.apply(this,arguments);
-            var ctx = this.ctx;
-            ctx.save();
-            this.ds.toCanvasContext(ctx);
-            _lrc.render_all_ue_links(this.ctx);
-            ctx.restore();
-        }        */
-
+        When we draw connections, do the ue ones as well
+        */
         const drawConnections = LGraphCanvas.prototype.drawConnections;
         LGraphCanvas.prototype.drawConnections = function(ctx) {
             drawConnections?.apply(this, arguments);

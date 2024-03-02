@@ -172,7 +172,6 @@ class UseEverywhereList {
         const ue_connections = [];
         this.ues.forEach((ue) => { 
             ue.sending_to.forEach((st) => {
-
                 ue_connections.push({
                     type : ue.type, 
                     input_index : st.input_index,
@@ -180,10 +179,27 @@ class UseEverywhereList {
                     control_node_input_index : ue.control_node_input_index,
                     sending_to : st.node,
                 });
-
             });
         });
         return ue_connections;        
+    }
+
+    all_ue_connections_for(node_id) {
+        const ue_connections = [];
+        this.ues.forEach((ue) => { 
+            ue.sending_to.forEach((st) => {
+                if (get_real_node(st.node.id).id==node_id || get_real_node(ue.controller.id).id==node_id) {
+                    ue_connections.push({
+                        type : ue.type, 
+                        input_index : st.input_index,
+                        control_node : get_real_node(ue.controller.id),
+                        control_node_input_index : ue.control_node_input_index,
+                        sending_to : st.node,
+                    });
+                }
+            });
+        });
+        return ue_connections;   
     }
 }
 

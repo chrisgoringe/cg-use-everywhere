@@ -165,6 +165,13 @@ function get_real_node(node_id, level=Logger.ERROR) {
     return rn;
 }
 
+function get_all_nodes_within(node_id) {
+    const node = get_group_node(node_id);
+    if (GroupNodeHandler.isGroupNode(node)) return node.getInnerNodes();
+    return [];
+}
+
+
 /*
 Does this input connect upstream to a live node?
 */
@@ -208,4 +215,4 @@ function inject(object, methodname, tracetext, injection, injectionthis, injecti
 }
 
 
-export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node, get_group_node}
+export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node, get_group_node, get_all_nodes_within}
