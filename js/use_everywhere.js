@@ -295,13 +295,32 @@ app.registerExtension({
         }
         
         /* 
-        Hijack drawNode to render the virtual links if requested
+        Hijack drawNode to render the virtual connections
         */
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             // don't trace - this is called way too often!
             original_drawNode.apply(this, arguments);
-            _lrc.render_ue_links(node, ctx);
+            _lrc.highlight_ue_connections(node, ctx);
+        }
+
+        /*
+        Whenever the canvas is redrawn, draw ue links
+
+        const draw = LGraphCanvas.prototype.draw;
+        LGraphCanvas.prototype.draw = function() {
+            draw.apply(this,arguments);
+            var ctx = this.ctx;
+            ctx.save();
+            this.ds.toCanvasContext(ctx);
+            _lrc.render_all_ue_links(this.ctx);
+            ctx.restore();
+        }        */
+
+        const drawConnections = LGraphCanvas.prototype.drawConnections;
+        LGraphCanvas.prototype.drawConnections = function(ctx) {
+            drawConnections?.apply(this, arguments);
+            _lrc.render_all_ue_links(ctx);
         }
 
         /* 
