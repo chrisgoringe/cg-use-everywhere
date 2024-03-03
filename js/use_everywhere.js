@@ -3,7 +3,7 @@ import { api } from "../../scripts/api.js";
 import { GroupNodeHandler } from "../core/groupNode.js";
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node, add_ue_from_node_in_group } from "./use_everywhere_nodes.js";
-import { node_in_loop, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node } from "./use_everywhere_utilities.js";
+import { node_in_loop, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node, get_group_node } from "./use_everywhere_utilities.js";
 import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { autoCreateMenu } from "./use_everywhere_autocreate.js";
@@ -295,13 +295,24 @@ app.registerExtension({
         }
         
         /* 
-        Hijack drawNode to render the virtual links if requested
+        Hijack drawNode to render the virtual connection points
+        and links to node with mouseOver
         */
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             // don't trace - this is called way too often!
             original_drawNode.apply(this, arguments);
-            _lrc.render_ue_links(node, ctx);
+            _lrc.highlight_ue_connections(node, ctx);
+            if (get_group_node(node.id).mouseOver) _lrc.render_mouseover(node, ctx);
+        }
+
+        /*
+        When we draw connections, do the ue ones as well
+        */
+        const drawConnections = LGraphCanvas.prototype.drawConnections;
+        LGraphCanvas.prototype.drawConnections = function(ctx) {
+            drawConnections?.apply(this, arguments);
+            _lrc.render_all_ue_links(ctx);
         }
 
         /* 

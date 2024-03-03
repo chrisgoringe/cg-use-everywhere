@@ -1,4 +1,4 @@
-import { Logger, get_real_node, get_group_node } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, get_group_node, get_all_nodes_within } from "./use_everywhere_utilities.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 
@@ -140,6 +140,10 @@ class LinkRenderController {
     }
 
     highlight_ue_connections(node, ctx) {
+        if (!app.ui.settings.getSettingValue('AE.highlight', true)) return;
+        if (this._ue_links_visible) return;
+        if (!this.list_ready()) return;
+
         this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
             if (!ue_connection.control_node) { // control node deleted...
                 this.mark_link_list_outdated();
@@ -170,58 +174,58 @@ class LinkRenderController {
         });
     }
 
-    render_ue_links(node, ctx) {
-        
-        const animate = (app.ui.settings.getSettingValue('AE.animate', true)) ? 1 : 0;
-        if (this.ue_list===undefined) {
-            this.request_link_list_update();    // list is out of date - ask for a new one
-        }
-        if (this.ue_list_reloading) return;     // if we don't have one, return. This method gets called frequently!
+    list_ready() {
+        if (this.ue_list===undefined) this.request_link_list_update();
+        return !this.ue_list_reloading
+    }
 
-        if (app.ui.settings.getSettingValue('AE.highlight', true)) {
-            this.highlight_ue_connections(node, ctx)
-        }
-
-        if (!(this._ue_links_visible || app.ui.settings.getSettingValue('AE.mouseover'))) return;    // switched off
-
-        this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
-            if (!ue_connection.control_node) { // control node deleted...
-                this.mark_link_list_outdated();
-                return; 
-            }
-
-            if (this._ue_links_visible || node.mouseOver || get_group_node(ue_connection.control_node.id).mouseOver) {
-                /* we're on the end node; get the position of the input */
-                var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
-
-                /* get the position of the *input* that is being echoed - except for the Seed Anywhere node, 
-                which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
-                const input_source = (ue_connection.control_node_input_index >= 0); 
-                const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
-                const pos1 = get_group_node(ue_connection.control_node.id).getConnectionPos(input_source, source_index, this.slot_pos2);    
-                
-                /* our drawing context is relative to the node we are on, so shift */
-                pos2[0] -= node.pos[0];
-                pos2[1] -= node.pos[1];
-                pos1[0] -= node.pos[0];
-                pos1[1] -= node.pos[1];
-
-                /* get the direction that we start and end */
-                const delta_x = pos2[0] - pos1[0];
-                const delta_y = pos2[1] - pos1[1];
-                const end_direction = LiteGraph.LEFT; // always end going into an input
-                const sta_direction = ((Math.abs(delta_y) > Math.abs(delta_x))) ? 
-                                            ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
-                                            ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
-
-                const color = LGraphCanvas.link_type_colors[ue_connection.type];
-                ctx.save();
-                ctx.shadowColor = "red";
-                ctx.shadowBlur = 15;
-                app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate, color, sta_direction, end_direction, undefined);
-                ctx.restore();
-            }
+    render_mouseover(node, ctx) {
+        if (this._ue_links_visible) return; // already showing all links
+        if (!app.ui.settings.getSettingValue('AE.mouseover')) return; //mouseover is off
+        if (!this.list_ready()) return;
+        ctx.save();
+        ctx.translate(-node.pos[0], -node.pos[1]);
+        get_all_nodes_within(node.id).forEach((anode) => {
+            this.ue_list.all_ue_connections_for(anode.id).forEach((ue_connection) => this.render_ue_link(ue_connection, ctx));
         })
+        this.ue_list.all_ue_connections_for(node.id).forEach((ue_connection) => this.render_ue_link(ue_connection, ctx));
+        ctx.restore();
+    }
+
+    render_all_ue_links(ctx) {
+        if (!this._ue_links_visible) return;    // switched off
+        if (!this.list_ready()) return;
+        // can we repeat this after a second or something?
+        this.ue_list.all_ue_connections().forEach((ue_connection) => this.render_ue_link(ue_connection, ctx));
+    }
+
+    render_ue_link(ue_connection, ctx) {
+        const node = get_real_node(ue_connection.sending_to.id);
+
+        /* this is the end node; get the position of the input */
+        var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
+
+        /* get the position of the *input* that is being echoed - except for the Seed Anywhere node, 
+        which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
+        const input_source = (ue_connection.control_node_input_index >= 0); 
+        const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
+        const pos1 = get_group_node(ue_connection.control_node.id).getConnectionPos(input_source, source_index, this.slot_pos2);    
+
+        /* get the direction that we start and end */
+        const delta_x = pos2[0] - pos1[0];
+        const delta_y = pos2[1] - pos1[1];
+        const end_direction = LiteGraph.LEFT; // always end going into an input
+        const sta_direction = ((Math.abs(delta_y) > Math.abs(delta_x))) ? 
+                                    ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
+                                    ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
+
+        const color = LGraphCanvas.link_type_colors[ue_connection.type];
+        ctx.save();
+        //ctx.shadowColor = "white";
+        //ctx.shadowBlur = 1;
+        const animate = (app.ui.settings.getSettingValue('AE.animate', true)) ? 1 : 0;
+        app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate, color, sta_direction, end_direction, undefined);
+        ctx.restore();
     }
 }
 
