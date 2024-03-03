@@ -295,7 +295,8 @@ app.registerExtension({
         }
         
         /* 
-        Hijack drawNode to render the virtual connections
+        Hijack drawNode to render the virtual connection points
+        and links to node with mouseOver
         */
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {

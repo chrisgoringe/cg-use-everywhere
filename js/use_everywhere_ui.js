@@ -141,10 +141,8 @@ class LinkRenderController {
 
     highlight_ue_connections(node, ctx) {
         if (!app.ui.settings.getSettingValue('AE.highlight', true)) return;
-        if (this.ue_list===undefined) {
-            this.request_link_list_update();    // list is out of date - ask for a new one
-        }
-        if (this.ue_list_reloading) return;     // if we don't have one, return. This method gets called frequently!
+        if (this._ue_links_visible) return;
+        if (!this.list_ready()) return;
 
         this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
             if (!ue_connection.control_node) { // control node deleted...
@@ -197,6 +195,7 @@ class LinkRenderController {
     render_all_ue_links(ctx) {
         if (!this._ue_links_visible) return;    // switched off
         if (!this.list_ready()) return;
+        // can we repeat this after a second or something?
         this.ue_list.all_ue_connections().forEach((ue_connection) => this.render_ue_link(ue_connection, ctx));
     }
 
