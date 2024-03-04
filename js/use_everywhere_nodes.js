@@ -1,25 +1,28 @@
 import { handle_bypass, get_real_node } from "./use_everywhere_utilities.js";
 
-function find_connected_link(node_id, input_id) {
-    
-}
+const CONVERTED_TYPE = "converted-widget";
+// import {CONVERTED_TYPE} from "../../extensions/core/widgetInputs.js"
 
 /*
 If a widget hasn't been converted, just get it's value
 If it has, *try* to go upstream
 */
 function get_widget_or_input_values(node_obj, widget_id) {
-    if (node_obj.widgets[widget_id].type=='text') { return node_obj.widgets[widget_id].value }
-    try {
-        const name = node_obj.widgets[widget_id].name;
-        const input = node_obj.inputs.find((input)=>input?.widget?.name==name);
-        const link = app.graph.links[input.link];
-        const upstream_node_obj = get_real_node(link.origin_id.toString());
-        //if (upstream_node_obj.widgets_values) return upstream_node_obj.widgets_values[0];
-        return upstream_node_obj.widgets[0].value;
-    } catch (error) {
-        return "NOT CONNECTED DONT MATCH";
+    if (node_obj.widgets[widget_id]?.type.startsWith(CONVERTED_TYPE)) {
+        try {
+            const name = node_obj.widgets[widget_id].name;
+            const input = node_obj.inputs.find((input)=>input?.widget?.name==name);
+            const link = app.graph.links[input.link];
+            const upstream_node_obj = get_real_node(link.origin_id.toString());
+            //if (upstream_node_obj.widgets_values) return upstream_node_obj.widgets_values[0];
+            return upstream_node_obj.widgets[0].value;
+        } catch (error) {
+            return "NOT CONNECTED DONT MATCH";
+        }
     }
+
+    return node_obj.widgets[widget_id].value;
+
 }
 
 

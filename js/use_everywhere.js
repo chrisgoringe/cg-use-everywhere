@@ -8,6 +8,7 @@ import { displayMessage, update_input_label, indicate_restriction } from "./use_
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { autoCreateMenu } from "./use_everywhere_autocreate.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
+import { add_autoprompts } from "./use_everywhere_autoprompt.js";
 
 var _original_graphToPrompt; // gets populated with the original method in setup()
 var _ambiguity_messages = [];
@@ -430,5 +431,9 @@ app.registerExtension({
         inject_outdating_into_object_method(app.graph, "afterChange", "graph.afterChange")
 
 	},
+
+    init() {
+        add_autoprompts(_lrc);
+    }
 
 });
