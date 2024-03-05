@@ -78,7 +78,7 @@ function validity_errors(params) {
 }
 
 class UseEverywhereList {
-    constructor() { this.ues = []; }
+    constructor() { this.ues = []; this.unmatched_inputs = []; }
 
     add_ue(node, control_node_input_index, type, output, title_regex, input_regex, group_regex, priority) {
         const params = {
@@ -118,6 +118,7 @@ class UseEverywhereList {
     }
 
     find_best_match(node, input, _ambiguity_messages) {
+        this.unmatched_inputs.push({"node":node, "input":input});
         var matches = this.ues.filter((candidate) => (  
             candidate.matches(node, input)
         ));
@@ -135,7 +136,6 @@ class UseEverywhereList {
                     if (matches[0].priority == matches[i].priority) {
                         const inner_msg = ` - ${matches[i].controller.type} (${matches[i].controller.id}) input ${matches[i].control_node_input_index}`;
                         Logger.log(Logger.PROBLEM, inner_msg);
-                        _ambiguity_messages.push(inner_msg);
                     }
                 }
                 return undefined;
@@ -148,6 +148,34 @@ class UseEverywhereList {
 
     print_all() {
         this.ues.forEach((ue) => { console.log(ue.describe()); });
+    }
+
+    all_unmatched_inputs(type) {
+        return this.unmatched_inputs.filter((ui)=>ui.input.type==type);
+    }
+
+    all_nodes_with_unmatched_input(type) {
+        const result = new Set();
+        this.all_unmatched_inputs(type).forEach((ui) => {
+            result.add(display_name(ui.node));
+        })
+        return result;
+    }
+
+    all_unmatched_input_names(type) {
+        const result = new Set();
+        this.all_unmatched_inputs(type).forEach((ui) => {
+            result.add(ui.input.label ? ui.input.label : ui.input.name);
+        })
+        return result;
+    }
+
+    all_group_names() {
+        const result = new Set();
+        app.graph._groups.forEach((group) => {
+            result.add(group.title);
+        })
+        return result;
     }
 
     all_connected_inputs(for_node) {

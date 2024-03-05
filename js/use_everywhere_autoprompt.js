@@ -45,9 +45,14 @@ function active_text_widget(node, inputname, _lrc) {
     }
     
     inputEl.addEventListener("focus", () => {
+        if (inputEl.value==".*") inputEl.value = "";
         const d = document.getElementById("uedynamiclist");
         while (d.firstChild) { d.removeChild(d.lastChild); };
-        const options = ["Vanilla", "Chocolate", "Strawberry"];  // Get the real list!
+        let options;
+        if (inputname=="title_regex") { options = _lrc.ue_list.all_nodes_with_unmatched_input(node.input_type[0]); }
+        else if (inputname=="input_regex") { options = _lrc.ue_list.all_unmatched_input_names(node.input_type[0]); }
+        else if (inputname=="group_regex") { options = _lrc.ue_list.all_group_names(node.input_type[0]); }
+        else options = [];
         options.forEach((option) => {
             const theOption = document.createElement("option");
             theOption.setAttribute("value", option);
@@ -58,7 +63,6 @@ function active_text_widget(node, inputname, _lrc) {
         _lrc.mark_link_list_outdated();
         app.graph.setDirtyCanvas(true,true);
     })
-
 
     return { widget };
 }
