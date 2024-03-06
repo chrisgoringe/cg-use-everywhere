@@ -70,7 +70,7 @@ function active_text_widget(node, inputname, _lrc) {
 function add_autoprompts(_lrc) {
     const STRING = ComfyWidgets.STRING;
     ComfyWidgets.STRING = function (node, inputName, inputData, app) {
-        if (!is_UEnode(node) || !inputName?.includes("regex")) {
+        if (!is_UEnode(node) || !inputName?.includes("regex") || !app.ui.settings.getSettingValue('AE.autoprompt', true)) {
             return STRING.apply(this, arguments);
         }
         return active_text_widget(node, inputName, _lrc);

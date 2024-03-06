@@ -197,22 +197,6 @@ app.registerExtension({
                 return r;
             }
         }
-
-        /*
-        onGraphConfigured looks for inputs with converted widgets to fix them.
-        moved to onNodeCreated
-        if (is_UEnode(nodeType)) {
-            const onGraphConfigured = nodeType.prototype.onGraphConfigured;
-            nodeType.prototype.onGraphConfigured = function() {
-                if (this.inputs) {
-                    if (!this.widgets) this.widgets = [];
-                    for (const input of this.inputs) {
-                        if (input.widget && !this.widgets.find((w) => w.name === input.widget.name)) this.widgets.push(input.widget)
-                    }
-                }
-                onGraphConfigured?.apply(this, arguments);
-            }
-        }*/
     },
 
     async nodeCreated(node) {
@@ -301,7 +285,6 @@ app.registerExtension({
         */
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
-            // don't trace - this is called way too often!
             original_drawNode.apply(this, arguments);
             _lrc.highlight_ue_connections(node, ctx);
             if (get_group_node(node.id).mouseOver) _lrc.render_mouseover(node, ctx);
@@ -324,6 +307,12 @@ app.registerExtension({
             name: "Anything Everywhere show node details",
             type: "boolean",
             defaultValue: false,
+        });
+        app.ui.settings.addSetting({
+            id: "AE.autoprompt",
+            name: "Anything Everywhere? autocomplete (may require page reload)",
+            type: "boolean",
+            defaultValue: true,
         });
         app.ui.settings.addSetting({
             id: "AE.checkloops",
