@@ -24,6 +24,7 @@ Or [the workflow as json](docs/test-workflow.json)
 
 4.7 (1st March 2024)
 - UE now works in group nodes
+- Autocomplete on `Anything Everywhere?` nodes
 
 4.6
 - add Group Regex to `Anything Everywhere?` node
