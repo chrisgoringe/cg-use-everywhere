@@ -227,13 +227,24 @@ app.registerExtension({
         setTimeout( ()=>{_lrc.mark_link_list_outdated()}, 100 );
 
         // mark outdated when changing the color of a node
-        Object.defineProperty(node, 'color', {
-            get : function() { return this._color; },
-            set : function(v) { this._color = v; _lrc.mark_link_list_outdated(); }
+        Object.defineProperty(node, 'bgcolor', {
+            get : function() { return this._bgcolor; },
+            set : function(v) { 
+                this._bgcolor = v; 
+                _lrc.mark_link_list_outdated();
+                this.widgets?.forEach((widget) => {widget.colorFollower?.(v)});
+             }
         });
     },
 
 	async setup() {
+        const head = document.getElementsByTagName('HEAD')[0];
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'extensions/cg-use-everywhere/ue.css';
+        head.appendChild(link);
+        
         /*
         Listen for message-handler event from python code
         */

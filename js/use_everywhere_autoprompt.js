@@ -5,43 +5,31 @@ import { app } from "../../scripts/app.js";
 
 function active_text_widget(node, inputname, _lrc) {
     const label = document.createElement("label");
-    label.setAttribute("class", "graphdialog");
-    label.style.padding = "0px";
-    label.style.fontSize = "14px";
-    label.style.setProperty("box-shadow", "none", "important");
-    label.style.borderRadius = "0";
+    label.className = "graphdialog ueprompt";
 
     const label_text = document.createElement("span");
     label_text.innerText = `${inputname.substring(0,5)} `;
-    label_text.style.minWidth = "60px";
+    label_text.className = "ueprompttext";
     label.appendChild(label_text);
 
     const span = document.createElement("span");
-    span.style.width = "100%";
-    span.style.marginBottom = "3px";
+    span.className = "uepromptspan";
     label.appendChild(span);
 
     const inputEl = document.createElement("input");
     inputEl.setAttribute("type", "text");
     inputEl.setAttribute("list", "uedynamiclist");
     inputEl.setAttribute("value", ".*");
-    inputEl.style.fontSize = "14px";
-    inputEl.style.borderRadius = "0";
-    inputEl.style.margin = "0px";
-    inputEl.style.width = "100%";
-    inputEl.style.float = "right";
+    inputEl.className = "uepromptinput";
     span.appendChild(inputEl);
-    // do style
-
+ 
     const widget = node.addDOMWidget(inputname, "input", label, {
         getValue() { return inputEl.value; },
-        setValue(v) {
-            inputEl.value = v; 
-        },
+        setValue(v) { inputEl.value = v; },
     });
-    widget.inputEl = label;
+    
     widget.computeSize = function (parent_width) {
-        return [parent_width ? parent_width : 400,30];
+        return [parent_width ? parent_width : 400, inputname=="group_regex"? 30 : 26];
     }
     
     inputEl.addEventListener("focus", () => {
@@ -63,7 +51,8 @@ function active_text_widget(node, inputname, _lrc) {
         _lrc.mark_link_list_outdated();
         app.graph.setDirtyCanvas(true,true);
     })
-
+    
+    widget.colorFollower = function (color) { label.style.backgroundColor = color; } 
     return { widget };
 }
 

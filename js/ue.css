@@ -1,0 +1,34 @@
+
+.litegraph label.ueprompt {
+    padding:0px;
+    font-size: 12px;
+    border-radius: 0;
+    box-shadow: none !important;
+    margin:1px;
+    height:30px;
+}
+
+.litegraph span.ueprompttext {
+    min-width: 30px;
+    font-family: Arial, sans-serif;
+    color: var(--input-text);
+    text-align: right;
+    padding: 2px 2px 8px 0px;
+    margin-bottom: 0px;
+    background-color: inherit;
+}
+
+.litegraph span.uepromptspan {
+    width: 100%;
+    margin-bottom: 5px;
+    padding-left:12px;
+    background-color: inherit;
+}
+
+.litegraph input.uepromptinput {
+    padding: 0 0 0 6px;
+    border-radius: 12px;
+    margin: 0px;
+    width: 100%;
+    float: right;
+}
