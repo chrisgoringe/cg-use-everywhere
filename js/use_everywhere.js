@@ -230,11 +230,21 @@ app.registerExtension({
         Object.defineProperty(node, 'bgcolor', {
             get : function() { return this._bgcolor; },
             set : function(v) { 
+                if (v==this._bgcolor) return;
                 this._bgcolor = v; 
-                _lrc.mark_link_list_outdated();
-                this.widgets?.forEach((widget) => {widget.colorFollower?.(v)});
+                if (node.mode!=4) _lrc.mark_link_list_outdated();
+                this.widgets?.forEach((widget) => {widget.colorFollower?.(v, node.mode)});
              }
         });
+        Object.defineProperty(node, 'mode', {
+            get : function() { return this._mode; },
+            set : function(v) { 
+                if (v==this._mode) return;
+                if (v!=4 && this._mode==4) this.widgets?.forEach((widget) => {widget.endBypass?.()});
+                this._mode = v; 
+             }
+        });
+        
     },
 
 	async setup() {
@@ -244,7 +254,7 @@ app.registerExtension({
         link.type = 'text/css';
         link.href = 'extensions/cg-use-everywhere/ue.css';
         head.appendChild(link);
-        
+
         /*
         Listen for message-handler event from python code
         */

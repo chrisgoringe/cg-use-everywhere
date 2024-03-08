@@ -2,6 +2,11 @@ import { is_UEnode } from "./use_everywhere_utilities.js";
 import { ComfyWidgets} from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 
+function format_color(color) {
+    var h = color.slice(1);
+    h = [...h].map(x => x + x).join('');
+    return `#${h}FF`;
+}
 
 function active_text_widget(node, inputname, _lrc) {
     const label = document.createElement("label");
@@ -52,7 +57,24 @@ function active_text_widget(node, inputname, _lrc) {
         app.graph.setDirtyCanvas(true,true);
     })
     
-    widget.colorFollower = function (color) { label.style.backgroundColor = color; } 
+    widget.colorFollower = function (color, mode) { 
+        if (mode==4) {
+            if (color!='#FF00FF') label.restoreColor = format_color(color);
+            label.style.backgroundColor = "#FF00FF00";
+            label.style.opacity = 0.2;
+            return;
+        }
+        label.style.backgroundColor = format_color(color);
+        label.style.opacity = 1.0;
+    }
+
+    widget.endBypass = function() {
+        if (label.restoreColor) {
+            label.style.backgroundColor = label.restoreColor;
+            label.style.opacity = 1.0;      
+            label.restoreColor = false;      
+        }
+    }
     return { widget };
 }
 
