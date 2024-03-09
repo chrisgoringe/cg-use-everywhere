@@ -247,6 +247,8 @@ app.registerExtension({
         
     },
 
+    loadedGraphNode(node) { if (node.flags.collapsed && node.IS_UE) node.loaded_when_collapsed?.(); },
+
 	async setup() {
         const head = document.getElementsByTagName('HEAD')[0];
         const link = document.createElement('link');
