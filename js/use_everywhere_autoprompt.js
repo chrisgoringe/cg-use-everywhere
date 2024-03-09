@@ -59,21 +59,21 @@ function active_text_widget(node, inputname, _lrc) {
     
     widget.colorFollower = function (color, mode) { 
         if (mode==4) {
-            if (color!='#FF00FF') label.restoreColor = format_color(color);
+            if (color && color!='#FF00FF') label.restoreColor = format_color(color);
             label.style.backgroundColor = "#FF00FF00";
             label.style.opacity = 0.2;
             return;
         }
-        label.style.backgroundColor = format_color(color);
+        label.style.backgroundColor = color ? format_color(color) : color;
         label.style.opacity = 1.0;
     }
 
     widget.endBypass = function() {
         if (label.restoreColor) {
             label.style.backgroundColor = label.restoreColor;
-            label.style.opacity = 1.0;      
             label.restoreColor = false;      
         }
+        label.style.opacity = 1.0;    
     }
 
     node.loaded_when_collapsed = function() {
