@@ -78,8 +78,10 @@ function active_text_widget(node, inputname, _lrc) {
 
     node.loaded_when_collapsed = function() {
         node.widgets?.forEach((widget) => {
-            widget.element?.hidden = true;
-            widget.element?.style.display = "none";
+            if (widget.element) {
+                widget.element.hidden = true;
+                widget.element.style.display = "none";
+            }
         })
     }
     return { widget };
