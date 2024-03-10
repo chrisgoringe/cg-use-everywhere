@@ -134,11 +134,9 @@ class UseEverywhereList {
                 for (var i=0; i<matches.length; i++) {
                     if (matches[0].priority == matches[i].priority) {
                         const inner_msg = ` - ${matches[i].controller.type} (${matches[i].controller.id}) input ${matches[i].control_node_input_index}`;
-                        //Logger.log(Logger.PROBLEM, inner_msg, Logger.AMBIGUITY);
                         _ambiguity_messages.push(inner_msg);
                     }
                 }
-                //Logger.log(Logger.PROBLEM, msg, Logger.AMBIGUITY);
                 return undefined;
             }
         }
