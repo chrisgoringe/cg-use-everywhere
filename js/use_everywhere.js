@@ -80,7 +80,7 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
         }
     });
 
-    if (_ambiguity_messages) Logger.log(Logger.PROBLEM, "Ambiguous connections", _ambiguity_messages, Logger.CAT_AMBIGUITY);
+    if (_ambiguity_messages.length) Logger.log(Logger.PROBLEM, "Ambiguous connections", _ambiguity_messages, Logger.CAT_AMBIGUITY);
 
     // if there are loops report them and raise an exception
     if (check_for_loops && app.ui.settings.getSettingValue('AE.checkloops', true)) {
@@ -125,6 +125,28 @@ function inject_outdating_into_objects(array, methodname, tracetext) {
 }
 function inject_outdating_into_object_method(object, methodname, tracetext) {
     if (object) inject(object, methodname, tracetext, _lrc.mark_link_list_outdated, _lrc);
+}
+
+const nodeHandler = {
+    set: function(obj, property, value) {
+        const oldValue = Reflect.get(obj, property, this);
+        const result = Reflect.set(...arguments);
+        if (oldValue!=value) {
+            if (property==='bgcolor') {
+                obj.widgets?.forEach((widget) => {widget.colorFollower?.(value, obj.mode)});
+                _lrc.mark_link_list_outdated();
+            }
+            if (property==='mode') {
+                _lrc.mark_link_list_outdated();
+                if (oldValue==4) obj.widgets?.forEach((widget) => {widget.endBypass?.()});
+            }
+        }
+        return result;
+    },
+    deleteProperty: function(obj, property) {
+        if (property==='bgcolor') obj.widgets?.forEach((widget) => {widget.colorFollower?.(null, obj.mode)});
+        return Reflect.deleteProperty(...arguments);
+    }
 }
 
 app.registerExtension({
@@ -228,26 +250,8 @@ app.registerExtension({
         // creating a node makes the link list dirty - but give the system a moment to finish
         setTimeout( ()=>{_lrc.mark_link_list_outdated()}, 100 );
 
-        // mark outdated when changing the color of a node or changing it's mode
-        Object.defineProperty(node, 'bgcolor', {
-            get : function() { return this._bgcolor; },
-            set : function(v) { 
-                if (v==this._bgcolor) return;
-                this._bgcolor = v; 
-                if (node.mode!=4) _lrc.mark_link_list_outdated();
-                this.widgets?.forEach((widget) => {widget.colorFollower?.(v, node.mode)});
-             }
-        });
-        Object.defineProperty(node, 'mode', {
-            get : function() { return this._mode; },
-            set : function(v) { 
-                if (v==this._mode) return;
-                if (v!=4 && this._mode==4) this.widgets?.forEach((widget) => {widget.endBypass?.()});
-                this._mode = v; 
-             }
-        });
-        
-    },
+
+    }, 
 
     loadedGraphNode(node) { if (node.flags.collapsed && node.IS_UE) node.loaded_when_collapsed?.(); },
 
@@ -448,6 +452,10 @@ app.registerExtension({
 
     init() {
         add_autoprompts(_lrc);
+        const createNode = LiteGraph.createNode;
+        LiteGraph.createNode = function() {
+            return new Proxy( createNode.apply(this,arguments), nodeHandler );
+        }
     }
 
 });
