@@ -129,7 +129,7 @@ class LinkRenderController {
     request_link_list_update() {
         if (this.ue_list_reloading) return;                            // already doing it
         this.ue_list_reloading = true;                                 // stop any more requests
-        this.the_graph_analyser().then(this.reload_resolve, this.reload_reject); // an async call is a promise; pass it two callbacks
+        this.the_graph_analyser.analyse_graph().then(this.reload_resolve, this.reload_reject); // an async call is a promise; pass it two callbacks
         Logger.log(Logger.INFORMATION, "link list update started");
     } 
 
