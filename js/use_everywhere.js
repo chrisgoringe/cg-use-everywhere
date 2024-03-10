@@ -80,6 +80,8 @@ async function analyse_graph(modify_and_return_prompt=false, check_for_loops=fal
         }
     });
 
+    if (_ambiguity_messages) Logger.log(Logger.PROBLEM, "Ambiguous connections", _ambiguity_messages, Logger.CAT_AMBIGUITY);
+
     // if there are loops report them and raise an exception
     if (check_for_loops && app.ui.settings.getSettingValue('AE.checkloops', true)) {
         try {
@@ -226,7 +228,7 @@ app.registerExtension({
         // creating a node makes the link list dirty - but give the system a moment to finish
         setTimeout( ()=>{_lrc.mark_link_list_outdated()}, 100 );
 
-        // mark outdated when changing the color of a node
+        // mark outdated when changing the color of a node or changing it's mode
         Object.defineProperty(node, 'bgcolor', {
             get : function() { return this._bgcolor; },
             set : function(v) { 

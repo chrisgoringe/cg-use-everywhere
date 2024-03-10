@@ -130,14 +130,15 @@ class UseEverywhereList {
             matches.sort((a,b) => b.priority-a.priority);
             if(matches[0].priority == matches[1].priority) {
                 const msg = `'${display_name(node)}' (${node.id}) input '${input.name}' matches multiple Use Everwhere sources:`;
-                Logger.log(Logger.PROBLEM, msg);
                 _ambiguity_messages.push(msg);
                 for (var i=0; i<matches.length; i++) {
                     if (matches[0].priority == matches[i].priority) {
                         const inner_msg = ` - ${matches[i].controller.type} (${matches[i].controller.id}) input ${matches[i].control_node_input_index}`;
-                        Logger.log(Logger.PROBLEM, inner_msg);
+                        //Logger.log(Logger.PROBLEM, inner_msg, Logger.AMBIGUITY);
+                        _ambiguity_messages.push(inner_msg);
                     }
                 }
+                //Logger.log(Logger.PROBLEM, msg, Logger.AMBIGUITY);
                 return undefined;
             }
         }

@@ -10,10 +10,19 @@ class Logger {
     static LEVEL = Logger.PROBLEM;
     static TRACE = false;   // most of the method calls
 
-    static log(level, message, array) {
+    static CAT_AMBIGUITY = 1;
+    static last_reported_category = {};
+    static category_cooloff = { 1 : 5000 }
+
+    static log(level, message, array, category) {
+        if (category && Logger.last_reported_category[category]) {
+            const elapsed = (new Date()) - Logger.last_reported_category[category];
+            if (elapsed < Logger.category_cooloff[category]) return;
+        }
         if (level <= Logger.LEVEL) {
             console.log(message);
             if (array) for (var i=0; i<array.length; i++) { console.log(array[i]) }
+            if (category) Logger.last_reported_category[category] = new Date();
         }
     }
 
