@@ -3,6 +3,7 @@ import { ComfyWidgets} from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 
 function format_color(color) {
+    if (!color) return color;
     var h = color.slice(1);
     h = [...h].map(x => x + x).join('');
     return `#${h}FF`;
@@ -59,12 +60,12 @@ function active_text_widget(node, inputname, _lrc) {
     
     widget.colorFollower = function (color, mode) { 
         if (mode==4) {
-            if (color && color!='#FF00FF') label.restoreColor = format_color(color);
+            if (color!='#FF00FF') label.restoreColor = format_color(color);
             label.style.backgroundColor = "#FF00FF00";
             label.style.opacity = 0.2;
             return;
         }
-        label.style.backgroundColor = color ? format_color(color) : color;
+        label.style.backgroundColor = format_color(color);
         label.style.opacity = 1.0;
     }
 
