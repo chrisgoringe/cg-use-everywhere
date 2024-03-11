@@ -9,15 +9,16 @@ import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
 import { add_autoprompts } from "./use_everywhere_autoprompt.js";
 
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
+import { main_menu_settings } from "./use_everywhere_settings.js";
 
 /*
 The ui component that looks after the link rendering
 */
-var _lrc;
+var linkRenderController;
 var graphAnalyser;
 
 /*
-Inject a call to _lrc.mark_list_link_outdated into a method with name methodname on all objects in the array
+Inject a call to linkRenderController.mark_list_link_outdated into a method with name methodname on all objects in the array
 If object is undefined, do nothing.
 The injection is added at the end of the existing method (if the method didn't exist, it is created).
 A Logger.trace call is added at the start with 'tracetext'
@@ -28,7 +29,7 @@ function inject_outdating_into_objects(array, methodname, tracetext) {
     }
 }
 function inject_outdating_into_object_method(object, methodname, tracetext) {
-    if (object) inject(object, methodname, tracetext, _lrc.mark_link_list_outdated, _lrc);
+    if (object) inject(object, methodname, tracetext, linkRenderController.mark_link_list_outdated, linkRenderController);
 }
 
 const nodeHandler = {
@@ -38,10 +39,10 @@ const nodeHandler = {
         if (oldValue!=value) {
             if (property==='bgcolor') {
                 obj.widgets?.forEach((widget) => {widget.colorFollower?.(value, obj.mode)});
-                if (obj.mode!=4) _lrc.mark_link_list_outdated();
+                if (obj.mode!=4) linkRenderController.mark_link_list_outdated();
             }
             if (property==='mode') {
-                _lrc.mark_link_list_outdated();
+                linkRenderController.mark_link_list_outdated();
                 if (oldValue==4) obj.widgets?.forEach((widget) => {widget.endBypass?.()});
             }
         }
@@ -73,7 +74,7 @@ app.registerExtension({
                     update_input_label(this, slot, app);
                 }
             }
-            _lrc.mark_link_list_outdated();
+            linkRenderController.mark_link_list_outdated();
             onConnectionsChange?.apply(this, arguments);
         };
 
@@ -152,7 +153,7 @@ app.registerExtension({
         inject_outdating_into_object_method(node, 'onRemoved', `node ${node.id} removed`)
 
         // creating a node makes the link list dirty - but give the system a moment to finish
-        setTimeout( ()=>{_lrc.mark_link_list_outdated()}, 100 );
+        setTimeout( ()=>{linkRenderController.mark_link_list_outdated()}, 100 );
 
 
     }, 
@@ -204,8 +205,8 @@ app.registerExtension({
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             original_drawNode.apply(this, arguments);
-            _lrc.highlight_ue_connections(node, ctx);
-            if (get_group_node(node.id).mouseOver) _lrc.render_mouseover(node, ctx);
+            linkRenderController.highlight_ue_connections(node, ctx);
+            if (get_group_node(node.id).mouseOver) linkRenderController.render_mouseover(node, ctx);
         }
 
         /*
@@ -214,54 +215,10 @@ app.registerExtension({
         const drawConnections = LGraphCanvas.prototype.drawConnections;
         LGraphCanvas.prototype.drawConnections = function(ctx) {
             drawConnections?.apply(this, arguments);
-            _lrc.render_all_ue_links(ctx);
+            linkRenderController.render_all_ue_links(ctx);
         }
 
-        /* 
-        Add to the settings menu 
-        */
-        app.ui.settings.addSetting({
-            id: "AE.details",
-            name: "Anything Everywhere show node details",
-            type: "boolean",
-            defaultValue: false,
-        });
-        app.ui.settings.addSetting({
-            id: "AE.autoprompt",
-            name: "Anything Everywhere? autocomplete (may require page reload)",
-            type: "boolean",
-            defaultValue: true,
-        });
-        app.ui.settings.addSetting({
-            id: "AE.checkloops",
-            name: "Anything Everywhere check loops",
-            type: "boolean",
-            defaultValue: true,
-        });        
-        app.ui.settings.addSetting({
-            id: "AE.mouseover",
-            name: "Anything Everywhere show links on mouse over",
-            type: "boolean",
-            defaultValue: false,
-        });
-        app.ui.settings.addSetting({
-            id: "AE.animate",
-            name: "Anything Everywhere animate UE links",
-            type: "boolean",
-            defaultValue: true,
-        });
-        app.ui.settings.addSetting({
-            id: "AE.highlight",
-            name: "Anything Everywhere highlight connected nodes",
-            type: "boolean",
-            defaultValue: true,
-        });
-        app.ui.settings.addSetting({
-            id: "AE.replacesearch",
-            name: "Anything Everywhere replace search",
-            type: "boolean",
-            defaultValue: true,
-        });
+        main_menu_settings();
         
         /* 
         Canvas menu is the right click on backdrop.
@@ -273,10 +230,10 @@ app.registerExtension({
             const options = original_getCanvasMenuOptions.apply(this, arguments);
             options.push(null); // divider
             options.push({
-                content: (_lrc._ue_links_visible) ? "Hide UE links" : "Show UE links",
+                content: (linkRenderController._ue_links_visible) ? "Hide UE links" : "Show UE links",
                 callback: () => {
                     Logger.trace("Toggle visibility called", arguments);
-                    _lrc.toggle_ue_links_visible();
+                    linkRenderController.toggle_ue_links_visible();
                 }
             },
             {
@@ -340,18 +297,14 @@ app.registerExtension({
 	},
 
     init() {
-                /*
-        The graphToPrompt method is called when the app is going to send a prompt to the server.
-        We hijack it, call the original, and return a modified copy.
-        _original_graphToPrompt defined as a var above
-        */
-
-        graphAnalyser = new GraphAnalyser();
+        graphAnalyser = GraphAnalyser.instance();
         app.graphToPrompt = async function () {
             return graphAnalyser.analyse_graph(true, true);
         }
-        _lrc = new LinkRenderController(graphAnalyser);
-        add_autoprompts(_lrc);
+        
+        linkRenderController = LinkRenderController.instance(graphAnalyser);
+
+        add_autoprompts();
         const createNode = LiteGraph.createNode;
         LiteGraph.createNode = function() {
             const nd = createNode.apply(this,arguments);

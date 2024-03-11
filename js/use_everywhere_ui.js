@@ -81,11 +81,15 @@ function update_input_label(node, slot, app) {
 }
 
 class LinkRenderController {
-// a reference to the method that we can use to calculate links
-    the_graph_analyser;
-    constructor(graph_analyser) {
-        this.the_graph_analyser = graph_analyser;
+    static _instance;
+    static instance(tga) {
+        if (!this._instance) this._instance = new LinkRenderController();
+        if (tga && !this._instance.the_graph_analyser) this._instance.the_graph_analyser = tga;
+        return this._instance
     }
+    constructor() {
+        this.the_graph_analyser = null;
+     }
 
     _ue_links_visible = false;  // toggle whether to show virtual links
     ue_list = undefined;        // a UseEverythingList; undefined when outdated
@@ -175,6 +179,7 @@ class LinkRenderController {
     }
 
     list_ready() {
+        if (!this.the_graph_analyser) return false;
         if (this.ue_list===undefined) this.request_link_list_update();
         return !this.ue_list_reloading
     }

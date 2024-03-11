@@ -5,6 +5,12 @@ import { node_in_loop, node_is_live, is_connected, is_UEnode, Logger, get_real_n
 import { app } from "../../scripts/app.js";
 
 class GraphAnalyser {
+    static _instance;
+    static instance() {
+        if (!this._instance) this._instance = new GraphAnalyser();
+        return this._instance;
+    }
+
     constructor() {
         this.original_graphToPrompt = app.graphToPrompt;
         this.ambiguity_messages = [];

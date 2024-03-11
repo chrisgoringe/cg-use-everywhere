@@ -1,6 +1,7 @@
 import { is_UEnode } from "./use_everywhere_utilities.js";
 import { ComfyWidgets} from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
+import { LinkRenderController } from "./use_everywhere_ui.js";
 
 function format_color(color) {
     if (!color) return color;
@@ -100,13 +101,13 @@ function active_text_widget(node, inputname, _lrc) {
     return { widget };
 }
 
-function add_autoprompts(_lrc) {
+function add_autoprompts() {
     const STRING = ComfyWidgets.STRING;
     ComfyWidgets.STRING = function (node, inputName, inputData, app) {
         if (!is_UEnode(node) || !inputName?.includes("regex") || !app.ui.settings.getSettingValue('AE.autoprompt', true)) {
             return STRING.apply(this, arguments);
         }
-        return active_text_widget(node, inputName, _lrc);
+        return active_text_widget(node, inputName, LinkRenderController.instance());
     }
     const datalist = document.createElement("datalist");
     datalist.id = "uedynamiclist";    
