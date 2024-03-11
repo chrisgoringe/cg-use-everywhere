@@ -62,7 +62,7 @@ function active_text_widget(node, inputname) {
     });
     
     inputEl.addEventListener("input", () => {
-        _lrc.mark_link_list_outdated();
+        LinkRenderController.instance().mark_link_list_outdated();
         app.graph.setDirtyCanvas(true,true);
     })
     
