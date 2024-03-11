@@ -7,7 +7,7 @@ function format_color(color) {
     if (!color) return color;
     if (color.length==7) return `${color}FF`;
     if (color.length==9) return color;
-    if (color.length==3) {
+    if (color.length==4) {
         var h = color.slice(1);
         h = [...h].map(x => x + x).join('');
         return `#${h}FF`;
@@ -16,7 +16,7 @@ function format_color(color) {
     return color;
 }
 
-function active_text_widget(node, inputname, _lrc) {
+function active_text_widget(node, inputname) {
     const label = document.createElement("label");
     label.className = "graphdialog ueprompt";
 
@@ -39,6 +39,7 @@ function active_text_widget(node, inputname, _lrc) {
     const widget = node.addDOMWidget(inputname, "input", label, {
         getValue() { return inputEl.value; },
         setValue(v) { inputEl.value = v; },
+        onDraw(w) { w.element.style.clipPath = null; w.element.style.willChange = null; }
     });
     
     widget.computeSize = function (parent_width) {
@@ -49,17 +50,17 @@ function active_text_widget(node, inputname, _lrc) {
         if (inputEl.value==".*") inputEl.value = "";
         const d = document.getElementById("uedynamiclist");
         while (d.firstChild) { d.removeChild(d.lastChild); };
-        let options;
-        if (inputname=="title_regex") { options = _lrc.ue_list.all_nodes_with_unmatched_input(node.input_type[0]); }
-        else if (inputname=="input_regex") { options = _lrc.ue_list.all_unmatched_input_names(node.input_type[0]); }
-        else if (inputname=="group_regex") { options = _lrc.ue_list.all_group_names(node.input_type[0]); }
-        else options = [];
+        let options = [];
+        if (inputname=="title_regex") { options = LinkRenderController.instance().ue_list?.all_nodes_with_unmatched_input(node.input_type[0]); }
+        else if (inputname=="input_regex") { options = LinkRenderController.instance().ue_list?.all_unmatched_input_names(node.input_type[0]); }
+        else if (inputname=="group_regex") { options = LinkRenderController.instance().ue_list?.all_group_names(node.input_type[0]); }
         options.forEach((option) => {
             const theOption = document.createElement("option");
             theOption.setAttribute("value", option);
             d.appendChild(theOption)
         })
     });
+    
     inputEl.addEventListener("input", () => {
         _lrc.mark_link_list_outdated();
         app.graph.setDirtyCanvas(true,true);
@@ -93,11 +94,6 @@ function active_text_widget(node, inputname, _lrc) {
         })
     }
 
-    //const onRemove = widget.onRemove;
-    //widget.onRemove = function() {
-    //    onRemove?.apply(this, arguments);
-    //    document.body.removeChild(widget.element);
-   // }
     return { widget };
 }
 
@@ -107,7 +103,7 @@ function add_autoprompts() {
         if (!is_UEnode(node) || !inputName?.includes("regex") || !app.ui.settings.getSettingValue('AE.autoprompt', true)) {
             return STRING.apply(this, arguments);
         }
-        return active_text_widget(node, inputName, LinkRenderController.instance());
+        return active_text_widget(node, inputName);
     }
     const datalist = document.createElement("datalist");
     datalist.id = "uedynamiclist";    
