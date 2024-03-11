@@ -308,7 +308,11 @@ app.registerExtension({
         const createNode = LiteGraph.createNode;
         LiteGraph.createNode = function() {
             const nd = createNode.apply(this,arguments);
-            return nd.IS_UE ? new Proxy( nd, nodeHandler ) : nd;
+            if (nd) {
+                return nd.IS_UE ? new Proxy( nd, nodeHandler ) : nd;
+            } else {
+                return nd;
+            }
         }
     }
 
