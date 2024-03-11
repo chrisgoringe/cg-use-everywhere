@@ -8,9 +8,14 @@ class GraphAnalyser {
     constructor() {
         this.original_graphToPrompt = app.graphToPrompt;
         this.ambiguity_messages = [];
+        this.pause_depth = 0;
     }
 
+    pause() { this.pause_depth += 1; }
+    unpause() { this.pause_depth -= 1; }
+
     async analyse_graph(modify_and_return_prompt=false, check_for_loops=false) {
+        if (this.pause_depth > 0) { return this.original_graphToPrompt.apply(app) }
         this.ambiguity_messages = [];
         var p = await this.original_graphToPrompt.apply(app);
         if (modify_and_return_prompt) {

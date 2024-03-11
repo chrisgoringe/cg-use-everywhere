@@ -38,7 +38,7 @@ const nodeHandler = {
         if (oldValue!=value) {
             if (property==='bgcolor') {
                 obj.widgets?.forEach((widget) => {widget.colorFollower?.(value, obj.mode)});
-                _lrc.mark_link_list_outdated();
+                if (obj.mode!=4) _lrc.mark_link_list_outdated();
             }
             if (property==='mode') {
                 _lrc.mark_link_list_outdated();
@@ -186,17 +186,15 @@ app.registerExtension({
         */
         const _original_save_onclick = document.getElementById('comfy-save-button').onclick;
         document.getElementById('comfy-save-button').onclick = function() {
-            const do_modify_was = do_modify
-            do_modify = false;
+            graphAnalyser.pause();
             _original_save_onclick();
-            do_modify = do_modify_was;
+            graphAnalyser.unpause()
         }
         const _original_save_api_onclick = document.getElementById('comfy-dev-save-api-button').onclick;
         document.getElementById('comfy-dev-save-api-button').onclick = function() {
-            const do_modify_was = do_modify
-            do_modify = false;
+            graphAnalyser.pause();
             _original_save_api_onclick();
-            do_modify = do_modify_was;
+            graphAnalyser.unpause()
         }
         
         /* 
@@ -347,20 +345,17 @@ app.registerExtension({
         We hijack it, call the original, and return a modified copy.
         _original_graphToPrompt defined as a var above
         */
-        var do_modify = true;
+
         graphAnalyser = new GraphAnalyser();
         app.graphToPrompt = async function () {
-            if (do_modify) {
-                return graphAnalyser.analyse_graph(true, true);
-            } else {
-                return graphAnalyser.original_graphToPrompt.apply(app)
-            }
+            return graphAnalyser.analyse_graph(true, true);
         }
         _lrc = new LinkRenderController(graphAnalyser);
         add_autoprompts(_lrc);
         const createNode = LiteGraph.createNode;
         LiteGraph.createNode = function() {
-            return new Proxy( createNode.apply(this,arguments), nodeHandler );
+            const nd = createNode.apply(this,arguments);
+            return nd.IS_UE ? new Proxy( nd, nodeHandler ) : nd;
         }
     }
 

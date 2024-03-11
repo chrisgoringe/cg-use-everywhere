@@ -45,8 +45,8 @@ function add_ue_from_node(ues, node) {
         let type;
         var link = undefined;
         if (in_link) {
-            type = get_real_node(node.id.toString()).input_type[0];
-            link = handle_bypass(app.graph.links[in_link], type);
+            type = get_real_node(node.id.toString())?.input_type?.[0];
+            if (type) link = handle_bypass(app.graph.links[in_link], type);
         } else if (node.in_group_with_data) {
             const group_style_link = node.in_group_with_data.linksTo[node.index][0];
             link = { "origin_id":node.getInnerNodesOfGroup()[group_style_link[0]].id, "origin_slot" : group_style_link[1] };

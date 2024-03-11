@@ -4,9 +4,15 @@ import { app } from "../../scripts/app.js";
 
 function format_color(color) {
     if (!color) return color;
-    var h = color.slice(1);
-    h = [...h].map(x => x + x).join('');
-    return `#${h}FF`;
+    if (color.length==7) return `${color}FF`;
+    if (color.length==9) return color;
+    if (color.length==3) {
+        var h = color.slice(1);
+        h = [...h].map(x => x + x).join('');
+        return `#${h}FF`;
+    }
+    console.log(`Couldn't process color ${color}`);
+    return color;
 }
 
 function active_text_widget(node, inputname, _lrc) {
@@ -85,6 +91,12 @@ function active_text_widget(node, inputname, _lrc) {
             }
         })
     }
+
+    //const onRemove = widget.onRemove;
+    //widget.onRemove = function() {
+    //    onRemove?.apply(this, arguments);
+    //    document.body.removeChild(widget.element);
+   // }
     return { widget };
 }
 
