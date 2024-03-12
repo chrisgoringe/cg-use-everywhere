@@ -95,7 +95,7 @@ app.registerExtension({
                     {
                         content: "Convert to real links",
                         callback: async () => {
-                            const ues = await analyse_graph();
+                            const ues = await graphAnalyser.analyse_graph();
                             convert_to_links(ues, this.id);
                             app.graph.remove(this);
                         }
@@ -235,7 +235,7 @@ app.registerExtension({
             {
                 content: "Convert all UEs to real links",
                 callback: async () => {
-                    const ues = await analyse_graph();
+                    const ues = await graphAnalyser.analyse_graph();
                     convert_to_links(ues, -1);
                     remove_all_ues();
                 }
