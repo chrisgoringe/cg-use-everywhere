@@ -3,19 +3,6 @@ import { ComfyWidgets} from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 
-function format_color(color) {
-    if (!color) return color;
-    if (color.length==7) return `${color}FF`;
-    if (color.length==9) return color;
-    if (color.length==4) {
-        var h = color.slice(1);
-        h = [...h].map(x => x + x).join('');
-        return `#${h}FF`;
-    }
-    console.log(`Couldn't process color ${color}`);
-    return color;
-}
-
 function active_text_widget(node, inputname) {
     const label = document.createElement("label");
     label.className = "graphdialog ueprompt";
@@ -43,7 +30,7 @@ function active_text_widget(node, inputname) {
     });
     
     widget.computeSize = function (parent_width) {
-        return [parent_width ? parent_width : 400, inputname=="group_regex"? 30 : 26];
+        return [parent_width ? parent_width : 400, inputname=="group_regex"? 30 : 20];
     }
     
     inputEl.addEventListener("focus", () => {
@@ -66,23 +53,8 @@ function active_text_widget(node, inputname) {
         app.graph.setDirtyCanvas(true,true);
     })
     
-    widget.colorFollower = function (color, mode) { 
-        if (mode==4) {
-            if (color!='#FF00FF') label.restoreColor = format_color(color);
-            label.style.backgroundColor = "#FF00FF00";
-            label.style.opacity = 0.2;
-            return;
-        }
-        label.style.backgroundColor = format_color(color);
-        label.style.opacity = 1.0;
-    }
-
-    widget.endBypass = function() {
-        if (label.restoreColor) {
-            label.style.backgroundColor = label.restoreColor;
-            label.restoreColor = false;      
-        }
-        label.style.opacity = 1.0;    
+    widget.onModeChange = function (mode) { 
+        label.style.opacity = mode==4 ? 0.2 : 1.0;
     }
 
     node.loaded_when_collapsed = function() {

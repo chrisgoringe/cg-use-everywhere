@@ -3,31 +3,36 @@
     padding:0px;
     font-size: 12px;
     border-radius: 0;
+    border: 0;
     box-shadow: none !important;
-    margin:1px;
+    margin:0px;
     height:30px;
+    background-color: rgba(0,0,0,0);
 }
 
 .litegraph span.ueprompttext {
+    margin: 0px;
     min-width: 30px;
     font-family: Arial, sans-serif;
-    color: var(--input-text);
+    color: var(--descrip-text);
     text-align: right;
-    padding: 2px 2px 8px 0px;
-    margin-bottom: 0px;
+    padding: 2px 2px 4px 0px;
     background-color: inherit;
 }
 
 .litegraph span.uepromptspan {
+    margin: 0px;
     width: 100%;
-    margin-bottom: 5px;
     padding-left:12px;
     background-color: inherit;
 }
 
 .litegraph input.uepromptinput {
     padding: 0 0 0 6px;
+    font-size: 12px;
     border-radius: 12px;
+    border: 2px solid var(--border-color);
+    color: var(--input-text);
     margin: 0px;
     width: 100%;
     float: right;

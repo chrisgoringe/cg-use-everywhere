@@ -38,12 +38,11 @@ const nodeHandler = {
         const result = Reflect.set(...arguments);
         if (oldValue!=value) {
             if (property==='bgcolor') {
-                obj.widgets?.forEach((widget) => {widget.colorFollower?.(value, obj.mode)});
                 if (obj.mode!=4) linkRenderController.mark_link_list_outdated();
             }
             if (property==='mode') {
                 linkRenderController.mark_link_list_outdated();
-                if (oldValue==4) obj.widgets?.forEach((widget) => {widget.endBypass?.()});
+                obj.widgets?.forEach((widget) => {widget.onModeChange?.(value)});
             }
         }
         return result;
