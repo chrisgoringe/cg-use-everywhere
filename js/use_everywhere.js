@@ -47,10 +47,6 @@ const nodeHandler = {
         }
         return result;
     },
-    deleteProperty: function(obj, property) {
-        if (property==='bgcolor') obj.widgets?.forEach((widget) => {widget.colorFollower?.(null, obj.mode)});
-        return Reflect.deleteProperty(...arguments);
-    }
 }
 
 app.registerExtension({
