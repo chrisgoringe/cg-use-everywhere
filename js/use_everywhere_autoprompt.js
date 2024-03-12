@@ -30,7 +30,8 @@ function active_text_widget(node, inputname) {
     });
     
     widget.computeSize = function (parent_width) {
-        return [parent_width ? parent_width : 400, inputname=="group_regex"? 30 : 20];
+        return parent_width ? [parent_width, 27] : [400, 20];
+        //return [parent_width ? parent_width : 400, inputname=="group_regex"? 30 : 20];
     }
     
     inputEl.addEventListener("focus", () => {
