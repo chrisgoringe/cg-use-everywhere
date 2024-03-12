@@ -64,8 +64,9 @@ app.registerExtension({
                 if (this.type=="Anything Everywhere?" && slot!=0) {
                     // don't do anything for the regexs
                 } else {
-                    this.input_type[slot] = (connect && link_info) ? get_real_node(link_info?.origin_id)?.outputs[link_info?.origin_slot]?.type 
-                                                                : undefined;
+                    const type = (connect && link_info) ? get_real_node(link_info?.origin_id)?.outputs[link_info?.origin_slot]?.type : undefined;
+                    this.input_type[slot] = type;
+                    link_info.type = type ? type : "*";
                     update_input_label(this, slot, app);
                 }
             }
