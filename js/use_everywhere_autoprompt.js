@@ -3,6 +3,20 @@ import { ComfyWidgets} from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 
+function update_picklist(node, inputname) {
+    const d = document.getElementById("uedynamiclist");
+    while (d.firstChild) { d.removeChild(d.lastChild); };
+    let options = [];
+    if (inputname=="title_regex") { options = LinkRenderController.instance().ue_list?.all_nodes_with_unmatched_input(node.input_type[0]); }
+    else if (inputname=="input_regex") { options = LinkRenderController.instance().ue_list?.all_unmatched_input_names(node.input_type[0]); }
+    else if (inputname=="group_regex") { options = LinkRenderController.instance().ue_list?.all_group_names(node.input_type[0]); }
+    options.forEach((option) => {
+        const theOption = document.createElement("option");
+        theOption.setAttribute("value", option);
+        d.appendChild(theOption)
+    })
+}
+
 function active_text_widget(node, inputname) {
     const label = document.createElement("label");
     label.className = "graphdialog ueprompt";
@@ -18,41 +32,38 @@ function active_text_widget(node, inputname) {
 
     const inputEl = document.createElement("input");
     inputEl.setAttribute("type", "text");
-    inputEl.setAttribute("list", "uedynamiclist");
-    inputEl.setAttribute("value", ".*");
     inputEl.className = "uepromptinput";
     span.appendChild(inputEl);
  
     const widget = node.addDOMWidget(inputname, "input", label, {
         getValue() { return inputEl.value; },
         setValue(v) { inputEl.value = v; },
-        onDraw(w) { w.element.style.clipPath = null; w.element.style.willChange = null; }
+        onDraw(w) { 
+            if (app.canvas?.selected_nodes?.[0]?.id == node.id) return;
+            w.element.style.clipPath = null; w.element.style.willChange = null; 
+        }
     });
+
+    inputEl.onmousedown = function(e) {
+        const x = app.canvas.prompt("Value",widget.value,function(v) { this.value = v; }.bind(widget), e, false );
+        const input = x.getElementsByClassName("value")[0];
+        input.setAttribute("list", "uedynamiclist");
+        input.addEventListener("input", function (v) {
+            widget.value = this.value;
+            LinkRenderController.instance().mark_link_list_outdated();
+            app.graph.setDirtyCanvas(true,true);
+        }.bind(input));
+        update_picklist(node, inputname);
+        e.stopImmediatePropagation();
+    }
     
     widget.computeSize = function (parent_width) {
         return parent_width ? [parent_width, 27] : [400, 20];
-        //return [parent_width ? parent_width : 400, inputname=="group_regex"? 30 : 20];
     }
     
     inputEl.addEventListener("focus", () => {
         if (inputEl.value==".*") inputEl.value = "";
-        const d = document.getElementById("uedynamiclist");
-        while (d.firstChild) { d.removeChild(d.lastChild); };
-        let options = [];
-        if (inputname=="title_regex") { options = LinkRenderController.instance().ue_list?.all_nodes_with_unmatched_input(node.input_type[0]); }
-        else if (inputname=="input_regex") { options = LinkRenderController.instance().ue_list?.all_unmatched_input_names(node.input_type[0]); }
-        else if (inputname=="group_regex") { options = LinkRenderController.instance().ue_list?.all_group_names(node.input_type[0]); }
-        options.forEach((option) => {
-            const theOption = document.createElement("option");
-            theOption.setAttribute("value", option);
-            d.appendChild(theOption)
-        })
     });
-    
-    inputEl.addEventListener("input", () => {
-        LinkRenderController.instance().mark_link_list_outdated();
-        app.graph.setDirtyCanvas(true,true);
-    })
     
     widget.onModeChange = function (mode) { 
         label.style.opacity = mode==4 ? 0.2 : 1.0;
