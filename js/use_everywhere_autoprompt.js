@@ -39,7 +39,8 @@ function active_text_widget(node, inputname) {
         getValue() { return inputEl.value; },
         setValue(v) { inputEl.value = v; },
         onDraw(w) { 
-            if (app.canvas?.selected_nodes?.[0]?.id == node.id) return;
+            // the DOM widget clips 
+            if (Object.values(app.canvas.selected_nodes)[0]?.id != node.id) return;
             w.element.style.clipPath = null; w.element.style.willChange = null; 
         }
     });
