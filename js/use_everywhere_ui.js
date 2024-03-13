@@ -145,7 +145,7 @@ class LinkRenderController {
 
     highlight_ue_connections(node, ctx) {
         if (!app.ui.settings.getSettingValue('AE.highlight', true)) return;
-        if (this._ue_links_visible) return;
+        //if (this._ue_links_visible) return;
         if (!this.list_ready()) return;
 
         this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
