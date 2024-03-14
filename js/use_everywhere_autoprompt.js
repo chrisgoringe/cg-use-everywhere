@@ -49,6 +49,7 @@ function active_text_widget(node, inputname) {
         const x = app.canvas.prompt("Value",widget.value,function(v) { this.value = v; }.bind(widget), e, false );
         const input = x.getElementsByClassName("value")[0];
         input.setAttribute("list", "uedynamiclist");
+        input.parentNode.style.zIndex = `${parseInt(label.style.zIndex ? label.style.zIndex : '0')+1}`;
         input.addEventListener("input", function (v) {
             widget.value = this.value;
             LinkRenderController.instance().mark_link_list_outdated();
