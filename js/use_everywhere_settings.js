@@ -28,8 +28,9 @@ function main_menu_settings() {
     app.ui.settings.addSetting({
         id: "AE.animate",
         name: "Anything Everywhere animate UE links",
-        type: "boolean",
-        defaultValue: true,
+        type: "combo",
+        options: [ {value:0, text:"Off"}, {value:1, text:"Dots"}, {value:2, text:"Pulse"}, {value:3, text:"Both"}, ],
+        defaultValue: 3,
     });
     app.ui.settings.addSetting({
         id: "AE.highlight",

@@ -184,27 +184,34 @@ class LinkRenderController {
         return !this.ue_list_reloading
     }
 
-    render_mouseover(node, ctx) {
-        if (this._ue_links_visible) return; // already showing all links
-        if (!app.ui.settings.getSettingValue('AE.mouseover')) return; //mouseover is off
-        if (!this.list_ready()) return;
-        ctx.save();
-        ctx.translate(-node.pos[0], -node.pos[1]);
-        get_all_nodes_within(node.id).forEach((anode) => {
-            this.ue_list.all_ue_connections_for(anode.id).forEach((ue_connection) => this.render_ue_link(ue_connection, ctx));
-        })
-        this.ue_list.all_ue_connections_for(node.id).forEach((ue_connection) => this.render_ue_link(ue_connection, ctx));
-        ctx.restore();
+    node_in_ueconnection(ue_connection, id) {
+        return (get_group_node(ue_connection.control_node.id).id == id || get_group_node(ue_connection.sending_to.id).id == id)
     }
 
     render_all_ue_links(ctx) {
-        if (!this._ue_links_visible) return;    // switched off
         if (!this.list_ready()) return;
-        // can we repeat this after a second or something?
-        this.ue_list.all_ue_connections().forEach((ue_connection) => this.render_ue_link(ue_connection, ctx));
+
+        ctx.save();
+        const orig_hqr = app.canvas.highquality_render;
+        app.canvas.highquality_render = false;
+
+        const node_over_id = app.canvas.node_over?.id;
+        const animate = app.ui.settings.getSettingValue('AE.animate', 3);
+        this.ue_list.all_ue_connections().forEach((ue_connection) => {
+            if ( (this._ue_links_visible) ||
+                 (node_over_id && app.ui.settings.getSettingValue('AE.mouseover') && this.node_in_ueconnection(ue_connection, node_over_id))) {
+                    this._render_ue_link(ue_connection, ctx, animate);
+                 }
+        });
+        
+        if (animate) setTimeout( app.graph.change.bind(app.graph), 10 );
+
+        app.canvas.highquality_render = orig_hqr;
+        ctx.restore();
     }
 
-    render_ue_link(ue_connection, ctx) {
+
+    _render_ue_link(ue_connection, ctx, animate) {
         const node = get_real_node(ue_connection.sending_to.id);
 
         /* this is the end node; get the position of the input */
@@ -224,13 +231,17 @@ class LinkRenderController {
                                     ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
                                     ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
 
-        const color = LGraphCanvas.link_type_colors[ue_connection.type];
-        ctx.save();
-        //ctx.shadowColor = "white";
-        //ctx.shadowBlur = 1;
-        const animate = (app.ui.settings.getSettingValue('AE.animate', true)) ? 1 : 0;
-        app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate, color, sta_direction, end_direction, undefined);
-        ctx.restore();
+        var color = LGraphCanvas.link_type_colors[ue_connection.type];
+        if (animate==2 || animate==3) this.animate_step(ctx, ["white", color], 12, 0.75);
+        app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate%2, color, sta_direction, end_direction, undefined);
+    
+    }
+
+    animate_step(ctx, colors, max_blur, speed) {
+        var f = (LiteGraph.getTime()*0.001*speed) % colors.length;
+        ctx.shadowColor = colors[Math.floor(f)];
+        const step = Math.ceil((f%1)*2*max_blur) % (2*max_blur);
+        ctx.shadowBlur = (step<max_blur) ? step + 1 : 2*max_blur - step;
     }
 }
 

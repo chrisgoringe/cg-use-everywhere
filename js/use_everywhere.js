@@ -202,7 +202,6 @@ app.registerExtension({
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             original_drawNode.apply(this, arguments);
             linkRenderController.highlight_ue_connections(node, ctx);
-            if (get_group_node(node.id).mouseOver) linkRenderController.render_mouseover(node, ctx);
         }
 
         /*
