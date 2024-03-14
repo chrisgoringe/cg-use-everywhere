@@ -232,7 +232,7 @@ class LinkRenderController {
                                     ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
 
         var color = LGraphCanvas.link_type_colors[ue_connection.type];
-        if (animate==2 || animate==3) this.animate_step(ctx, ["white", color], 12, 0.75);
+        if (animate==2 || animate==3) this.animate_step(ctx, [color, color], 12, 0.75);
         app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate%2, color, sta_direction, end_direction, undefined);
     
     }
