@@ -20,6 +20,7 @@ function update_picklist(node, inputname) {
 function active_text_widget(node, inputname) {
     const label = document.createElement("label");
     label.className = "graphdialog ueprompt";
+    label.style.display = "none";
 
     const label_text = document.createElement("span");
     label_text.innerText = `${inputname.substring(0,5)} `;
@@ -39,11 +40,16 @@ function active_text_widget(node, inputname) {
         getValue() { return inputEl.value; },
         setValue(v) { inputEl.value = v; },
         onDraw(w) { 
-            // the DOM widget clips 
-            if (Object.values(app.canvas.selected_nodes)[0]?.id != node.id) return;
-            w.element.style.clipPath = null; w.element.style.willChange = null; 
+            // are we the most recently selected node? 
+            if (Object.values(app.canvas.selected_nodes)[0]?.id == node.id) {
+                // if so, turn off DOM clipping
+                w.element.style.clipPath = null; w.element.style.willChange = null; 
+            } else {
+                //w.element.style.zIndex = 0;
+            }
         }
     });
+    widget.element.hidden = true;
 
     inputEl.onmousedown = function(e) {
         const x = app.canvas.prompt("Value",widget.value,function(v) { this.value = v; }.bind(widget), e, false );
@@ -83,17 +89,33 @@ function active_text_widget(node, inputname) {
     return { widget };
 }
 
+function activate(node, widget) {
+    if (node.flags?.collapsed) return;
+    widget.element.hidden = false;
+    widget.element.style.display = "";
+}
+
 function add_autoprompts() {
     const STRING = ComfyWidgets.STRING;
     ComfyWidgets.STRING = function (node, inputName, inputData, app) {
         if (!is_UEnode(node) || !inputName?.includes("regex") || !app.ui.settings.getSettingValue('AE.autoprompt', true)) {
             return STRING.apply(this, arguments);
         }
-        return active_text_widget(node, inputName);
+        const atw = active_text_widget(node, inputName);
+        const orig_onAdded = node.onAdded;
+        node.onAdded = function () {
+            orig_onAdded?.apply(this, arguments);
+            activate(node, atw.widget);
+        }
+        return atw;
     }
     const datalist = document.createElement("datalist");
     datalist.id = "uedynamiclist";    
     document.body.append(datalist);
+}
+
+function node_added(node) {
+    const a = 1;
 }
 
 
