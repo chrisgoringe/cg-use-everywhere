@@ -154,7 +154,7 @@ app.registerExtension({
 
     }, 
 
-    loadedGraphNode(node) { if (node.flags.collapsed && node.IS_UE) node.loaded_when_collapsed?.(); },
+    loadedGraphNode(node) { if (node.flags.collapsed && node.loaded_when_collapsed) node.loaded_when_collapsed(); },
 
 	async setup() {
         const head = document.getElementsByTagName('HEAD')[0];
@@ -191,7 +191,7 @@ app.registerExtension({
         document.getElementById('comfy-dev-save-api-button').onclick = function() {
             graphAnalyser.pause();
             _original_save_api_onclick();
-            graphAnalyser.unpause()
+            graphAnalyser.unpause();
         }
         
         /* 
@@ -303,8 +303,8 @@ app.registerExtension({
         const createNode = LiteGraph.createNode;
         LiteGraph.createNode = function() {
             const nd = createNode.apply(this,arguments);
-            if (nd) {
-                return nd.IS_UE ? new Proxy( nd, nodeHandler ) : nd;
+            if (nd && nd.IS_UE) {
+                return new Proxy( nd, nodeHandler );
             } else {
                 return nd;
             }
