@@ -55,28 +55,65 @@ class LoopError extends Error {
     }
 }
 
-function recursive_follow(node_id, start_node_id, links_added, stack, nodes_cleared, ues, count) {
-    count += 1;
-    if (stack.includes(node_id.toString())) throw new LoopError(node_id, new Set(stack), new Set(ues));
-    if (nodes_cleared.has(node_id.toString())) return;
-    stack.push(node_id.toString());
+function find_all_upstream(node_id, links_added) {
+    const all_upstream = [];
     const node = get_real_node(node_id);
-    node?.inputs?.forEach((input) => {
+    node?.inputs?.forEach((input) => { // normal links
         const link_id = input.link;
         if (link_id) {
             const link = app.graph.links[link_id];
-            if (link) recursive_follow(link.origin_id, start_node_id, links_added, stack, nodes_cleared, ues, count);
+            if (link) all_upstream.push({id:link.origin_id, slot:link.origin_slot});
         }
     });
-    links_added.forEach((la)=>{
-        if (la.downstream==node_id) {
-            ues.push(la.controller.toString());
-            recursive_follow(la.upstream, start_node_id, links_added, stack, nodes_cleared, ues, count);
-            ues.pop();
+    links_added.forEach((la)=>{ // UE links
+        if (get_real_node(la.downstream).id==node.id) {
+            all_upstream.push({id:la.upstream, slot:la.upstream_slot, ue:la.controller.toString()})
         }
     });
-    nodes_cleared.add(node_id.toString());
+    if (node.id != get_group_node(node.id).id) { // node is in group
+        const grp_nd = get_group_node(node.id).id;
+        const group_data = GroupNodeHandler.getGroupData(get_group_node(node.id));
+        const indx = group_data.nodeData.nodes.findIndex((n)=>n.pos[0]==node.pos[0] && n.pos[1]==node.pos[1]);
+        if (indx>=0) {
+            if (GroupNodeHandler.getGroupData(app.graph._nodes_by_id[grp_nd])?.linksTo?.[indx] ) { // links within group
+                Object.values(GroupNodeHandler.getGroupData(app.graph._nodes_by_id[grp_nd]).linksTo[indx]).forEach((internal_link) => {
+                    all_upstream.push({id:`${grp_nd}:${internal_link[0]}`, slot:internal_link[1]});
+                });
+            }
+            if (GroupNodeHandler.getGroupData(app.graph._nodes_by_id[grp_nd]).oldToNewInputMap?.[indx]) { // links out of group
+                Object.values(GroupNodeHandler.getGroupData(app.graph._nodes_by_id[grp_nd]).oldToNewInputMap?.[indx]).forEach((groupInput) => {
+                    const link_id = get_group_node(node.id).inputs?.[groupInput]?.link;
+                    if (link_id) {
+                        const link = app.graph.links[link_id];
+                        if (link) all_upstream.push({id:link.origin_id, slot:link.origin_slot});
+                    }
+                })
+            }
+        }
+    }
+    return all_upstream;
+}
+
+function recursive_follow(node_id, start_node_id, links_added, stack, nodes_cleared, ues, count, slot) {
+    const node = get_real_node(node_id);
+    if (slot>=0 && GroupNodeHandler.isGroupNode(node)) { // link into group
+        const mapped = GroupNodeHandler.getGroupData(node).newToOldOutputMap[slot];
+        return recursive_follow(`${node.id}:${mapped.node.index}`, start_node_id, links_added, stack, nodes_cleared, ues, count, mapped.slot);
+    }
+    count += 1;
+    if (stack.includes(node.id.toString())) throw new LoopError(node.id, new Set(stack), new Set(ues));
+    if (nodes_cleared.has(node.id.toString())) return;
+    stack.push(node.id.toString());
+
+    find_all_upstream(node.id, links_added).forEach((upstream) => {
+        if (upstream.ue) ues.push(upstream.ue);
+        count = recursive_follow(upstream.id, start_node_id, links_added, stack, nodes_cleared, ues, count, upstream.slot);
+        if (upstream.ue) ues.pop();
+    })
+
+    nodes_cleared.add(node.id.toString());
     stack.pop();
+    return count;
 }
 
 /*
@@ -87,11 +124,11 @@ links_added is a list of the UE virtuals links
 function node_in_loop(live_nodes, links_added) {
     var nodes_to_check = [];
     const nodes_cleared = new Set();
-    live_nodes.forEach((n)=>nodes_to_check.push(n.id));
+    live_nodes.forEach((n)=>nodes_to_check.push(get_real_node(n.id).id));
+    var count = 0;
     while (nodes_to_check.length>0) {
         const node_id = nodes_to_check.pop();
-        var count = 0;
-        recursive_follow(node_id, node_id, links_added, [], nodes_cleared, [], count);
+        count += recursive_follow(node_id, node_id, links_added, [], nodes_cleared, [], 0, -1);
         nodes_to_check = nodes_to_check.filter((nid)=>!nodes_cleared.has(nid.toString()));
     }
     console.log(`node_in_loop made ${count} checks`)
