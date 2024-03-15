@@ -17,6 +17,62 @@ function update_picklist(node, inputname) {
     })
 }
 
+function intersect(a, b) {
+	const x = Math.max(a.x, b.x);
+	const num1 = Math.min(a.x + a.width, b.x + b.width);
+	const y = Math.max(a.y, b.y);
+	const num2 = Math.min(a.y + a.height, b.y + b.height);
+	if (num1 >= x && num2 >= y) return [x, y, num1 - x, num2 - y];
+	else return null;
+}
+
+function union(a,b) {
+    if (!b) return a;
+    if (!a) return b;
+    const x = Math.min(a.x, b.x);
+    const y = Math.min(a.y,b.y);
+    const width = Math.max(a.x+a.width, b.x+b.width) - x;
+    const height = Math.max(a.y+a.height, b.y+b.height) - x;
+    return { x:x, y:y, width:width, height:height };
+}
+
+function getClipPath(node, element) {
+    const scale = app.canvas.ds.scale;
+    const widgetRect = element.getBoundingClientRect();
+    var onTopOfMe = false;
+    var clip = null;
+    app.graph._nodes.forEach((other_node) => {
+        if (other_node.id == node.id) {
+            onTopOfMe = true;
+        }
+        else if (onTopOfMe) {
+            const MARGIN = other_node.is_selected ? 7 : 2;
+            const bounding = other_node.getBounding();
+            const intersection = intersect(
+                { x: widgetRect.x / scale, y: widgetRect.y / scale, width: widgetRect.width / scale, height: widgetRect.height / scale },
+                {
+                    x: other_node.pos[0] + app.canvas.ds.offset[0] - MARGIN,
+                    y: other_node.pos[1] + app.canvas.ds.offset[1] - LiteGraph.NODE_TITLE_HEIGHT - MARGIN,
+                    width: bounding[2] + MARGIN + MARGIN,
+                    height: bounding[3] + MARGIN + MARGIN,
+                }
+            );
+            if (intersection) {
+                clip = union(clip, { 
+                    x : intersection[0] - widgetRect.x / scale, 
+                    y : intersection[1] - widgetRect.y / scale,
+                    width : intersection[2],
+                    height : intersection[3]
+                })
+                //const newpath = `0% 0%, 0% 100%, ${clipX} 100%, ${clipX} ${clipY}, calc(${clipX} + ${clipWidth}) ${clipY}, calc(${clipX} + ${clipWidth}) calc(${clipY} + ${clipHeight}), ${clipX} calc(${clipY} + ${clipHeight}), ${clipX} 100%, 100% 100%, 100% 0%`;
+                //path = path != '' ? `${path}, ${newpath}` : newpath;
+            }
+        }
+    })
+    const path = clip ? `polygon(0% 0%, 0% 100%, ${clip.x}px 100%, ${clip.x}px ${clip.y}px, ${clip.x + clip.width}px ${clip.y}px, ${clip.x + clip.width}px ${clip.y + clip.height}px, ${clip.x}px ${clip.y + clip.height}px, ${clip.x}px 100%, 100% 100%, 100% 0%)` : '';
+	return path;
+}
+
 function active_text_widget(node, inputname) {
     const label = document.createElement("label");
     label.className = "graphdialog ueprompt";
@@ -45,7 +101,10 @@ function active_text_widget(node, inputname) {
                 // if so, turn off DOM clipping
                 w.element.style.clipPath = null; w.element.style.willChange = null; 
             } else {
-                //w.element.style.zIndex = 0;
+                w.element.style.zIndex = 0;
+                const p = getClipPath(node, w.element);
+                w.element.style.clipPath = p;
+                let a;
             }
         }
     });
