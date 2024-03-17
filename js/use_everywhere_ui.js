@@ -221,14 +221,25 @@ class LinkRenderController {
 
         const node_over_id = app.canvas.node_over?.id;
         const animate = app.ui.settings.getSettingValue('AE.animate', 3);
+        if (animate==2 || animate==3) this.animate_step(ctx);
+        var any_links_shown = false;
         this.ue_list.all_ue_connections().forEach((ue_connection) => {
             if ( (this._ue_links_visible) ||
                  (node_over_id && app.ui.settings.getSettingValue('AE.mouseover') && this.node_in_ueconnection(ue_connection, node_over_id))) {
                     this._render_ue_link(ue_connection, ctx, animate);
+                    any_links_shown = true;
                  }
         });
         
-        if (animate) setTimeout( app.graph.change.bind(app.graph), 10 );
+        if (animate>0) {
+            /*
+            If no links were shown, wait 200ms.
+            If links were shown without dots, wait 100ms.
+            If links were shown with dots, wait 30ms.
+            */
+            const timeout = any_links_shown ? ((animate%2 == 1) ? 30 : 100) : 200;
+            setTimeout( app.graph.change.bind(app.graph), timeout );
+        }
 
         app.canvas.highquality_render = orig_hqr;
         ctx.restore();
@@ -255,17 +266,19 @@ class LinkRenderController {
                                     ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
                                     ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
 
-        var color = LGraphCanvas.link_type_colors[ue_connection.type];
-        if (animate==2 || animate==3) this.animate_step(ctx, [color, color], 12, 0.75);
+        const color = LGraphCanvas.link_type_colors[ue_connection.type];
+        ctx.shadowColor = color;
+        
         app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate%2, color, sta_direction, end_direction, undefined);
     
     }
 
-    animate_step(ctx, colors, max_blur, speed) {
-        var f = (LiteGraph.getTime()*0.001*speed) % colors.length;
-        ctx.shadowColor = colors[Math.floor(f)];
-        const step = Math.ceil((f%1)*2*max_blur) % (2*max_blur);
-        ctx.shadowBlur = (step<max_blur) ? step + 1 : 2*max_blur - step;
+    animate_step(ctx) {
+        const max_blur = 8;
+        const speed = 0.75;
+        var f = (LiteGraph.getTime()*0.001*speed) % 1;
+        const step = Math.ceil(f*2*max_blur) % (2*max_blur);
+        ctx.shadowBlur = (step<max_blur) ? step + 4 : 3 + 2*max_blur - step;
     }
 }
 
