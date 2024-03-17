@@ -5,11 +5,11 @@ import { is_UEnode, is_helper, inject, Logger, get_real_node, get_group_node } f
 import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { autoCreateMenu } from "./use_everywhere_autocreate.js";
-import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
+
 import { add_autoprompts } from "./use_everywhere_autoprompt.js";
 
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
-import { main_menu_settings } from "./use_everywhere_settings.js";
+import { main_menu_settings, node_menu_settings, canvas_menu_settings } from "./use_everywhere_settings.js";
 
 /*
 The ui component that looks after the link rendering
@@ -83,24 +83,8 @@ app.registerExtension({
             Logger.trace("getExtraMenuOptions", arguments, this);
             getExtraMenuOptions?.apply(this, arguments);
             if (is_UEnode(this)) {
-                options.push(null,
-                    {
-                        content: (this.properties.group_restricted) ? "Remove group restriction" : "Send only within my group(s)",
-                        callback: () => { this.properties.group_restricted = !this.properties.group_restricted; }
-                    }, 
-                    {
-                        content: (this.properties.color_restricted) ? "Remove color restriction" : "Send only to matching color",
-                        callback: () => { this.properties.color_restricted = !this.properties.color_restricted; }
-                    },
-                    {
-                        content: "Convert to real links",
-                        callback: async () => {
-                            const ues = await graphAnalyser.analyse_graph();
-                            convert_to_links(ues, this.id);
-                            app.graph.remove(this);
-                        }
-                    },
-                null)
+                node_menu_settings(options, this);
+
             }
             // any right click action can make the list dirty
             inject_outdating_into_objects(options,'callback',`menu option on ${this.id}`);
@@ -111,8 +95,8 @@ app.registerExtension({
             nodeType.prototype.onNodeCreated = function () {
                 const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
                 if (!this.properties) this.properties = {}
-                this.properties.group_restricted = false;
-                this.properties.color_restricted = false;
+                this.properties.group_restricted = 0;
+                this.properties.color_restricted = 0;
                 if (this.inputs) {
                     if (!this.widgets) this.widgets = [];
                     for (const input of this.inputs) {
@@ -150,8 +134,6 @@ app.registerExtension({
 
         // creating a node makes the link list dirty - but give the system a moment to finish
         setTimeout( ()=>{linkRenderController.mark_link_list_outdated()}, 100 );
-
-
     }, 
 
     loadedGraphNode(node) { if (node.flags.collapsed && node.loaded_when_collapsed) node.loaded_when_collapsed(); },
@@ -223,32 +205,8 @@ app.registerExtension({
         LGraphCanvas.prototype.getCanvasMenuOptions = function () {
             // Add our items to the canvas menu 
             const options = original_getCanvasMenuOptions.apply(this, arguments);
-            options.push(null); // divider
-            options.push({
-                content: (linkRenderController._ue_links_visible) ? "Hide UE links" : "Show UE links",
-                callback: () => {
-                    Logger.trace("Toggle visibility called", arguments);
-                    linkRenderController.toggle_ue_links_visible();
-                }
-            },
-            {
-                content: "Convert all UEs to real links",
-                callback: async () => {
-                    const ues = await graphAnalyser.analyse_graph();
-                    convert_to_links(ues, -1);
-                    remove_all_ues();
-                }
-            });
-            if (graphAnalyser.ambiguity_messages.length) {
-                options.push({
-                    content: "Show UE broadcast clashes",
-                    callback: async () => { 
-                        alert(graphAnalyser.ambiguity_messages.join("\n")) 
-                    }
-                })
-            }
-            options.push(null); // divider
-
+            canvas_menu_settings(options);
+            
             //  every menu item makes our list dirty
             inject_outdating_into_objects(options,'callback',`menu option on canvas`);
 

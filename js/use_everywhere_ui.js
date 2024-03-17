@@ -13,6 +13,15 @@ function nodes_in_my_group(node_id) {
     return [...nodes_in];
 }
 
+function nodes_not_in_my_group(node_id) {
+    const nid = nodes_in_my_group(node_id);
+    const nodes_not_in = [];
+    app.graph._nodes.forEach((node) => {
+        if (!nid.includes(node.id)) nodes_not_in.push(node.id);
+    });
+    return nodes_not_in;
+}
+
 function nodes_in_groups_matching(regex, already_limited_to) {
     const nodes_in = new Set();
     app.graph._groups.forEach((group) => {
@@ -39,6 +48,21 @@ function nodes_my_color(node_id, already_limited_to) {
     } else {
         app.graph._nodes.forEach((node) => {
             if (node.color==color) nodes_in.add(node.id)
+        })
+    }
+    return [...nodes_in];
+}
+
+function nodes_not_my_color(node_id, already_limited_to) {
+    const nodes_in = new Set();
+    const color = get_real_node(node_id).color;
+    if (already_limited_to) {
+        already_limited_to.forEach((nid) => {
+            if (get_real_node(nid).color!=color) nodes_in.add(nid)
+        })
+    } else {
+        app.graph._nodes.forEach((node) => {
+            if (node.color!=color) nodes_in.add(node.id)
         })
     }
     return [...nodes_in];
@@ -245,5 +269,5 @@ class LinkRenderController {
     }
 }
 
-export {displayMessage, update_input_label, nodes_in_my_group, nodes_in_groups_matching, nodes_my_color, indicate_restriction}
+export {displayMessage, update_input_label, nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
 export{ LinkRenderController}

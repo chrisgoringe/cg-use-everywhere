@@ -1,4 +1,4 @@
-import { nodes_in_my_group, nodes_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
+import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
 import { Logger, node_is_live, get_real_node } from "./use_everywhere_utilities.js";
 
 function display_name(node) { 
@@ -95,12 +95,20 @@ class UseEverywhereList {
             Logger.log(Logger.PROBLEM, `Node ${node.id} not found`, params);
             return;
         }
-        if (get_real_node(node.id).properties.group_restricted) {
+        if (get_real_node(node.id).properties.group_restricted == 1) {
             params.restrict_to = nodes_in_my_group(node.id);
             params.priority += 1;
         }
-        if (get_real_node(node.id).properties.color_restricted) {
+        if (get_real_node(node.id).properties.group_restricted == 2) {
+            params.restrict_to = nodes_not_in_my_group(node.id);
+            params.priority += 1;
+        }
+        if (get_real_node(node.id).properties.color_restricted == 1) {
             params.restrict_to = nodes_my_color(node.id, params.restrict_to);
+            params.priority += 1;
+        }
+        if (get_real_node(node.id).properties.color_restricted == 2) {
+            params.restrict_to = nodes_not_my_color(node.id, params.restrict_to);
             params.priority += 1;
         }
         if (group_regex) {
