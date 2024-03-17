@@ -113,19 +113,15 @@ class LinkRenderController {
     }
     constructor() {
         this.the_graph_analyser = null;
+        this.periodically_mark_link_list_outdated();
      }
 
-    _ue_links_visible = false;  // toggle whether to show virtual links
     ue_list = undefined;        // a UseEverythingList; undefined when outdated
     ue_list_reloading = false;  // true when a reload has been requested but not completed
 
     // memory reuse
     slot_pos1 = new Float32Array(2); //to reuse
     slot_pos2 = new Float32Array(2); //to reuse
-
-    ue_links_visible() {
-        return this._ue_links_visible;
-    }
 
     mark_link_list_outdated() {
         if (this.ue_list) {
@@ -137,13 +133,17 @@ class LinkRenderController {
         }
     }
 
+    periodically_mark_link_list_outdated() {
+        this.mark_link_list_outdated();
+        setTimeout(this.periodically_mark_link_list_outdated.bind(this), 1000);
+    }
+
     // callback when the_graph_analyser finishes - store the result and note reloading is false
     reload_resolve = function (value) {
         this.ue_list_reloading=false;
         this.ue_list = value;
         Logger.log(Logger.INFORMATION, "link list update completed");
         Logger.log_call(Logger.DETAIL, this.ue_list.print_all);
-        if (this._ue_links_visible) app.graph.setDirtyCanvas(true,true);
     }.bind(this)
 
     // callback for when the_graph_analyser fails - note reloading is false and log
@@ -160,12 +160,6 @@ class LinkRenderController {
         this.the_graph_analyser.analyse_graph().then(this.reload_resolve, this.reload_reject); // an async call is a promise; pass it two callbacks
         Logger.log(Logger.INFORMATION, "link list update started");
     } 
-
-    async toggle_ue_links_visible() {
-        this._ue_links_visible = !this._ue_links_visible;
-        Logger.log(Logger.INFORMATION, `toggle ue links visible ${this._ue_links_visible}`);
-        app.graph.setDirtyCanvas(true,true);
-    }
 
     highlight_ue_connections(node, ctx) {
         if (!app.ui.settings.getSettingValue('AE.highlight', true)) return;
@@ -212,6 +206,10 @@ class LinkRenderController {
         return (get_group_node(ue_connection.control_node.id).id == id || get_group_node(ue_connection.sending_to.id).id == id)
     }
 
+    any_node_in_ueconnection(ue_connection, list_of_nodes) {
+        return (Object.values(list_of_nodes).find((node) => (this.node_in_ueconnection(ue_connection, node.id))))?true:false;
+    }
+
     render_all_ue_links(ctx) {
         if (!this.list_ready()) return;
 
@@ -219,17 +217,24 @@ class LinkRenderController {
         const orig_hqr = app.canvas.highquality_render;
         app.canvas.highquality_render = false;
 
-        const node_over_id = app.canvas.node_over?.id;
+        const mode = app.ui.settings.getSettingValue('AE.showlinks', 0);
         const animate = app.ui.settings.getSettingValue('AE.animate', 3);
         if (animate==2 || animate==3) this.animate_step(ctx);
+
         var any_links_shown = false;
+
         this.ue_list.all_ue_connections().forEach((ue_connection) => {
-            if ( (this._ue_links_visible) ||
-                 (node_over_id && app.ui.settings.getSettingValue('AE.mouseover') && this.node_in_ueconnection(ue_connection, node_over_id))) {
+            var show = false;
+            if (mode==4) show = true;
+            if ( (mode==2 || mode==3) && app.canvas.node_over && this.node_in_ueconnection(ue_connection, app.canvas.node_over.id) ) show = true;
+            if ( (mode==1 || mode==3) && this.any_node_in_ueconnection(ue_connection, app.canvas.selected_nodes)) show = true;
+
+            if ( show ) {
                     this._render_ue_link(ue_connection, ctx, animate);
                     any_links_shown = true;
-                 }
+                }
         });
+
         
         if (animate>0) {
             /*
@@ -266,7 +271,8 @@ class LinkRenderController {
                                     ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
                                     ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
 
-        const color = LGraphCanvas.link_type_colors[ue_connection.type];
+        var color = LGraphCanvas.link_type_colors[ue_connection.type];
+        if (color=="") color = "white";
         ctx.shadowColor = color;
         
         app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate%2, color, sta_direction, end_direction, undefined);

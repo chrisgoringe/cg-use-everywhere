@@ -2,7 +2,6 @@ import { app } from "../../scripts/app.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
-import { Logger } from "./use_everywhere_utilities.js";
 
 function main_menu_settings() {
 
@@ -23,13 +22,14 @@ function main_menu_settings() {
         name: "Anything Everywhere check loops",
         type: "boolean",
         defaultValue: true,
-    });        
-    app.ui.settings.addSetting({
-        id: "AE.mouseover",
-        name: "Anything Everywhere show links on mouse over",
-        type: "boolean",
-        defaultValue: false,
     });
+    app.ui.settings.addSetting({
+        id: "AE.showlinks",
+        name: "Anything Everywhere show links",
+        type: "combo",
+        options: [ {value:0, text:"All off"}, {value:1, text:"Selected nodes"}, {value:2, text:"Mouseover node"}, {value:3, text:"Selected and mouseover nodes"}, {value:4, text:"All on"}],
+        defaultValue: 0,
+    });      
     app.ui.settings.addSetting({
         id: "AE.animate",
         name: "Anything Everywhere animate UE links",
@@ -104,10 +104,10 @@ function node_menu_settings(options, node) {
 function canvas_menu_settings(options) {
     options.push(null); // divider
     options.push({
-        content: (LinkRenderController.instance()._ue_links_visible) ? "Hide UE links" : "Show UE links",
+        content: (app.ui.settings.getSettingValue('AE.showlinks', 0)>0) ? "Hide UE links" : "Show UE links",
         callback: () => {
-            Logger.trace("Toggle visibility called", arguments);
-            LinkRenderController.instance().toggle_ue_links_visible();
+            const setTo = (app.ui.settings.getSettingValue('AE.showlinks', 0)>0) ? 0 : 4;
+            app.ui.settings.setSettingValue('AE.showlinks', setTo);
         }
     },
     {
