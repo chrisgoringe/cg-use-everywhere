@@ -158,8 +158,6 @@ app.registerExtension({
         }
         api.addEventListener("ue-message-handler", messageHandler);
 
-
-
         /*
         We don't want to do that if we are saving the workflow or api:
         */
@@ -248,7 +246,7 @@ app.registerExtension({
     init() {
         graphAnalyser = GraphAnalyser.instance();
         app.graphToPrompt = async function () {
-            return graphAnalyser.analyse_graph(true, true);
+            return graphAnalyser.analyse_graph(true, true, false);
         }
         
         linkRenderController = LinkRenderController.instance(graphAnalyser);

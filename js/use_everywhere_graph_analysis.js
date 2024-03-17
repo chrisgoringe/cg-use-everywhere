@@ -20,7 +20,34 @@ class GraphAnalyser {
     pause() { this.pause_depth += 1; }
     unpause() { this.pause_depth -= 1; }
 
-    async analyse_graph(modify_and_return_prompt=false, check_for_loops=false) {
+
+    async analyse_graph(modify_and_return_prompt=false, check_for_loops=false, supress_before_queued=true) {
+        try {
+            if (supress_before_queued) {
+                app.graph._nodes.forEach((node) => {
+                    node.widgets?.forEach((widget) => {
+                        if (widget.beforeQueued) {
+                            widget.__beforeQueued = widget.beforeQueued;
+                            widget.beforeQueued = null;
+                        }
+                    })
+                })
+            }
+            return this._analyse_graph(modify_and_return_prompt, check_for_loops);
+        } finally {
+            if (supress_before_queued) {
+                app.graph._nodes.forEach((node) => {
+                    node.widgets?.forEach((widget) => {
+                        if (widget.__beforeQueued) {
+                            widget.beforeQueued = widget.__beforeQueued;
+                            widget.__beforeQueued = null;
+                        }
+                    })
+                })
+            }
+        }
+    }
+    async _analyse_graph(modify_and_return_prompt=false, check_for_loops=false) {
         if (this.pause_depth > 0) { return this.original_graphToPrompt.apply(app) }
         this.ambiguity_messages = [];
         var p = await this.original_graphToPrompt.apply(app);
