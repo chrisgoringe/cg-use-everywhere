@@ -119,7 +119,10 @@ class LinkRenderController {
     ue_list = undefined;           // the most current ue list - set to undefined if we know it is out of date
     ue_list_reloading = false;     // true when a reload has been requested but not completed
     last_used_ue_list = undefined; // the last ue list we actually used to generate graphics
-    paused = false;                
+    paused = false;     
+    
+    queue_size = null;
+    note_queue_size(x) { this.queue_size = x; }
 
     pause(ms) {
         this.paused = true;
@@ -234,7 +237,8 @@ class LinkRenderController {
         app.canvas.highquality_render = false;
 
         const mode = app.ui.settings.getSettingValue('AE.showlinks', 0);
-        const animate = app.ui.settings.getSettingValue('AE.animate', 3);
+        var animate = app.ui.settings.getSettingValue('AE.animate', 3);
+        if (app.ui.settings.getSettingValue('AE.stop.animation.running', true) && this.queue_size>0) animate = 0;
         if (animate==2 || animate==3) this.animate_step(ctx);
 
         var any_links_shown = false;

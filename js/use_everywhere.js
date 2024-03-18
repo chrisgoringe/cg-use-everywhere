@@ -157,6 +157,10 @@ app.registerExtension({
         }
         api.addEventListener("ue-message-handler", messageHandler);
 
+        api.addEventListener("status", ({detail}) => {
+            if (linkRenderController) linkRenderController.note_queue_size(detail ? detail.exec_info.queue_remaining : 0)
+        });
+
         /*
         We don't want to do that if we are saving the workflow or api:
         */

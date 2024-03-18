@@ -40,6 +40,13 @@ function main_menu_settings() {
         onChange: app.graph.change.bind(app.graph),
     });
     app.ui.settings.addSetting({
+        id: "AE.stop.animation.running",
+        name: "Anything Everywhere turn animation off when running",
+        type: "boolean",
+        defaultValue: true,
+        onChange: app.graph.change.bind(app.graph),
+    });    
+    app.ui.settings.addSetting({
         id: "AE.highlight",
         name: "Anything Everywhere highlight connected nodes",
         type: "boolean",
