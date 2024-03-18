@@ -299,7 +299,7 @@ class LinkRenderController {
                                         ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
 
             var color = LGraphCanvas.link_type_colors[ue_connection.type];
-            if (color=="") color = "white";
+            if (color=="") color = app.canvas.default_link_color;
             ctx.shadowColor = color;
             
             app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate%2, color, sta_direction, end_direction, undefined);
