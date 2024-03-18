@@ -1,15 +1,14 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
-import { is_UEnode, is_helper, inject, Logger, get_real_node, get_group_node } from "./use_everywhere_utilities.js";
+import { is_UEnode, is_helper, inject, Logger, get_real_node } from "./use_everywhere_utilities.js";
 import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { autoCreateMenu } from "./use_everywhere_autocreate.js";
-
 import { add_autoprompts } from "./use_everywhere_autoprompt.js";
-
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { main_menu_settings, node_menu_settings, canvas_menu_settings } from "./use_everywhere_settings.js";
+import { add_debug } from "./ue_debug.js";
 
 /*
 The ui component that looks after the link rendering
@@ -261,6 +260,9 @@ app.registerExtension({
                 return nd;
             }
         }
+
+        if (false) add_debug();
+
     }
 
 });
