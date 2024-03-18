@@ -26,6 +26,16 @@ class UseEverywhere {
         if (this.title_regex) this.description += ` - node title regex '${this.title_regex.source}'`;
         if (this.input_regex) this.description += ` - input name regex '${this.input_regex.source}'`;
     }
+
+    sending_differs_from(another_ue) {
+        if (this.sending_to.length != another_ue.sending_to.length) return true;
+        for (var i=0; i<this.sending_to.length; i++) {
+            if ( (this.sending_to[i].node != another_ue.sending_to[i].node) ||
+                 (this.sending_to[i].input != another_ue.sending_to[i].input) ||
+                 (this.sending_to[i].input_index != another_ue.sending_to[i].input_index) ) return true;
+        }
+        return false;
+    }
     /*
     Does this broadcast match a given node,input?
     */
@@ -79,6 +89,15 @@ function validity_errors(params) {
 
 class UseEverywhereList {
     constructor() { this.ues = []; this.unmatched_inputs = []; }
+
+    differs_from(another_uel) {
+        if (!another_uel) return true;
+        if (this.ues.length != another_uel.ues.length) return true;
+        for (var i=0; i<this.ues.length; i++) {
+            if (this.ues[i].sending_differs_from(another_uel.ues[i])) return true;
+        }
+        return false;
+    }
 
     add_ue(node, control_node_input_index, type, output, title_regex, input_regex, group_regex, priority) {
         const params = {

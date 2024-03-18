@@ -125,6 +125,7 @@ class LinkRenderController {
 
     mark_link_list_outdated() {
         if (this.ue_list) {
+            this.old_ue_list = this.ue_list;
             this.ue_list = undefined;
             this.request_link_list_update();
             Logger.log(Logger.INFORMATION, "link_list marked outdated");
@@ -140,8 +141,9 @@ class LinkRenderController {
 
     // callback when the_graph_analyser finishes - store the result and note reloading is false
     reload_resolve = function (value) {
-        this.ue_list_reloading=false;
         this.ue_list = value;
+        this.ue_list_reloading = false;
+        if (this.ue_list.differs_from(this.old_ue_list)) app.graph.change();
         Logger.log(Logger.INFORMATION, "link list update completed");
         Logger.log_call(Logger.DETAIL, this.ue_list.print_all);
     }.bind(this)
@@ -222,8 +224,10 @@ class LinkRenderController {
         if (animate==2 || animate==3) this.animate_step(ctx);
 
         var any_links_shown = false;
+        var any_links = false;
 
         this.ue_list.all_ue_connections().forEach((ue_connection) => {
+            any_links = true;
             var show = false;
             if (mode==4) show = true;
             if ( (mode==2 || mode==3) && app.canvas.node_over && this.node_in_ueconnection(ue_connection, app.canvas.node_over.id) ) show = true;
@@ -238,12 +242,16 @@ class LinkRenderController {
         
         if (animate>0) {
             /*
-            If no links were shown, wait 200ms.
-            If links were shown without dots, wait 100ms.
-            If links were shown with dots, wait 30ms.
+            If animating, we want to mark the visuals as changed so the animation updates - but not often!
+            If links shown:
+              - If showing dots, wait 30ms
+              - Otherwise, wait 100ms
+            If no links are shown
+              - If there are links, and our mode is mouseover, wait 200ms
+              - Otherwise don't request an update (there are no links that could be shown without something else requesting a redraw)
             */
-            const timeout = any_links_shown ? ((animate%2 == 1) ? 30 : 100) : 200;
-            setTimeout( app.graph.change.bind(app.graph), timeout );
+            const timeout = (any_links_shown) ? ((animate%2 == 1) ? 30 : 100) : ((mode==2 || mode==3) && any_links) ? 200 : -1;
+            if (timeout>0) setTimeout( app.graph.change.bind(app.graph), timeout );
         }
 
         app.canvas.highquality_render = orig_hqr;

@@ -29,6 +29,7 @@ function main_menu_settings() {
         type: "combo",
         options: [ {value:0, text:"All off"}, {value:1, text:"Selected nodes"}, {value:2, text:"Mouseover node"}, {value:3, text:"Selected and mouseover nodes"}, {value:4, text:"All on"}],
         defaultValue: 0,
+        onChange: app.graph.change.bind(app.graph),
     });      
     app.ui.settings.addSetting({
         id: "AE.animate",
@@ -36,12 +37,14 @@ function main_menu_settings() {
         type: "combo",
         options: [ {value:0, text:"Off"}, {value:1, text:"Dots"}, {value:2, text:"Pulse"}, {value:3, text:"Both"}, ],
         defaultValue: 3,
+        onChange: app.graph.change.bind(app.graph),
     });
     app.ui.settings.addSetting({
         id: "AE.highlight",
         name: "Anything Everywhere highlight connected nodes",
         type: "boolean",
         defaultValue: true,
+        onChange: app.graph.change.bind(app.graph),
     });
     app.ui.settings.addSetting({
         id: "AE.replacesearch",
@@ -108,6 +111,7 @@ function canvas_menu_settings(options) {
         callback: () => {
             const setTo = (app.ui.settings.getSettingValue('AE.showlinks', 0)>0) ? 0 : 4;
             app.ui.settings.setSettingValue('AE.showlinks', setTo);
+            app.graph.change();
         }
     },
     {
