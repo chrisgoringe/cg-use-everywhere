@@ -22,6 +22,11 @@ Or [the workflow as json](docs/test-workflow.json)
 
 ## Latest updates
 
+4.8 (18th March 2024)
+- Group and color sending have a `send to unmatched` mode
+- UE link animations can be the classic dots, or a pulsing glow (or both, or neither)
+- Show UE links can now be on, off, mouseover, selected nodes, or mouseover and selected nodes
+
 4.7 (1st March 2024)
 - UE now works in group nodes
 - Autocomplete on `Anything Everywhere?` nodes
@@ -125,11 +130,11 @@ For more on this, see [this discussion](https://github.com/chrisgoringe/cg-use-e
 
 # Other features
 
-## Show links on mouse over
+## Show links - visualisation and animation.
 
-This is off by default - enable it in the main settings menu. If `Anything Everywhere show links on mouse over` is enabled, UE links to and from nodes are shown when you move the mouse over the node.
+If you want to see the UE links, you can turn them on and off by right-clicking on the canvas. For finer control, the main settings menu has options to show links when the mouse moves over the node at either end, or when one of those nodes is selected.
 
-![mouseover](docs/mouseOver.gif)
+The links can be animated to distinguish them from normal links - this animation can take the form of moving dots, a pulsing glow, or both. This may impact performance in some cases - note that the pulse animation requires less processing than the moving dots. Control this in the main settings menu.
 
 ## Convert to real links
 
@@ -145,9 +150,11 @@ Shift click on an output node and drag then release to get an autocreate menu. T
 
 ## Group and color restriction
 
-Any UE node can be restricted to only send within the group(s) it is part of, or only to nodes of the same color (or both). Right-click on the node and select `Send only within my group(s)`/`Remove group restriction` or `Send only to matching color`/`Remove color restriction`. UE nodes which are restricted (in either or both ways) have a green circle in the top-left corner. Here's part of a workflow that compares two models using this feature:
+UE nodes can be restricted to send only to nodes of the same color, or only to nodes that *aren't* the same color.
 
-![screen](docs/group.png)
+They can also be restricted to send only to nodes in the same group (any group in common), or only to nodes that aren't in the same group.
+
+Right-click on the node and select `Group restrictions` or `Color restrictions`. UE nodes which are restricted (in either or both ways) have a green circle in the top-left corner. 
 
 ## Highway nodes
 
@@ -176,18 +183,6 @@ If there is more than one sending node that matches an input, the basic rules is
 Within each group, UE nodes with group restriction are prioritised over those without.
 
 If two nodes with the same priority both match *neither will connect* - better to fail fast than have an ambiguous outcome. If there are ambiguous matches you can display them using `Show UE broadcast clashes` (right-click on background - the option only appears if there are clashes).
-
-## Visualise
-
-If something isn't working right, right click on the background canvas and `Toggle UE Link Visibility` to see all the links being made by the UE nodes.
-|Visualise off|Visualise on|
-|-|-|
-|![off](docs/off.png)|![on](docs/on.png)|
-If the animation effects are too much for your graphics (esp. when the workflow is running) you can turn them off in the main settings menu.
-
-Connected inputs are also subtly marked as such - here the model, positive, and negative inputs are connected by UI, there is no connection to the latent, and the seed has a traditional connection. You can turn this effect off in the main preferences.
-
-![con](docs/connection-ui.png) 
 
 ## See what is sent
 

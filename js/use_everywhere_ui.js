@@ -116,8 +116,20 @@ class LinkRenderController {
         this.periodically_mark_link_list_outdated();
      }
 
-    ue_list = undefined;        // a UseEverythingList; undefined when outdated
-    ue_list_reloading = false;  // true when a reload has been requested but not completed
+    ue_list = undefined;           // the most current ue list - set to undefined if we know it is out of date
+    ue_list_reloading = false;     // true when a reload has been requested but not completed
+    last_used_ue_list = undefined; // the last ue list we actually used to generate graphics
+    paused = false;                
+
+    pause(ms) {
+        this.paused = true;
+        if (!ms) ms = 100;
+        setTimeout( this.unpause.bind(this), ms );
+    }
+    unpause() { 
+        this.paused = false;
+        app.graph.change();
+    }
 
     // memory reuse
     slot_pos1 = new Float32Array(2); //to reuse
@@ -125,7 +137,6 @@ class LinkRenderController {
 
     mark_link_list_outdated() {
         if (this.ue_list) {
-            this.old_ue_list = this.ue_list;
             this.ue_list = undefined;
             this.request_link_list_update();
             Logger.log(Logger.INFORMATION, "link_list marked outdated");
@@ -143,7 +154,7 @@ class LinkRenderController {
     reload_resolve = function (value) {
         this.ue_list = value;
         this.ue_list_reloading = false;
-        if (this.ue_list.differs_from(this.old_ue_list)) app.graph.change();
+        if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
         Logger.log(Logger.INFORMATION, "link list update completed");
         Logger.log_call(Logger.DETAIL, this.ue_list.print_all);
     }.bind(this)
@@ -198,10 +209,13 @@ class LinkRenderController {
         });
     }
 
-    list_ready() {
-        if (!this.the_graph_analyser) return false;
-        if (this.ue_list===undefined) this.request_link_list_update();
-        return !this.ue_list_reloading
+    list_ready(make_latest) {
+        if (this.paused) return false;
+        if (!this.the_graph_analyser) return false; // we don't have the analyser yet (still loading)
+        if (!this.ue_list) this.request_link_list_update();
+        if (!this.ue_list) return false;
+        if (make_latest) this.last_used_ue_list = this.ue_list;
+        return true;
     }
 
     node_in_ueconnection(ue_connection, id) {
@@ -213,7 +227,7 @@ class LinkRenderController {
     }
 
     render_all_ue_links(ctx) {
-        if (!this.list_ready()) return;
+        if (!this.list_ready(true)) return;
 
         ctx.save();
         const orig_hqr = app.canvas.highquality_render;
@@ -260,31 +274,34 @@ class LinkRenderController {
 
 
     _render_ue_link(ue_connection, ctx, animate) {
-        const node = get_real_node(ue_connection.sending_to.id);
+        try {
+            const node = get_real_node(ue_connection.sending_to.id);
 
-        /* this is the end node; get the position of the input */
-        var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
+            /* this is the end node; get the position of the input */
+            var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
 
-        /* get the position of the *input* that is being echoed - except for the Seed Anywhere node, 
-        which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
-        const input_source = (ue_connection.control_node_input_index >= 0); 
-        const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
-        const pos1 = get_group_node(ue_connection.control_node.id).getConnectionPos(input_source, source_index, this.slot_pos2);    
+            /* get the position of the *input* that is being echoed - except for the Seed Anywhere node, 
+            which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
+            const input_source = (ue_connection.control_node_input_index >= 0); 
+            const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
+            const pos1 = get_group_node(ue_connection.control_node.id).getConnectionPos(input_source, source_index, this.slot_pos2);    
 
-        /* get the direction that we start and end */
-        const delta_x = pos2[0] - pos1[0];
-        const delta_y = pos2[1] - pos1[1];
-        const end_direction = LiteGraph.LEFT; // always end going into an input
-        const sta_direction = ((Math.abs(delta_y) > Math.abs(delta_x))) ? 
-                                    ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
-                                    ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
+            /* get the direction that we start and end */
+            const delta_x = pos2[0] - pos1[0];
+            const delta_y = pos2[1] - pos1[1];
+            const end_direction = LiteGraph.LEFT; // always end going into an input
+            const sta_direction = ((Math.abs(delta_y) > Math.abs(delta_x))) ? 
+                                        ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
+                                        ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
 
-        var color = LGraphCanvas.link_type_colors[ue_connection.type];
-        if (color=="") color = "white";
-        ctx.shadowColor = color;
-        
-        app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate%2, color, sta_direction, end_direction, undefined);
-    
+            var color = LGraphCanvas.link_type_colors[ue_connection.type];
+            if (color=="") color = "white";
+            ctx.shadowColor = color;
+            
+            app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate%2, color, sta_direction, end_direction, undefined);
+        } catch (e) {
+            Logger.log(Logger.PROBLEM, `Couldn't render UE link ${ue_connection}. That's ok if something just got deleted.`);
+        }
     }
 
     animate_step(ctx) {

@@ -198,7 +198,7 @@ Return the node object for this node_id.
 - if it is of the form x:y find it in group node x
 - if it is the real node number of something in a group, get it from the group
 */
-function get_real_node(node_id, level=Logger.ERROR) {
+function get_real_node(node_id, level=Logger.INFORMATION) {
     const nid = node_id.toString();
     var rn = app.graph._nodes_by_id[nid];
     if (!rn && nid.includes(':')) rn = app.graph._nodes_by_id[nid.split(':')[0]]?.getInnerNodes()[nid.split(':')[1]]
@@ -207,7 +207,7 @@ function get_real_node(node_id, level=Logger.ERROR) {
             if (!rn) rn = node.getInnerNodes().find((inner_node) => (inner_node.id==nid));
         })
     }
-    if (!rn) Logger.log(level, `get_real_node couldn't find ${node_id}`)
+    if (!rn) Logger.log(level, `get_real_node couldn't find ${node_id} - ok during loading, shortly after node deletion etc.`)
     return rn;
 }
 

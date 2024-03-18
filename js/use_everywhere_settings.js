@@ -117,9 +117,13 @@ function canvas_menu_settings(options) {
     {
         content: "Convert all UEs to real links",
         callback: async () => {
-            const ues = await GraphAnalyser.instance().analyse_graph();
-            convert_to_links(ues, -1);
-            remove_all_ues();
+            if (window.confirm("This will convert all links created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
+                const ues = await GraphAnalyser.instance().analyse_graph();
+                LinkRenderController.instance().pause();
+                convert_to_links(ues, -1);
+                remove_all_ues();
+                app.graph.change();
+            }
         }
     });
     if (GraphAnalyser.instance().ambiguity_messages.length) {
