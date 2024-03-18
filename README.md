@@ -136,6 +136,8 @@ If you want to see the UE links, you can turn them on and off by right-clicking 
 
 The links can be animated to distinguish them from normal links - this animation can take the form of moving dots, a pulsing glow, or both. This may impact performance in some cases - note that the pulse animation requires less processing than the moving dots. Control this in the main settings menu.
 
+By default the animations turn off when the workflow is running to minimise impact on CPU/GPU - you can change this in the settings too.
+
 ## Convert to real links
 
 If you want to share a workflow without UE nodes being required, or to save an API version of a workflow, you can replace the virtual links created by UE nodes with real links (and remove the UE nodes).
