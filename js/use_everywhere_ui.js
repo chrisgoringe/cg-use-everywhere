@@ -119,7 +119,8 @@ class LinkRenderController {
     ue_list = undefined;           // the most current ue list - set to undefined if we know it is out of date
     ue_list_reloading = false;     // true when a reload has been requested but not completed
     last_used_ue_list = undefined; // the last ue list we actually used to generate graphics
-    paused = false;     
+    paused = false; 
+    reading_list = false; // don't outdate the list while we read it (because reading it can trigger outdates!)
     
     queue_size = null;
     note_queue_size(x) { this.queue_size = x; }
@@ -139,6 +140,7 @@ class LinkRenderController {
     slot_pos2 = new Float32Array(2); //to reuse
 
     mark_link_list_outdated() {
+        if (this.reading_list) return;
         if (this.ue_list) {
             this.ue_list = undefined;
             this.request_link_list_update();
@@ -178,6 +180,7 @@ class LinkRenderController {
     } 
 
     highlight_ue_connections(node, ctx) {
+        this.reading_list = true;
         if (!app.ui.settings.getSettingValue('AE.highlight', true)) return;
         //if (this._ue_links_visible) return;
         if (!this.list_ready()) return;
@@ -210,6 +213,7 @@ class LinkRenderController {
 
             ctx.restore();
         });
+        this.reading_list = false;
     }
 
     list_ready(make_latest) {
@@ -232,6 +236,7 @@ class LinkRenderController {
     render_all_ue_links(ctx) {
         if (!this.list_ready(true)) return;
 
+        this.reading_list = true;
         ctx.save();
         const orig_hqr = app.canvas.highquality_render;
         app.canvas.highquality_render = false;
@@ -274,6 +279,7 @@ class LinkRenderController {
 
         app.canvas.highquality_render = orig_hqr;
         ctx.restore();
+        this.reading_list = false;
     }
 
 

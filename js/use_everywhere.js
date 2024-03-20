@@ -114,7 +114,7 @@ app.registerExtension({
             node.displayMessage = displayMessage;                // receive messages from the python code           
 
             // If a widget on a UE node is edited, link list is dirty
-            inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
+            inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${node.id}`);
 
             // draw the indication of group restrictions
             const original_onDrawTitleBar = node.onDrawTitleBar;

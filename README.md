@@ -20,6 +20,20 @@ Shameless plug for my other nodes -> Check out [Image Picker](https://github.com
 
 Or [the workflow as json](docs/test-workflow.json)
 
+## Current known limitations
+
+There are some situations that UE nodes can't cope with at present. Here are some I know about, and possible workarounds.
+
+### Pythonssss Preset Text
+
+[pythonsssss](https://github.com/pythongosssss/ComfyUI-Custom-Scripts) custom nodes are great, but there are some limitations in using them with UE nodes. In particular, you can't feed the output of a Preset Text node directly into a UE node (see https://github.com/chrisgoringe/cg-use-everywhere/issues/154). 
+
+### Group nodes
+
+UE nodes mostly work with group nodes. But there are a couple of important things to note:
+
+- when you create a group node the input names and node names can change. This might break UE? regex connections.
+
 ## Latest updates
 
 4.8 (18th March 2024)
