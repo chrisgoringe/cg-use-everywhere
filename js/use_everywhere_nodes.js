@@ -11,20 +11,17 @@ function get_widget_or_input_values(node_obj, widget_id) {
     if (node_obj.widgets[widget_id]?.type.startsWith(CONVERTED_TYPE)) {
         try {
             const name = node_obj.widgets[widget_id].name;
-            const input = node_obj.inputs.find((input)=>input?.widget?.name==name);
-            const link = app.graph.links[input.link];
-            const upstream_node_obj = get_real_node(link.origin_id.toString());
-            //if (upstream_node_obj.widgets_values) return upstream_node_obj.widgets_values[0];
-            return upstream_node_obj.widgets[0].value;
+            const input_id = node_obj.inputs.findIndex((input) => input.name==name);
+            const connection = get_connection(node_obj, input_id, "STRING");
+            const upstream_node_obj = get_real_node(connection.link.origin_id.toString());
+            const widget = upstream_node_obj.widgets.find((w) => w.name.toLowerCase() == upstream_node_obj.outputs[connection.link.origin_slot].name.toLowerCase());
+            return widget.value;
         } catch (error) {
             return "NOT CONNECTED DONT MATCH";
         }
     }
-
     return node_obj.widgets[widget_id].value;
-
 }
-
 
 function add_ue_from_node_in_group(ues, node, group_node_id, group_data) {
     const group_node = get_real_node(group_node_id);
@@ -44,25 +41,25 @@ function get_available_input_name(inputs, the_input, type) {
     }
 }
 
-function get_connection(node, i) {
+function get_connection(node, i, override_type) {
     const in_link = node?.inputs[i].link;
-    let type;
+    var type = override_type;
     var link = undefined;
     if (in_link) {
-        type = get_real_node(node.id.toString())?.input_type[i];
+        if (!override_type) type = get_real_node(node.id.toString())?.input_type[i];
         link = handle_bypass(app.graph.links[in_link],type);
     } else if (node.in_group_with_data) {
         if (node.in_group_with_data.linksTo[node.index] && node.in_group_with_data.linksTo[node.index][i]) {
             const group_style_link = node.in_group_with_data.linksTo[node.index][i];
             link = { "origin_id":node.getInnerNodesOfGroup()[group_style_link[0]].id, "origin_slot" : group_style_link[1] };
-            type = group_style_link[5];
+            if (!override_type) type = group_style_link[5];
         } else { // group external input
             const group_node = get_group_node(node.id);
             const group_node_input = group_node.inputs[node.in_group_with_data.oldToNewInputMap[node.index][i]];
             const link_n = group_node_input.link;
             if (link_n) {
                 link = app.graph.links[link_n];
-                type = app.graph._nodes_by_id[link.origin_id].outputs[link.origin_slot].type;
+                if (!override_type) type = app.graph._nodes_by_id[link.origin_id].outputs[link.origin_slot].type;
                 // update the group input node... and the link type
                 group_node_input.type = type;
                 group_node_input.name = get_available_input_name(group_node.inputs, group_node_input, type);
