@@ -180,6 +180,14 @@ class LinkRenderController {
     } 
 
     highlight_ue_connections(node, ctx) {
+        try {
+            this._highlight_ue_connections(node, ctx);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    _highlight_ue_connections(node, ctx) {
         this.reading_list = true;
         if (!app.ui.settings.getSettingValue('AE.highlight', true)) return;
         //if (this._ue_links_visible) return;
@@ -234,6 +242,14 @@ class LinkRenderController {
     }
 
     render_all_ue_links(ctx) {
+        try {
+            this._render_all_ue_links(ctx);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    _render_all_ue_links(ctx) {
         if (!this.list_ready(true)) return;
 
         this.reading_list = true;
