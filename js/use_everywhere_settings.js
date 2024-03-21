@@ -2,6 +2,7 @@ import { app } from "../../scripts/app.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
+import { has_priority_boost } from "./use_everywhere_utilities.js";
 
 function main_menu_settings() {
 
@@ -88,8 +89,30 @@ function color_restriction_submenu(value, options, e, menu, node) {
     submenu(node.properties, "color_restricted", COLOR_RESTRICTION_OPTIONS, e, menu, node);
 }
 
+function priority_boost_submenu(value, options, e, menu, node) {
+    const current = (node.properties["priority_boost"] ? node.properties["priority_boost"] : 0) + 1;
+    const submenu = new LiteGraph.ContextMenu(
+        [0,1,2,3,4,5,6,7,8,9],
+        { event: e, callback: function (v) { 
+            node.properties["priority_boost"] = parseInt(v);
+            LinkRenderController.instance().mark_link_list_outdated();
+        }, 
+        parentMenu: menu, node:node}
+    )
+    const current_element = submenu.root.querySelector(`:nth-child(${current})`);
+    if (current_element) current_element.style.borderLeft = "2px solid #484";
+}
+
 function node_menu_settings(options, node) {
-    options.push(null,
+    options.push(null);
+    if (has_priority_boost(node)) options.push(
+        {
+            content: "Priority Boost",
+            has_submenu: true,
+            callback: priority_boost_submenu,
+        }
+    )
+    options.push(
         {
             content: "Group Restrictions",
             has_submenu: true,
@@ -107,8 +130,9 @@ function node_menu_settings(options, node) {
                 convert_to_links(ues, node.id);
                 app.graph.remove(node);
             }
-        },
-    null)
+        }
+    )
+    options.push(null);
 }
 
 function canvas_menu_settings(options) {

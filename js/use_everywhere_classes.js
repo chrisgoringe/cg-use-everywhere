@@ -110,29 +110,31 @@ class UseEverywhereList {
             group_regex: group_regex,
             priority: priority
         };
-        if (!get_real_node(node.id)) {
+        const real_node = get_real_node(node.id);
+        if (!real_node) {
             Logger.log(Logger.PROBLEM, `Node ${node.id} not found`, params);
             return;
         }
-        if (get_real_node(node.id).properties.group_restricted == 1) {
+        if (real_node.properties.group_restricted == 1) {
             params.restrict_to = nodes_in_my_group(node.id);
-            params.priority += 1;
+            params.priority += 0.1;
         }
-        if (get_real_node(node.id).properties.group_restricted == 2) {
+        if (real_node.properties.group_restricted == 2) {
             params.restrict_to = nodes_not_in_my_group(node.id);
-            params.priority += 1;
+            params.priority += 0.1;
         }
-        if (get_real_node(node.id).properties.color_restricted == 1) {
+        if (real_node.properties.color_restricted == 1) {
             params.restrict_to = nodes_my_color(node.id, params.restrict_to);
-            params.priority += 1;
+            params.priority += 0.3;
         }
-        if (get_real_node(node.id).properties.color_restricted == 2) {
+        if (real_node.properties.color_restricted == 2) {
             params.restrict_to = nodes_not_my_color(node.id, params.restrict_to);
-            params.priority += 1;
+            params.priority += 0.3;
         }
         if (group_regex) {
             params.restrict_to = nodes_in_groups_matching(group_regex, params.restrict_to);
         }
+        if (real_node.properties["priority_boost"]) params.priority += real_node.properties["priority_boost"];
         
         const ue = new UseEverywhere(params);
         const error = validity_errors(params);

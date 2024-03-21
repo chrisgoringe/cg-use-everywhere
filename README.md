@@ -107,7 +107,7 @@ Regex 101 - `^` means 'the start', `$` means 'the end', `.` matches any single c
 
 Sort of.
 
-Because the regex needs to be known before the workflow is submitted (in order to calculate the links), you can't pass a string into the `Anything Everywhere?` node and expect it to work. The *only* thing that is supported is if the input comes *directly* from an node which consists solely of a string widget. The `Simple String` node that is included in this pack will work. The same `Simple String` can be connected to multiple `Anything Everywhere?` nodes, but no other structures will work.
+Because the regex needs to be known before the workflow is submitted (in order to calculate the links), you can't pass a string into the `Anything Everywhere?` node and expect it to work. The *only* thing that is supported is if the input comes *directly* from a node which sets it with a string widget. The `Simple String` node that is included in this pack will work. 
 
 |This works|This doesn't. And never will.|
 |-|-|
@@ -196,7 +196,7 @@ If there is more than one sending node that matches an input, the basic rules is
 - `Anything Everywhere`
 - `Anything Everywhere3`
 
-Within each group, UE nodes with group restriction are prioritised over those without.
+For nodes of the same time, those with colour restrictions and group restriction are prioritised (colour+group > colour > group > none).
 
 If two nodes with the same priority both match *neither will connect* - better to fail fast than have an ambiguous outcome. If there are ambiguous matches you can display them using `Show UE broadcast clashes` (right-click on background - the option only appears if there are clashes).
 
