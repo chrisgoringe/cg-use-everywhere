@@ -27,6 +27,10 @@ function nodes_in_groups_matching(regex, already_limited_to) {
     app.graph._groups.forEach((group) => {
         if (regex.test(group.title)) {
             if (!app.canvas.selected_group_moving) group.recomputeInsideNodes();
+            /* 
+            Note for optimisation - it would be more efficient to calculate what nodes are in what groups
+            once at the start of analyse_graph() rather than for every group for every UE? with a group regex.
+            */
             group._nodes.forEach((node) => { 
                 if (!already_limited_to || already_limited_to.includes(node.id)) {
                     nodes_in.add(node.id) 
