@@ -28,7 +28,7 @@ function nodes_in_groups_matching(regex, already_limited_to) {
         if (regex.test(group.title)) {
             group.recomputeInsideNodes();
             group._nodes.forEach((node) => { 
-                if (!already_limited_to || already_limited_to.contains(node.id)) {
+                if (!already_limited_to || already_limited_to.includes(node.id)) {
                     nodes_in.add(node.id) 
                 }
             } );

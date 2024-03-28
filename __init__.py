@@ -1,6 +1,6 @@
 from .use_everywhere import SeedEverywhere, AnythingEverywherePrompts
 
-UE_VERSION = "4.8.3"
+UE_VERSION = "4.8.4"
 
 NODE_CLASS_MAPPINGS = { "Seed Everywhere": SeedEverywhere }
 
