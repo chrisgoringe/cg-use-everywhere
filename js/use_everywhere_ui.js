@@ -26,7 +26,7 @@ function nodes_in_groups_matching(regex, already_limited_to) {
     const nodes_in = new Set();
     app.graph._groups.forEach((group) => {
         if (regex.test(group.title)) {
-            group.recomputeInsideNodes();
+            if (!app.canvas.selected_group_moving) group.recomputeInsideNodes();
             group._nodes.forEach((node) => { 
                 if (!already_limited_to || already_limited_to.includes(node.id)) {
                     nodes_in.add(node.id) 
