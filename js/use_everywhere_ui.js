@@ -5,7 +5,7 @@ import { app } from "../../scripts/app.js";
 function nodes_in_my_group(node_id) {
     const nodes_in = new Set();
     app.graph._groups.forEach((group) => {
-        group.recomputeInsideNodes();
+        if (!app.canvas.selected_group_moving) group.recomputeInsideNodes();
         if (group._nodes?.find((node) => { return (node.id===node_id) } )) {
             group._nodes.forEach((node) => { nodes_in.add(node.id) } )
         }
