@@ -36,6 +36,9 @@ UE nodes mostly work with group nodes. But there are a couple of important thing
 
 ## Latest updates
 
+4.9 (2nd May 2024)
+- Fix incompatibility with Efficiency Nodes (#182)
+
 4.8 (18th March 2024)
 - Group and color sending have a `send to unmatched` mode
 - UE link animations can be the classic dots, or a pulsing glow (or both, or neither)

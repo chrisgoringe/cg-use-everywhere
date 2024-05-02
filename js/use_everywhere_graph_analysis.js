@@ -31,6 +31,10 @@ class GraphAnalyser {
                             widget.beforeQueued = null;
                         }
                     })
+                    if(node.seedControl){ // for efficiency nodes seedControl
+                        node.seedControl.lastSeedButton.__disabled = node.seedControl.lastSeedButton.disabled
+                        node.seedControl.lastSeedButton.disabled = true
+                    }
                 })
             }
             return this._analyse_graph(modify_and_return_prompt, check_for_loops);
@@ -43,6 +47,9 @@ class GraphAnalyser {
                             widget.__beforeQueued = null;
                         }
                     })
+                    if(node.seedControl){ // for efficiency nodes seedControl
+                        node.seedControl.lastSeedButton.disabled = node.seedControl.lastSeedButton.__disabled
+                    }
                 })
             }
         }
