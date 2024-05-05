@@ -31,7 +31,7 @@ class GraphAnalyser {
                             widget.beforeQueued = null;
                         }
                     })
-                    if(node.seedControl){ // for efficiency nodes seedControl
+                    if(node.seedControl && node.seedControl.lastSeedButton){ // for efficiency nodes seedControl
                         node.seedControl.lastSeedButton.__disabled = node.seedControl.lastSeedButton.disabled
                         node.seedControl.lastSeedButton.disabled = true
                     }
@@ -47,7 +47,7 @@ class GraphAnalyser {
                             widget.__beforeQueued = null;
                         }
                     })
-                    if(node.seedControl){ // for efficiency nodes seedControl
+                    if(node.seedControl && node.seedControl.lastSeedButton){ // for efficiency nodes seedControl
                         node.seedControl.lastSeedButton.disabled = node.seedControl.lastSeedButton.__disabled
                     }
                 })
