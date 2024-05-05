@@ -1,4 +1,5 @@
 import { handle_bypass, get_real_node, get_group_node } from "./use_everywhere_utilities.js";
+import { app } from "../../scripts/app.js";
 
 const CONVERTED_TYPE = "converted-widget";
 // import {CONVERTED_TYPE} from "../../extensions/core/widgetInputs.js"
