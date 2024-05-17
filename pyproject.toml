@@ -11,4 +11,3 @@ Repository = "https://github.com/chrisgoringe/cg-use-everywhere"
 PublisherId = ""
 DisplayName = "cg-use-everywhere"
 Icon = ""
-Models = [{location = "/checkpoints/model.safetensor", model_url = "https://example.com/model.zip"}]
