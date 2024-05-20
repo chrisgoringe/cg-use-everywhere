@@ -8,6 +8,6 @@ license = "LICENSE"
 Repository = "https://github.com/chrisgoringe/cg-use-everywhere"
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "chrisgoringe"
 DisplayName = "cg-use-everywhere"
 Icon = ""
