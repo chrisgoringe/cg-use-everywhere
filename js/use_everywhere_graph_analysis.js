@@ -92,7 +92,7 @@ class GraphAnalyser {
                                 const inner_node_index = o2n.findIndex((l)=>Object.values(l[1]).includes(in_index));
                                 const inner_node_slot_index = Object.values(o2n[inner_node_index][1]).findIndex((l)=>l==in_index);
                                 effective_node_slot = Object.keys(o2n[inner_node_index][1])[inner_node_slot_index];
-                                effective_node = nd.getInnerNodes()[inner_node_index];
+                                effective_node = nd.getInnerNodes()[o2n[inner_node_index][0]];
                             }
                             const upNode = get_real_node(ue.output[0]);
                             var effective_output = [ue.output[0], ue.output[1]];
