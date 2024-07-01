@@ -82,7 +82,7 @@ class GraphAnalyser {
                 const isGrp = !!gpData;
                 const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;
                 node.inputs?.forEach(input => {
-                    if (!is_connected(input)) {
+                    if (!is_connected(input) && !(node.reject_ue_connection && node.reject_ue_connection(input))) {
                         var ue = ues.find_best_match(node, input, this.ambiguity_messages);
                         if (ue && modify_and_return_prompt) {
                             var effective_node = node;
