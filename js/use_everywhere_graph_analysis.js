@@ -22,8 +22,8 @@ class GraphAnalyser {
 
 
     async analyse_graph(modify_and_return_prompt=false, check_for_loops=false, supress_before_queued=true) {
-        try {
-            if (supress_before_queued) {
+        //try {
+            /*if (supress_before_queued) {
                 app.graph._nodes.forEach((node) => {
                     node.widgets?.forEach((widget) => {
                         if (widget.beforeQueued) {
@@ -36,9 +36,9 @@ class GraphAnalyser {
                         node.seedControl.lastSeedButton.disabled = true
                     }
                 })
-            }
-            return this._analyse_graph(modify_and_return_prompt, check_for_loops);
-        } finally {
+            }*/
+            //return this._analyse_graph(modify_and_return_prompt, check_for_loops);
+        /*} finally {
             if (supress_before_queued) {
                 app.graph._nodes.forEach((node) => {
                     node.widgets?.forEach((widget) => {
@@ -52,15 +52,18 @@ class GraphAnalyser {
                     }
                 })
             }
-        }
-    }
-    async _analyse_graph(modify_and_return_prompt=false, check_for_loops=false) {
+        }*/
+    //}
+    //async _analyse_graph(modify_and_return_prompt=false, check_for_loops=false) {
         if (this.pause_depth > 0) { return this.original_graphToPrompt.apply(app) }
         this.ambiguity_messages = [];
-        var p = await this.original_graphToPrompt.apply(app);
+        var p;
         if (modify_and_return_prompt) {
+            p = await this.original_graphToPrompt.apply(app);
             p = structuredClone(p);
-        } 
+        } else {
+            p = { workflow:app.graph.serialize() }
+        }
                 
         // Create a UseEverywhereList and populate it from all live (not bypassed) nodes
         const ues = new UseEverywhereList();
