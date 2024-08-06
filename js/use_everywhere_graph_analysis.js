@@ -80,7 +80,7 @@ class GraphAnalyser {
         // Look for unconnected inputs and see if we can connect them
         live_nodes.filter((node) => !is_UEnode(node)).forEach(node => {
             const nd = get_real_node(node.id, Logger.INFORMATION);
-            if (nd) {
+            if (nd && !nd.rejects_ue_links) {
                 var gpData = GroupNodeHandler.getGroupData(nd);
                 const isGrp = !!gpData;
                 const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;

@@ -7,7 +7,7 @@ import { LinkRenderController } from "./use_everywhere_ui.js";
 import { autoCreateMenu } from "./use_everywhere_autocreate.js";
 import { add_autoprompts } from "./use_everywhere_autoprompt.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
-import { main_menu_settings, node_menu_settings, canvas_menu_settings } from "./use_everywhere_settings.js";
+import { main_menu_settings, node_menu_settings, canvas_menu_settings, non_ue_menu_settings } from "./use_everywhere_settings.js";
 import { add_debug } from "./ue_debug.js";
 
 /*
@@ -83,7 +83,8 @@ app.registerExtension({
             getExtraMenuOptions?.apply(this, arguments);
             if (is_UEnode(this)) {
                 node_menu_settings(options, this);
-
+            } else {
+                non_ue_menu_settings(options, this);
             }
             // any right click action can make the list dirty
             inject_outdating_into_objects(options,'callback',`menu option on ${this.id}`);

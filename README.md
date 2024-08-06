@@ -36,6 +36,10 @@ UE nodes mostly work with group nodes. But there are a couple of important thing
 
 ## Latest updates
 
+5.0 (6th August 2024)
+- Significant change to core logic. Should greatly reduce incompatibility issues, but may have unexpoected consequences!
+- Added to right-click menu on nodes the option to make a node reject all UE connections.
+
 4.9 (2nd May 2024)
 - Fix incompatibility with Efficiency Nodes (#182)
 
@@ -146,6 +150,10 @@ If you want to use UE to control sampler or sigma, you can do this with the buil
 For more on this, see [this discussion](https://github.com/chrisgoringe/cg-use-everywhere/issues/69)
 
 # Other features
+
+## Reject links
+
+Right click on a node and you can set it to reject UE links
 
 ## Show links - visualisation and animation.
 

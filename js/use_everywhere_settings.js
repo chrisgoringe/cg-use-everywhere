@@ -103,6 +103,17 @@ function priority_boost_submenu(value, options, e, menu, node) {
     if (current_element) current_element.style.borderLeft = "2px solid #484";
 }
 
+function non_ue_menu_settings(options, node) {
+    options.push(null);
+    options.push(
+        {
+            content: node.rejects_ue_links ? "Allow UE Links" : "Reject UE Links",
+            has_submenu: false,
+            callback: () => { node.rejects_ue_links = !!!node.rejects_ue_links  },
+        }
+    )
+}
+
 function node_menu_settings(options, node) {
     options.push(null);
     if (has_priority_boost(node)) options.push(
@@ -168,4 +179,4 @@ function canvas_menu_settings(options) {
     options.push(null); // divider
 }
 
-export { main_menu_settings, node_menu_settings, canvas_menu_settings }
+export { main_menu_settings, node_menu_settings, canvas_menu_settings, non_ue_menu_settings }
