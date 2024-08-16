@@ -40,6 +40,7 @@ class UseEverywhere {
     Does this broadcast match a given node,input?
     */
     matches(node, input) {
+        if (this.output[0] == node.id) return false;
         if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;
         const input_label = input.label ? input.label : input.name;
         const node_label = node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type);
