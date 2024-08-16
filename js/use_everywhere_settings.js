@@ -107,9 +107,9 @@ function non_ue_menu_settings(options, node) {
     options.push(null);
     options.push(
         {
-            content: node.rejects_ue_links ? "Allow UE Links" : "Reject UE Links",
+            content: node.properties.rejects_ue_links ? "Allow UE Links" : "Reject UE Links",
             has_submenu: false,
-            callback: () => { node.rejects_ue_links = !!!node.rejects_ue_links  },
+            callback: () => { node.properties.rejects_ue_links = !!!node.properties.rejects_ue_links  },
         }
     )
 }
