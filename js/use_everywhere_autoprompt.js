@@ -76,7 +76,7 @@ function getClipPath(node, element) {
 function active_text_widget(node, inputname) {
     const label = document.createElement("label");
     label.className = "graphdialog ueprompt";
-    label.style.display = "none";
+
 
     const label_text = document.createElement("span");
     label_text.innerText = `${inputname.substring(0,5)} `;
@@ -108,7 +108,9 @@ function active_text_widget(node, inputname) {
             }
         }
     });
-    widget.element.hidden = true;
+    //widget.element.hidden = true;
+    //widget.element.classList.add("ue_hide")
+    widget.element.style.display="block"
 
     inputEl.onmousedown = function(e) {
         const x = app.canvas.prompt("Value",widget.value,function(v) { this.value = v; }.bind(widget), e, false );
@@ -140,7 +142,7 @@ function active_text_widget(node, inputname) {
         node.widgets?.forEach((widget) => {
             if (widget.element) {
                 widget.element.hidden = true;
-                widget.element.style.display = "none";
+                widget.element.classList.add("ue_hide")
             }
         })
     }
@@ -151,13 +153,13 @@ function active_text_widget(node, inputname) {
 function activate(node, widget) {
     if (node.flags?.collapsed) return;
     widget.element.hidden = false;
-    widget.element.style.display = "";
+    widget.element.classList.remove("ue_hide")
 }
 
 function add_autoprompts() {
     const STRING = ComfyWidgets.STRING;
     ComfyWidgets.STRING = function (node, inputName, inputData, app) {
-        if (!is_UEnode(node) || !inputName?.includes("regex") || !app.ui.settings.getSettingValue('AE.autoprompt', true)) {
+        if (true || !is_UEnode(node) || !inputName?.includes("regex") || !app.ui.settings.getSettingValue('AE.autoprompt', true)) {
             return STRING.apply(this, arguments);
         }
         const atw = active_text_widget(node, inputName);

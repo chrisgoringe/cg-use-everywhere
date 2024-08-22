@@ -37,3 +37,7 @@
     width: 100%;
     float: right;
 }
+
+ue_hide {
+    display: none;
+}
