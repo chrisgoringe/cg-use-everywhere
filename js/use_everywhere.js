@@ -31,6 +31,11 @@ function inject_outdating_into_object_method(object, methodname, tracetext) {
     if (object) inject(object, methodname, tracetext, linkRenderController.mark_link_list_outdated, linkRenderController);
 }
 
+/*
+In order to capture certain changes to nodes, we create a proxy for them which passes
+all property set calls through this handler. It checks the old value, calls the setter,
+and then outdates the link list if there has been a change to one of the properties that matter
+*/
 const nodeHandler = {
     set: function(obj, property, value) {
         const oldValue = Reflect.get(obj, property, this);
@@ -74,8 +79,8 @@ app.registerExtension({
         };
 
         /*
-        Toggle the group restriction.
-        Any right click action on a node might make the link list dirty.
+        Extra menu options are the node right click menu.
+        We add to this list, and also insert a link list outdate to everything.
         */
         const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
         nodeType.prototype.getExtraMenuOptions = function(_, options) {
@@ -86,10 +91,14 @@ app.registerExtension({
             } else {
                 non_ue_menu_settings(options, this);
             }
-            // any right click action can make the list dirty
             inject_outdating_into_objects(options,'callback',`menu option on ${this.id}`);
         }
 
+        /*
+        When a UE node is created, we set the group and color restriction properties.
+        We also create pseudo-widgets for all the inputs so that they can be searched
+        and to avoid other code throwing errors.
+        */
         if (is_UEnode(nodeType)) {
             const onNodeCreated = nodeType.prototype.onNodeCreated;
             nodeType.prototype.onNodeCreated = function () {
@@ -136,9 +145,14 @@ app.registerExtension({
         setTimeout( ()=>{linkRenderController.mark_link_list_outdated()}, 100 );
     }, 
 
+    // When a graph node is loaded collapsed the UI need to know
+    // probably not needed now autocomplete is gone?
     loadedGraphNode(node) { if (node.flags.collapsed && node.loaded_when_collapsed) node.loaded_when_collapsed(); },
 
 	async setup() {
+        /*
+        Add css for the autocomplete. Probably not needed now
+        */
         const head = document.getElementsByTagName('HEAD')[0];
         const link = document.createElement('link');
         link.rel = 'stylesheet';
@@ -163,7 +177,7 @@ app.registerExtension({
         });
 
         /*
-        We don't want to do that if we are saving the workflow or api:
+        Don't modify the graph when saving the workflow or api
         */
         const _original_save_onclick = document.getElementById('comfy-save-button').onclick;
         document.getElementById('comfy-save-button').onclick = function() {
@@ -174,13 +188,13 @@ app.registerExtension({
         const _original_save_api_onclick = document.getElementById('comfy-dev-save-api-button').onclick;
         document.getElementById('comfy-dev-save-api-button').onclick = function() {
             graphAnalyser.pause();
+            // should check for UE links here and give a warning: #217
             _original_save_api_onclick();
             graphAnalyser.unpause();
         }
         
         /* 
-        Hijack drawNode to render the virtual connection points
-        and links to node with mouseOver
+        When we draw a node, render the virtual connection points
         */
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
@@ -189,7 +203,7 @@ app.registerExtension({
         }
 
         /*
-        When we draw connections, do the ue ones as well
+        When we draw connections, do the ue ones as well (logic for on/off is in lrc)
         */
         const drawConnections = LGraphCanvas.prototype.drawConnections;
         LGraphCanvas.prototype.drawConnections = function(ctx) {
@@ -197,11 +211,14 @@ app.registerExtension({
             linkRenderController.render_all_ue_links(ctx);
         }
 
+        /*
+        Add to the main settings
+        */
         main_menu_settings();
         
         /* 
         Canvas menu is the right click on backdrop.
-        We need to add our option, and hijack the others.
+        We need to add our options, and hijack the others to mark link list dirty
         */
         const original_getCanvasMenuOptions = LGraphCanvas.prototype.getCanvasMenuOptions;
         LGraphCanvas.prototype.getCanvasMenuOptions = function () {
@@ -217,14 +234,15 @@ app.registerExtension({
 
         /*
         When you drag from a node, showConnectionMenu is called. If shift key is pressed call ours
+        Broken #219
         */
-        const original_showConnectionMenu = LGraphCanvas.prototype.showConnectionMenu;
-        LGraphCanvas.prototype.showConnectionMenu = function (optPass) {
-            if (optPass.e.shiftKey) {
+        const showSearchBox = LGraphCanvas.prototype.showSearchBox;
+        LGraphCanvas.prototype.showSearchBox = function (optPass) {
+            if (optPass.shiftKey) {
                 autoCreateMenu.apply(this, arguments);
             } else {
                 this.use_original_menu = true;
-                original_showConnectionMenu.apply(this, arguments);
+                showSearchBox.apply(this, arguments);
                 this.use_original_menu = false;
             }
         }
@@ -232,6 +250,7 @@ app.registerExtension({
         /*
         To allow us to use the shift drag above, we need to intercept 'allow_searchbox' sometimes
         (because searchbox is the default behaviour when shift dragging)
+        Broken #219
         */
         var original_allow_searchbox = app.canvas.allow_searchbox;
         Object.defineProperty(app.canvas, 'allow_searchbox', {

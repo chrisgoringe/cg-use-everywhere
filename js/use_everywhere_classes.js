@@ -92,7 +92,7 @@ class UseEverywhereList {
     constructor() { this.ues = []; this.unmatched_inputs = []; }
 
     differs_from(another_uel) {
-        if (!another_uel) return true;
+        if (!another_uel || !another_uel.ues || !this.ues) return true;
         if (this.ues.length != another_uel.ues.length) return true;
         for (var i=0; i<this.ues.length; i++) {
             if (this.ues[i].sending_differs_from(another_uel.ues[i])) return true;

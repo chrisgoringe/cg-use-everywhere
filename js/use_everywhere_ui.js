@@ -197,34 +197,36 @@ class LinkRenderController {
         //if (this._ue_links_visible) return;
         if (!this.list_ready()) return;
 
-        this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
-            if (!ue_connection.control_node) { // control node deleted...
-                this.mark_link_list_outdated();
-                return; 
-            }
-            var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
-            pos2[0] -= node.pos[0];
-            pos2[1] -= node.pos[1];
-            ctx.save();
-            ctx.lineWidth = 1;
-            var radius=5
-            ctx.strokeStyle = LGraphCanvas.link_type_colors[ue_connection.type];
-            ctx.shadowColor = "white"; 
-            ctx.shadowBlur = 10;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
-            ctx.beginPath();
-            ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.strokeStyle = "black";
-            ctx.shadowBlur = 0;
-            radius = radius - 1;
-            ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
-            ctx.stroke();
+        if (this.ue_list.all_connected_inputs) {
+            this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
+                if (!ue_connection.control_node) { // control node deleted...
+                    this.mark_link_list_outdated();
+                    return; 
+                }
+                var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
+                pos2[0] -= node.pos[0];
+                pos2[1] -= node.pos[1];
+                ctx.save();
+                ctx.lineWidth = 1;
+                var radius=5
+                ctx.strokeStyle = LGraphCanvas.link_type_colors[ue_connection.type];
+                ctx.shadowColor = "white"; 
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                ctx.beginPath();
+                ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.strokeStyle = "black";
+                ctx.shadowBlur = 0;
+                radius = radius - 1;
+                ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
+                ctx.stroke();
 
-            ctx.restore();
-        });
+                ctx.restore();
+            });
+        }
         this.reading_list = false;
     }
 
