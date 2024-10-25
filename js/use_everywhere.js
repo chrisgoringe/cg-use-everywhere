@@ -2,7 +2,7 @@ import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
 import { is_UEnode, is_helper, inject, Logger, get_real_node } from "./use_everywhere_utilities.js";
-import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
+import { displayMessage, update_input_label, indicate_restriction, UpdateBlocker } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { autoCreateMenu } from "./use_everywhere_autocreate.js";
 import { add_autoprompts } from "./use_everywhere_autoprompt.js";
@@ -198,8 +198,11 @@ app.registerExtension({
         */
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
-            original_drawNode.apply(this, arguments);
-            linkRenderController.highlight_ue_connections(node, ctx);
+            UpdateBlocker.push()
+            try {
+                original_drawNode.apply(this, arguments);
+                linkRenderController.highlight_ue_connections(node, ctx);
+            } finally { UpdateBlocker.pop() }
         }
 
         /*

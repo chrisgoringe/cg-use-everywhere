@@ -2,6 +2,13 @@ import { Logger, get_real_node, get_group_node, get_all_nodes_within } from "./u
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 
+export class UpdateBlocker {
+    static depth = 0
+    static push() { UpdateBlocker.depth += 1 }
+    static pop() { UpdateBlocker.depth -= 1 }
+    static blocking() { return UpdateBlocker.depth>0 }
+}
+
 function nodes_in_my_group(node_id) {
     const nodes_in = new Set();
     app.graph._groups.forEach((group) => {
@@ -144,6 +151,7 @@ class LinkRenderController {
     slot_pos2 = new Float32Array(2); //to reuse
 
     mark_link_list_outdated() {
+        if (UpdateBlocker.blocking()) return;
         if (this.reading_list) return;
         if (this.ue_list) {
             this.ue_list = undefined;
