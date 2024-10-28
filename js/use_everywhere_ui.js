@@ -248,7 +248,8 @@ class LinkRenderController {
     }
 
     node_in_ueconnection(ue_connection, id) {
-        return (get_group_node(ue_connection.control_node.id).id == id || get_group_node(ue_connection.sending_to.id).id == id)
+        if (ue_connection.control_node && get_group_node(ue_connection.control_node.id)?.id == id) return true
+        if (ue_connection.sending_to   && get_group_node(ue_connection.sending_to.id)?.id   == id) return true
     }
 
     any_node_in_ueconnection(ue_connection, list_of_nodes) {
