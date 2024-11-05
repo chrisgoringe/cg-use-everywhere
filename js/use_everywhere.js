@@ -31,28 +31,6 @@ function inject_outdating_into_object_method(object, methodname, tracetext) {
     if (object) inject(object, methodname, tracetext, linkRenderController.mark_link_list_outdated, linkRenderController);
 }
 
-/*
-In order to capture certain changes to nodes, we create a proxy for them which passes
-all property set calls through this handler. It checks the old value, calls the setter,
-and then outdates the link list if there has been a change to one of the properties that matter
-*/
-const nodeHandler = {
-    set: function(obj, property, value) {
-        const oldValue = Reflect.get(obj, property, this);
-        const result = Reflect.set(...arguments);
-        if (oldValue!=value) {
-            if (property==='bgcolor') {
-                if (obj.mode!=4) linkRenderController.mark_link_list_outdated();
-            }
-            if (property==='mode') {
-                linkRenderController.mark_link_list_outdated();
-                obj.widgets?.forEach((widget) => {widget.onModeChange?.(value)});
-            }
-        }
-        return result;
-    },
-}
-
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
 
@@ -118,6 +96,32 @@ app.registerExtension({
     },
 
     async nodeCreated(node) {
+        if (!node._mode) {
+            node._mode = node.mode
+            Object.defineProperty(node, "mode", {
+                get: ( )=>{return node._mode},
+                set: (v)=>{node._mode = v; node.afterChangeMade?.('mode', v);}            
+            })
+        }
+        if (!node._bgcolor) {
+            node._bgcolor = node._bgcolor
+            Object.defineProperty(node,"bgcolor", {
+                get: ( )=>{return node._bgcolor},
+                set: (v)=>{node._bgcolor = v; node.afterChangeMade?.('bgcolor', v);}                       
+            })
+        }
+        const acm = node.afterChangeMade
+        node.afterChangeMade = (p, v) => {
+            acm?.apply(node,arguments)
+            if (p==='bgcolor') {
+                if (node.mode!=4) linkRenderController.mark_link_list_outdated();
+            }
+            if (p==='mode') {
+                linkRenderController.mark_link_list_outdated();
+                node.widgets?.forEach((widget) => {widget.onModeChange?.(v)});
+            }
+        }
+
         node.IS_UE = is_UEnode(node);
         if (node.IS_UE) {
             node.input_type = [undefined, undefined, undefined]; // for dynamic input types
@@ -278,15 +282,6 @@ app.registerExtension({
         linkRenderController = LinkRenderController.instance(graphAnalyser);
 
         add_autoprompts();
-        const createNode = LiteGraph.createNode;
-        LiteGraph.createNode = function() {
-            const nd = createNode.apply(this,arguments);
-            if (nd && nd.IS_UE) {
-                return new Proxy( nd, nodeHandler );
-            } else {
-                return nd;
-            }
-        }
 
         if (false) add_debug();
 
