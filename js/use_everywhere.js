@@ -112,7 +112,7 @@ app.registerExtension({
         }
         const acm = node.afterChangeMade
         node.afterChangeMade = (p, v) => {
-            acm?.apply(node,arguments)
+            acm?.(p,v)
             if (p==='bgcolor') {
                 if (node.mode!=4) linkRenderController.mark_link_list_outdated();
             }
