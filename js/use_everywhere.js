@@ -204,8 +204,9 @@ app.registerExtension({
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             UpdateBlocker.push()
             try {
-                original_drawNode.apply(this, arguments);
+                const v = original_drawNode.apply(this, arguments);
                 linkRenderController.highlight_ue_connections(node, ctx);
+                return v
             } finally { UpdateBlocker.pop() }
         }
 
