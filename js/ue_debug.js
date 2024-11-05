@@ -16,3 +16,5 @@ export function add_debug() {
         set : (v) => { dirty_bg_canvas = v;}  // a breakpoint here catches the calls that mark the background canvas as dirty
     })
 }
+
+export const version = 500005
