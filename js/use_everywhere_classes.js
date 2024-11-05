@@ -30,8 +30,7 @@ class UseEverywhere {
     sending_differs_from(another_ue) {
         if (this.sending_to.length != another_ue.sending_to.length) return true;
         for (var i=0; i<this.sending_to.length; i++) {
-            if ( (this.sending_to[i].node != another_ue.sending_to[i].node) ||
-                 (this.sending_to[i].input != another_ue.sending_to[i].input) ||
+            if ( (this.sending_to[i].node.id != another_ue.sending_to[i].node.id) ||
                  (this.sending_to[i].input_index != another_ue.sending_to[i].input_index) ) return true;
         }
         return false;
