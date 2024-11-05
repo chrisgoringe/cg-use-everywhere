@@ -96,15 +96,15 @@ app.registerExtension({
     },
 
     async nodeCreated(node) {
-        if (!node._mode) {
-            node._mode = node.mode
+        if (!node.__mode) {
+            node.__mode = node.mode
             Object.defineProperty(node, "mode", {
                 get: ( )=>{return node._mode},
                 set: (v)=>{node._mode = v; node.afterChangeMade?.('mode', v);}            
             })
         }
-        if (!node._bgcolor) {
-            node._bgcolor = node._bgcolor
+        if (!node.__bgcolor) {
+            node.__bgcolor = node._bgcolor
             Object.defineProperty(node,"bgcolor", {
                 get: ( )=>{return node._bgcolor},
                 set: (v)=>{node._bgcolor = v; node.afterChangeMade?.('bgcolor', v);}                       
