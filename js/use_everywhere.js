@@ -99,15 +99,15 @@ app.registerExtension({
         if (!node.__mode) {
             node.__mode = node.mode
             Object.defineProperty(node, "mode", {
-                get: ( )=>{return node._mode},
-                set: (v)=>{node._mode = v; node.afterChangeMade?.('mode', v);}            
+                get: ( )=>{return node.__mode},
+                set: (v)=>{node.__mode = v; node.afterChangeMade?.('mode', v);}            
             })
         }
         if (!node.__bgcolor) {
-            node.__bgcolor = node._bgcolor
+            node.__bgcolor = node.bgcolor
             Object.defineProperty(node,"bgcolor", {
-                get: ( )=>{return node._bgcolor},
-                set: (v)=>{node._bgcolor = v; node.afterChangeMade?.('bgcolor', v);}                       
+                get: ( )=>{return node.__bgcolor},
+                set: (v)=>{node.__bgcolor = v; node.afterChangeMade?.('bgcolor', v);}                       
             })
         }
         const acm = node.afterChangeMade
