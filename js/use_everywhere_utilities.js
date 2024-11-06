@@ -263,3 +263,30 @@ function inject(object, methodname, tracetext, injection, injectionthis, injecti
 
 
 export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node, get_group_node, get_all_nodes_within, has_priority_boost}
+
+export function defineProperty(instance, property, desc) {
+    const existingDesc = Object.getOwnPropertyDescriptor(instance, property);
+    if (existingDesc?.configurable === false) {
+      throw new Error(`Error: Cannot define un-configurable property "${property}"`);
+    }
+    if (existingDesc?.get && desc.get) {
+      const descGet = desc.get;
+      desc.get = () => {
+        existingDesc.get.apply(instance, []);
+        return descGet.apply(instance, []);
+      };
+    }
+    if (existingDesc?.set && desc.set) {
+      const descSet = desc.set;
+      desc.set = (v) => {
+        existingDesc.set.apply(instance, [v]);
+        return descSet.apply(instance, [v]);
+      };
+    }
+    desc.enumerable = desc.enumerable ?? existingDesc?.enumerable ?? true;
+    desc.configurable = desc.configurable ?? existingDesc?.configurable ?? true;
+    if (!desc.get && !desc.set) {
+      desc.writable = desc.writable ?? existingDesc?.writable ?? true;
+    }
+    return Object.defineProperty(instance, property, desc);
+  }

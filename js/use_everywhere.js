@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
-import { is_UEnode, is_helper, inject, Logger, get_real_node } from "./use_everywhere_utilities.js";
+import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty } from "./use_everywhere_utilities.js";
 import { displayMessage, update_input_label, indicate_restriction, UpdateBlocker } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { autoCreateMenu } from "./use_everywhere_autocreate.js";
@@ -98,14 +98,14 @@ app.registerExtension({
     async nodeCreated(node) {
         if (!node.__mode) {
             node.__mode = node.mode
-            Object.defineProperty(node, "mode", {
+            defineProperty(node, "mode", {
                 get: ( )=>{return node.__mode},
                 set: (v)=>{node.__mode = v; node.afterChangeMade?.('mode', v);}            
             })
         }
         if (!node.__bgcolor) {
             node.__bgcolor = node.bgcolor
-            Object.defineProperty(node,"bgcolor", {
+            defineProperty(node,"bgcolor", {
                 get: ( )=>{return node.__bgcolor},
                 set: (v)=>{node.__bgcolor = v; node.afterChangeMade?.('bgcolor', v);}                       
             })
@@ -261,7 +261,7 @@ app.registerExtension({
         Broken #219
         */
         var original_allow_searchbox = app.canvas.allow_searchbox;
-        Object.defineProperty(app.canvas, 'allow_searchbox', {
+        defineProperty(app.canvas, 'allow_searchbox', {
             get : function() { 
                 if (this.use_original_menu) { return original_allow_searchbox; }
                 if(app.ui.settings.getSettingValue('AE.replacesearch', true) && this.connecting_output) {
