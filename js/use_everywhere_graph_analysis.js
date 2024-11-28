@@ -22,39 +22,6 @@ class GraphAnalyser {
 
 
     async analyse_graph(modify_and_return_prompt=false, check_for_loops=false, supress_before_queued=true) {
-        //try {
-            /*if (supress_before_queued) {
-                app.graph._nodes.forEach((node) => {
-                    node.widgets?.forEach((widget) => {
-                        if (widget.beforeQueued) {
-                            widget.__beforeQueued = widget.beforeQueued;
-                            widget.beforeQueued = null;
-                        }
-                    })
-                    if(node.seedControl && node.seedControl.lastSeedButton){ // for efficiency nodes seedControl
-                        node.seedControl.lastSeedButton.__disabled = node.seedControl.lastSeedButton.disabled
-                        node.seedControl.lastSeedButton.disabled = true
-                    }
-                })
-            }*/
-            //return this._analyse_graph(modify_and_return_prompt, check_for_loops);
-        /*} finally {
-            if (supress_before_queued) {
-                app.graph._nodes.forEach((node) => {
-                    node.widgets?.forEach((widget) => {
-                        if (widget.__beforeQueued) {
-                            widget.beforeQueued = widget.__beforeQueued;
-                            widget.__beforeQueued = null;
-                        }
-                    })
-                    if(node.seedControl && node.seedControl.lastSeedButton){ // for efficiency nodes seedControl
-                        node.seedControl.lastSeedButton.disabled = node.seedControl.lastSeedButton.__disabled
-                    }
-                })
-            }
-        }*/
-    //}
-    //async _analyse_graph(modify_and_return_prompt=false, check_for_loops=false) {
         if (this.pause_depth > 0) { return this.original_graphToPrompt.apply(app) }
         this.ambiguity_messages = [];
         var p;
@@ -87,7 +54,7 @@ class GraphAnalyser {
                 node.inputs?.forEach(input => {
                     if (!is_connected(input) && !(node.reject_ue_connection && node.reject_ue_connection(input))) {
                         var ue = ues.find_best_match(node, input, this.ambiguity_messages);
-                        if (ue && modify_and_return_prompt) {
+                        if (ue) {
                             var effective_node = node;
                             var effective_node_slot = -1;
                             if (isGrp) { // the node we are looking at is a group node
@@ -108,7 +75,7 @@ class GraphAnalyser {
                                 effective_output = [`${up_inner_node_id}`, up_inner_node_slot];
                             } 
                             if (effective_node_slot==-1) effective_node_slot = effective_node.inputs.findIndex((i)=>(i.label ? i.label : i.name)===(input.label ? input.label : input.name));
-                            p.output[effective_node.id].inputs[effective_node.inputs[effective_node_slot].name] = effective_output;
+                            if (modify_and_return_prompt) p.output[effective_node.id].inputs[effective_node.inputs[effective_node_slot].name] = effective_output;
                             links_added.add({
                                 "downstream":effective_node.id, "downstream_slot":effective_node_slot,
                                 "upstream":effective_output[0], "upstream_slot":effective_output[1], 
@@ -120,6 +87,8 @@ class GraphAnalyser {
                 });
             }
         });
+
+        app.graph.extra['ue_links'] = Array.from(links_added)
     
         if (this.ambiguity_messages.length) Logger.log(Logger.PROBLEM, "Ambiguous connections", this.ambiguity_messages, Logger.CAT_AMBIGUITY);
     
