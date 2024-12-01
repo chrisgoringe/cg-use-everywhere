@@ -94,8 +94,14 @@ function add_ue_from_node(ues, node) {
     if (node.type === "Prompts Everywhere") {
         for (var i=0; i<2; i++) {
             const connection = get_connection(node, i);
-            if (connection.link) ues.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], 
-                undefined, new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]), undefined, 5);
+            if (connection.link) {
+                ues.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], 
+                        undefined, new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]), undefined, 5);
+                if (i==0) {
+                    ues.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], 
+                        new RegExp("Xlabs"), new RegExp("conditioning"), undefined, 5);
+                }
+            }
         }
     }
     if (node.type === "Anything Everywhere") {
