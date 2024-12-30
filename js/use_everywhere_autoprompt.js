@@ -159,7 +159,7 @@ function activate(node, widget) {
 function add_autoprompts() {
     const STRING = ComfyWidgets.STRING;
     ComfyWidgets.STRING = function (node, inputName, inputData, app) {
-        if (true || !is_UEnode(node) || !inputName?.includes("regex") || !app.ui.settings.getSettingValue('AE.autoprompt', true)) {
+        if (true || !is_UEnode(node) || !inputName?.includes("regex") || !app.ui.settings.getSettingValue('AE.autoprompt')) {
             return STRING.apply(this, arguments);
         }
         const atw = active_text_widget(node, inputName);

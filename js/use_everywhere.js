@@ -264,7 +264,7 @@ app.registerExtension({
         defineProperty(app.canvas, 'allow_searchbox', {
             get : function() { 
                 if (this.use_original_menu) { return original_allow_searchbox; }
-                if(app.ui.settings.getSettingValue('AE.replacesearch', true) && this.connecting_output) {
+                if(app.ui.settings.getSettingValue('AE.replacesearch') && this.connecting_output) {
                     return false;
                 } else { return original_allow_searchbox; }
             },

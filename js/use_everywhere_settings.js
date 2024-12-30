@@ -149,9 +149,9 @@ function node_menu_settings(options, node) {
 function canvas_menu_settings(options) {
     options.push(null); // divider
     options.push({
-        content: (app.ui.settings.getSettingValue('AE.showlinks', 0)>0) ? "Hide UE links" : "Show UE links",
+        content: (app.ui.settings.getSettingValue('AE.showlinks')>0) ? "Hide UE links" : "Show UE links",
         callback: () => {
-            const setTo = (app.ui.settings.getSettingValue('AE.showlinks', 0)>0) ? 0 : 4;
+            const setTo = (app.ui.settings.getSettingValue('AE.showlinks')>0) ? 0 : 4;
             app.ui.settings.setSettingValue('AE.showlinks', setTo);
             app.graph.change();
         }

@@ -93,7 +93,7 @@ class GraphAnalyser {
         if (this.ambiguity_messages.length) Logger.log(Logger.PROBLEM, "Ambiguous connections", this.ambiguity_messages, Logger.CAT_AMBIGUITY);
     
         // if there are loops report them and raise an exception
-        if (check_for_loops && app.ui.settings.getSettingValue('AE.checkloops', true)) {
+        if (check_for_loops && app.ui.settings.getSettingValue('AE.checkloops')) {
             try {
                 node_in_loop(live_nodes, links_added);
             } catch (e) {

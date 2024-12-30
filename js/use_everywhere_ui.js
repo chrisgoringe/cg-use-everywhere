@@ -93,7 +93,7 @@ function displayMessage(id, message) {
     const node = get_real_node(id);
     if (!node) return;
     var w = node.widgets?.find((w) => w.name === "display_text_widget");
-    if (app.ui.settings.getSettingValue('AE.details', false) || w) {
+    if (app.ui.settings.getSettingValue('AE.details') || w) {
         if (!w) {
             w = ComfyWidgets["STRING"](this, "display_text_widget", ["STRING", { multiline: true }], app).widget;
             w.inputEl.readOnly = true;
@@ -201,7 +201,7 @@ class LinkRenderController {
 
     _highlight_ue_connections(node, ctx) {
         this.reading_list = true;
-        if (!app.ui.settings.getSettingValue('AE.highlight', true)) return;
+        if (!app.ui.settings.getSettingValue('AE.highlight')) return;
         //if (this._ue_links_visible) return;
         if (!this.list_ready()) return;
 
@@ -272,9 +272,9 @@ class LinkRenderController {
         const orig_hqr = app.canvas.highquality_render;
         app.canvas.highquality_render = false;
 
-        const mode = app.ui.settings.getSettingValue('AE.showlinks', 0);
-        var animate = app.ui.settings.getSettingValue('AE.animate', 3);
-        if (app.ui.settings.getSettingValue('AE.stop.animation.running', true) && this.queue_size>0) animate = 0;
+        const mode = app.ui.settings.getSettingValue('AE.showlinks');
+        var animate = app.ui.settings.getSettingValue('AE.animate');
+        if (app.ui.settings.getSettingValue('AE.stop.animation.running') && this.queue_size>0) animate = 0;
         if (animate==2 || animate==3) this.animate_step(ctx);
 
         var any_links_shown = false;
