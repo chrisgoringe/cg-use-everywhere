@@ -27,7 +27,11 @@ class GraphAnalyser {
         var p;
         if (modify_and_return_prompt) {
             p = await this.original_graphToPrompt.apply(app);
-            p = structuredClone(p);
+            try {
+                p = JSON.parse(JSON.stringify(p));
+            } catch (error) {
+                console.error("Error during JSON cloning:", error);
+            }
         } else {
             p = { workflow:app.graph.serialize() }
         }
