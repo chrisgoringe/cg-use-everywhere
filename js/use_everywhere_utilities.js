@@ -235,15 +235,15 @@ function is_connected(input) {
 Is this a UE node?
 */
 function is_UEnode(node_or_nodeType) {
-    const title = node_or_nodeType.type ?? node_or_nodeType.comfyClass;
+    const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
     return ((title) && (title.startsWith("Anything Everywhere") || title==="Seed Everywhere" || title==="Prompts Everywhere"))
 }
 function is_helper(node_or_nodeType) {
-    const title = node_or_nodeType.type ?? node_or_nodeType.comfyClass;
+    const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
     return ((title) && (title.startsWith("Simple String")))
 }
 function has_priority_boost(node_or_nodeType) {
-    const title = node_or_nodeType.type ?? node_or_nodeType.comfyClass;
+    const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
     return ((title) && (title == "Anything Everywhere?"))   
 }
 
