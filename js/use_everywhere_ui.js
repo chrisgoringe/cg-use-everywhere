@@ -107,10 +107,10 @@ function displayMessage(id, message) {
 
 function update_input_label(node, slot, app) {
     if (node.input_type[slot]) {
-        node.inputs[slot].name = node.input_type[slot];
+        node.inputs[slot].label = node.input_type[slot];
         node.inputs[slot].color_on = app.canvas.default_connection_color_byType[node.input_type[slot]];
     } else {
-        node.inputs[slot].name = "anything";
+        node.inputs[slot].label = "anything";
         node.inputs[slot].color_on = undefined;
     }
 }
