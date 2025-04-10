@@ -1,5 +1,7 @@
-from server import PromptServer
 import torch
+
+from server import PromptServer
+from comfy.comfy_types.node_typing import IO
 
 def message(id,message):
     if isinstance(message, torch.Tensor):
@@ -42,7 +44,7 @@ class AnythingEverywhere(Base):
     @classmethod
     def INPUT_TYPES(s):
         return {"required":{}, 
-                "optional": { "anything" : ("*", {}), },
+                "optional": { "anything" : (IO.ANY, {}), },
                  "hidden": {"id":"UNIQUE_ID"} }
 
     def func(self, id, **kwargs):
@@ -54,7 +56,7 @@ class AnythingEverywherePrompts(Base):
     @classmethod
     def INPUT_TYPES(s):
         return {"required":{}, 
-                "optional": { "+ve" : ("*", {}), "-ve" : ("*", {}), } }
+                "optional": { "+ve" : (IO.ANY, {}), "-ve" : (IO.ANY, {}), } }
     
     def func(self, **kwargs):
         return ()
@@ -63,7 +65,7 @@ class AnythingEverywhereTriplet(Base):
     @classmethod
     def INPUT_TYPES(s):
         return {"required":{}, 
-                "optional": { "anything" : ("*", {}), "anything2" : ("*", {}), "anything3" : ("*", {}),} }
+                "optional": { "anything" : (IO.ANY, {}), "anything2" : (IO.ANY, {}), "anything3" : (IO.ANY, {}),} }
     
     def func(self, **kwargs):
         return ()
@@ -73,7 +75,7 @@ class AnythingSomewhere(Base):
     def INPUT_TYPES(s):
         return {"required":{}, 
                 "optional": { 
-                    "anything" : ("*", {}), 
+                    "anything" : (IO.ANY, {}), 
                     "title_regex" : ("STRING", {"default":".*"}),
                     "input_regex" : ("STRING", {"default":".*"}),
                     "group_regex" : ("STRING", {"default":".*"}),
