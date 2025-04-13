@@ -28,7 +28,7 @@ class Logger {
 
     static log_call(level, method) {
         if (level <= Logger.LEVEL) {
-            method.apply();
+            method();
         }
     }
 

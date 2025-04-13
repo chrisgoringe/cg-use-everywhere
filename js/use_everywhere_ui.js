@@ -173,7 +173,7 @@ class LinkRenderController {
         this.ue_list_reloading = false;
         if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
         Logger.log(Logger.INFORMATION, "link list update completed");
-        Logger.log_call(Logger.DETAIL, this.ue_list.print_all);
+        Logger.log_call(Logger.DETAIL, this.ue_list.print_all.bind(this.ue_list));
     }.bind(this)
 
     // callback for when the_graph_analyser fails - note reloading is false and log
