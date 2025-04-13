@@ -276,12 +276,13 @@ app.registerExtension({
 
     init() {
         graphAnalyser = GraphAnalyser.instance();
-        app.graphToPrompt = async function () {
-            return graphAnalyser.analyse_graph(true, true, false);
-        }
-        
         linkRenderController = LinkRenderController.instance(graphAnalyser);
 
+        app.graphToPrompt = async function () {
+            const ues = await graphAnalyser.analyse_graph(true);
+            return await graphAnalyser.graph_to_prompt(ues);
+        }
+        
         add_autoprompts();
 
         if (false) add_debug();
