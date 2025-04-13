@@ -259,4 +259,4 @@ class UseEverywhereList {
     }
 }
 
-export {UseEverywhereList}
+export {UseEverywhereList, display_name}

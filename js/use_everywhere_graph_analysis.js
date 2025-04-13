@@ -1,7 +1,8 @@
 import { GroupNodeHandler } from "../core/groupNode.js";
-import { UseEverywhereList } from "./use_everywhere_classes.js";
+import { UseEverywhereList, display_name } from "./use_everywhere_classes.js";
 import { add_ue_from_node, add_ue_from_node_in_group } from "./use_everywhere_nodes.js";
 import { node_in_loop, node_is_live, is_connected, is_UEnode, Logger, get_real_node } from "./use_everywhere_utilities.js";
+import { UpdateBlocker } from "./use_everywhere_ui.js";
 import { app } from "../../scripts/app.js";
 
 class GraphAnalyser {
@@ -21,20 +22,53 @@ class GraphAnalyser {
     unpause() { this.pause_depth -= 1; }
 
 
-    async analyse_graph(modify_and_return_prompt=false, check_for_loops=false, supress_before_queued=true) {
+    async analyse_graph(modify_and_return_prompt=false, check_for_loops=false, supress_before_queued=true, cur_list=undefined) {
         if (this.pause_depth > 0) { return this.original_graphToPrompt.apply(app) }
         this.ambiguity_messages = [];
         var p;
         if (modify_and_return_prompt) {
-            p = await this.original_graphToPrompt.apply(app);
+            if (!cur_list) {
+                console.error("No cur_list");
+                return null;
+            }
+            // Convert the virtual links into real connections
+            const addedLinks = [];
+            UpdateBlocker.push();  // Block updates while we modify the connections
+            try { // For each UseEverywhere object add its connections
+                cur_list.ues.forEach(ue => {
+                     const originNode = get_real_node(ue.output[0]);
+                     const originSlotIndex = ue.output[1];
+                     Logger.log(Logger.INFORMATION, "Adding virtual links for " + ue.description);
+                     // Add a link for each target
+                     ue.sending_to.forEach(tg => {
+                         const targetNode = get_real_node(tg.node.id);
+                         const targetSlotIndex = tg.input_index;
+                         const newLink = originNode.connect(originSlotIndex, targetNode, targetSlotIndex);
+                         if (!newLink)
+                             console.error("Failed to connect nodes: " +
+                                           `${originNode.id}[${originSlotIndex}] -> ` +
+                                           `${targetNode.id}[${targetSlotIndex}].`);
+                         else { // Memorize the links we are adding to remove them later
+                             addedLinks.push(newLink.id);
+                             Logger.log(Logger.INFORMATION, `  -> ${display_name(tg.node)}, ${tg.input.name} ` +
+                                                            `(${tg.node.id}.${tg.input_index}) (ID: ${newLink.id})`);
+                         }
+                     } );
+                } );
+                // Now create the prompt using the ComfyUI original functionality and the patched graph
+                p = await this.original_graphToPrompt.apply(app);
+                // Remove the added virtual links
+                addedLinks.forEach(id => { app.graph.removeLink(id); });
+            } finally { UpdateBlocker.pop(); }
             try {
                 p = JSON.parse(JSON.stringify(p));
             } catch (error) {
                 console.error("Error during JSON cloning:", error);
+                return null;
             }
-        } else {
-            p = { workflow:app.graph.serialize() }
+            return p;
         }
+        p = { workflow:app.graph.serialize() };
                 
         // Create a UseEverywhereList and populate it from all live (not bypassed) nodes
         const ues = new UseEverywhereList();
@@ -55,7 +89,7 @@ class GraphAnalyser {
                 var gpData = GroupNodeHandler.getGroupData(nd);
                 const isGrp = !!gpData;
                 const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;
-                node.inputs?.forEach(input => {
+                nd.inputs?.forEach(input => {
                     if (!is_connected(input) && !(node.reject_ue_connection && node.reject_ue_connection(input))) {
                         var ue = ues.find_best_match(node, input, this.ambiguity_messages);
                         if (ue) {
@@ -77,9 +111,8 @@ class GraphAnalyser {
                                 const up_inner_node_id = upNode.getInnerNodes()[up_inner_node_index].id;
                                 const up_inner_node_slot = upGpData.newToOldOutputMap[ue.output[1]].slot;
                                 effective_output = [`${up_inner_node_id}`, up_inner_node_slot];
-                            } 
+                            }
                             if (effective_node_slot==-1) effective_node_slot = effective_node.inputs.findIndex((i)=>(i.label ? i.label : i.name)===(input.label ? input.label : input.name));
-                            if (modify_and_return_prompt) p.output[effective_node.id].inputs[effective_node.inputs[effective_node_slot].name] = effective_output;
                             links_added.add({
                                 "downstream":effective_node.id, "downstream_slot":effective_node_slot,
                                 "upstream":effective_output[0], "upstream_slot":effective_output[1], 
@@ -110,15 +143,7 @@ class GraphAnalyser {
                 throw new Error(`Loop Detected ${e.stack}, ${e.ues}`, {"cause":e});
             }
         }
-    
-        if (modify_and_return_prompt) {
-            [...links_added].forEach((l)=>{
-                p.workflow.last_link_id += 1;
-                p.workflow.links.push([p.workflow.last_link_id, parseInt(l.upstream), l.upstream_slot, l.downstream, l.downstream_slot, l.type])
-            })
-            return p;
-        }
-        else return ues;
+        return ues;
     }
 }
 
