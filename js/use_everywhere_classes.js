@@ -22,7 +22,12 @@ class UseEverywhere {
         this.sending_to = [];
         Object.assign(this, arguments[0]);
         if (this.priority === undefined) this.priority = 0;
-        this.description = `source ${this?.output[0]}.${this?.output[1]} -> control ${this?.controller.id}.${this?.control_node_input_index} "${this.type}" <-  (priority ${this.priority})`;
+        const from_node = get_real_node(this?.output[0]);
+        const to_node = get_real_node(this?.controller.id);
+        this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]].name} (${this?.output[0]}.${this?.output[1]}) ` +
+                           `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index].name} (${this?.controller.id}.${this?.control_node_input_index}) ` +
+                           `"${this.type}" <-  (priority ${this.priority})`;
+        // this.description = `source ${this?.output[0]}.${this?.output[1]} -> control ${this?.controller.id}.${this?.control_node_input_index} "${this.type}" <-  (priority ${this.priority})`;
         if (this.title_regex) this.description += ` - node title regex '${this.title_regex.source}'`;
         if (this.input_regex) this.description += ` - input name regex '${this.input_regex.source}'`;
     }
@@ -259,4 +264,4 @@ class UseEverywhereList {
     }
 }
 
-export {UseEverywhereList}
+export {UseEverywhereList, display_name}
