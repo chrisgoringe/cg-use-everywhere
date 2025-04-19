@@ -67,6 +67,7 @@ class GraphAnalyser {
                 var gpData = GroupNodeHandler.getGroupData(nd);
                 const isGrp = !!gpData;
                 const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;
+                const o2w = isGrp ? Object.entries(gpData.oldToNewWidgetMap) : null;
                 nd.inputs?.forEach(input => {
                     if (!is_connected(input) && !(node.reject_ue_connection && node.reject_ue_connection(input))) {
                         var ue = ues.find_best_match(node, input, this.ambiguity_messages);
@@ -74,8 +75,12 @@ class GraphAnalyser {
                             var effective_node = node;
                             var effective_node_slot = -1;
                             if (isGrp) { // the node we are looking at is a group node
-                                const in_index = node.inputs.findIndex((i)=>i==input);
-                                const inner_node_index = o2n.findIndex((l)=>Object.values(l[1]).includes(in_index));
+                                const in_index = nd.inputs.findIndex((i)=>i==input);
+                                var inner_node_index = o2n.findIndex((l)=>Object.values(l[1]).includes(in_index));
+                                if (inner_node_index==-1) {
+                                    // Should be a widget
+                                    inner_node_index = o2w.findIndex((l)=>Object.values(l[1]).includes(input.name));
+                                }
                                 const inner_node_slot_index = Object.values(o2n[inner_node_index][1]).findIndex((l)=>l==in_index);
                                 effective_node_slot = Object.keys(o2n[inner_node_index][1])[inner_node_slot_index];
                                 effective_node = nd.getInnerNodes()[o2n[inner_node_index][0]];
