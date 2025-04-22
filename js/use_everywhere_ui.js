@@ -246,7 +246,7 @@ class LinkRenderController {
                         ctx.beginPath();
                         ctx.strokeStyle = "#ffffff80"
                         ctx.moveTo(pos2[0]+radius,pos2[1])
-                        ctx.lineTo(node.size[0]-radius,pos2[1]);
+                        ctx.lineTo(node.size[0]-pos2[0],pos2[1]);
                         ctx.stroke();
                     }
                     ctx.beginPath();
