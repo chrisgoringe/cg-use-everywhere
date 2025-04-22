@@ -34,71 +34,87 @@ class GraphAnalyser {
             // Remove the added virtual links
             addedLinks.forEach(id => { app.graph.removeLink(id); });
         } finally { UpdateBlocker.pop(); }
-        try {
+
+        /*try {
             p = JSON.parse(JSON.stringify(p));
         } catch (error) {
             console.error("Error during JSON cloning:", error);
             return null;
-        }
+        }*/
         return p;
     }
 
-    async analyse_graph(check_for_loops=false) {
+    analyse_graph(check_for_loops=false) {
         if (this.pause_depth > 0) { return this.original_graphToPrompt.apply(app) }
         this.ambiguity_messages = [];
         var p = { workflow:app.graph.serialize() };
-                
-        // Create a UseEverywhereList and populate it from all live (not bypassed) nodes
-        const ues = new UseEverywhereList();
         const live_nodes = p.workflow.nodes.filter((node) => node_is_live(node))
+                
+        // Create a UseEverywhereList and populate it from all live (not bypassed) UE nodes
+        const ues = new UseEverywhereList();
         live_nodes.filter((node) => is_UEnode(node)).forEach(node => { add_ue_from_node(ues, node); })
-        live_nodes.filter((node) => (get_real_node(node.id, Logger.INFORMATION) && GroupNodeHandler.isGroupNode(get_real_node(node.id)))).forEach( groupNode => {
+        // and nodes in group nodes
+        live_nodes.filter((node) => (get_real_node(node.id, Logger.DETAIL) && GroupNodeHandler.isGroupNode(get_real_node(node.id)))).forEach( groupNode => {
             const group_data = GroupNodeHandler.getGroupData(get_real_node(groupNode.id));
             group_data.nodeData.nodes.filter((node) => is_UEnode(node)).forEach(node => { 
                 add_ue_from_node_in_group(ues, node, groupNode.id, group_data); 
             })
         })
     
-        const links_added = new Set();
-        // Look for unconnected inputs and see if we can connect them
+        
+        // List all unconnected inputs on non-UE nodes which are connectable
+        const connectable = []
         live_nodes.filter((node) => !is_UEnode(node)).forEach(node => {
-            const nd = get_real_node(node.id, Logger.INFORMATION);
+            const nd = get_real_node(node.id, Logger.DETAIL);
+
             if (nd && !nd.properties.rejects_ue_links) {
                 var gpData = GroupNodeHandler.getGroupData(nd);
                 const isGrp = !!gpData;
                 const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;
+                const widget_names = nd.widgets?.map(w => w.name) || [];
                 nd.inputs?.forEach(input => {
-                    if (!is_connected(input) && !(node.reject_ue_connection && node.reject_ue_connection(input))) {
-                        var ue = ues.find_best_match(node, input, this.ambiguity_messages);
-                        if (ue) {
-                            var effective_node = node;
-                            var effective_node_slot = -1;
-                            if (isGrp) { // the node we are looking at is a group node
-                                const in_index = node.inputs.findIndex((i)=>i==input);
-                                const inner_node_index = o2n.findIndex((l)=>Object.values(l[1]).includes(in_index));
-                                const inner_node_slot_index = Object.values(o2n[inner_node_index][1]).findIndex((l)=>l==in_index);
-                                effective_node_slot = Object.keys(o2n[inner_node_index][1])[inner_node_slot_index];
-                                effective_node = nd.getInnerNodes()[o2n[inner_node_index][0]];
-                            }
-                            const upNode = get_real_node(ue.output[0]);
-                            var effective_output = [ue.output[0], ue.output[1]];
-                            if (GroupNodeHandler.isGroupNode(upNode)) { // the upstream node is a group node
-                                const upGpData = GroupNodeHandler.getGroupData(upNode);
-                                const up_inner_node = upGpData.newToOldOutputMap[ue.output[1]].node;
-                                const up_inner_node_index = up_inner_node.index;
-                                const up_inner_node_id = upNode.getInnerNodes()[up_inner_node_index].id;
-                                const up_inner_node_slot = upGpData.newToOldOutputMap[ue.output[1]].slot;
-                                effective_output = [`${up_inner_node_id}`, up_inner_node_slot];
-                            }
-                            if (effective_node_slot==-1) effective_node_slot = effective_node.inputs.findIndex((i)=>(i.label ? i.label : i.name)===(input.label ? input.label : input.name));
-                            links_added.add({
-                                "downstream":effective_node.id, "downstream_slot":effective_node_slot,
-                                "upstream":effective_output[0], "upstream_slot":effective_output[1], 
-                                "controller":ue.controller.id,
-                                "type":ue.type
-                            });
-                        }
-                    }
+                    if (is_connected(input)) return;  
+                    if (nd.reject_ue_connection && nd.reject_ue_connection(input)) return;
+                    if (widget_names.includes(input.name) && !(nd.properties['widget_ue_connectable'] && nd.properties['widget_ue_connectable'][input.name])) return;
+                    connectable.push({node, input, isGrp, o2n});
+                })
+            }
+        })
+
+        // see if we can connect them
+        const links_added = new Set();
+        connectable.forEach(({node, input, isGrp, o2n}) => {
+            var ue = ues.find_best_match(node, input, this.ambiguity_messages);
+            if (ue) {
+
+                // Get the real node and slot (taking into account group nodes)
+                var real_target_node = node;
+                var real_target_node_slot = -1;
+                if (isGrp) { // the node we are looking at is a group node
+                    const in_index = node.inputs.findIndex((i)=>i==input);
+                    const inner_node_index = o2n.findIndex((l)=>Object.values(l[1]).includes(in_index));
+                    const inner_node_slot_index = Object.values(o2n[inner_node_index][1]).findIndex((l)=>l==in_index);
+                    real_target_node_slot = Object.keys(o2n[inner_node_index][1])[inner_node_slot_index];
+                    real_target_node = nd.getInnerNodes()[o2n[inner_node_index][0]];
+                }
+
+                const upstream_node = get_real_node(ue.output[0]);
+                var effective_output = [ue.output[0], ue.output[1]];  // [node_id, slot]
+                if (GroupNodeHandler.isGroupNode(upstream_node)) { // the upstream node is a group node, so get the inner node and slot
+                    const upGpData = GroupNodeHandler.getGroupData(upstream_node);
+                    const up_inner_node = upGpData.newToOldOutputMap[ue.output[1]].node;
+                    const up_inner_node_index = up_inner_node.index;
+                    const up_inner_node_id = upstream_node.getInnerNodes()[up_inner_node_index].id;
+                    const up_inner_node_slot = upGpData.newToOldOutputMap[ue.output[1]].slot;
+                    effective_output = [`${up_inner_node_id}`, up_inner_node_slot];
+                }
+
+                if (real_target_node_slot==-1) real_target_node_slot = real_target_node.inputs.findIndex((i)=>(i.label ? i.label : i.name)===(input.label ? input.label : input.name));
+                links_added.add({
+                    "downstream":real_target_node.id, "downstream_slot":real_target_node_slot,
+                    "upstream":effective_output[0], "upstream_slot":effective_output[1], 
+                    "controller":ue.controller.id,
+                    "type":ue.type
                 });
             }
         });

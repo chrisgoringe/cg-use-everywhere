@@ -1,13 +1,14 @@
 import { app } from "../../scripts/app.js";
 import { GroupNodeHandler } from "../core/groupNode.js";
 
+
+
 class Logger {
     static ERROR       = 0; // actual errors
     static PROBLEM     = 1; // things that stop the workflow working
     static INFORMATION = 2; // record of good things
     static DETAIL      = 3; // details
 
-    static LEVEL = Logger.PROBLEM;
     static TRACE = false;   // most of the method calls
 
     static CAT_AMBIGUITY = 1;
@@ -19,7 +20,7 @@ class Logger {
             const elapsed = (new Date()) - Logger.last_reported_category[category];
             if (elapsed < Logger.category_cooloff[category]) return;
         }
-        if (level <= Logger.LEVEL) {
+        if (level <= app.ui.settings.getSettingValue('AE.logging')) {
             console.log(message);
             if (array) for (var i=0; i<array.length; i++) { console.log(array[i]) }
             if (category) Logger.last_reported_category[category] = new Date();
@@ -27,13 +28,13 @@ class Logger {
     }
 
     static log_call(level, method) {
-        if (level <= Logger.LEVEL) {
+        if (level <= app.ui.settings.getSettingValue('AE.logging')) {
             method();
         }
     }
 
     static log_error(level, message) {
-        if (level <= Logger.LEVEL) {
+        if (level <= app.ui.settings.getSettingValue('AE.logging')) {
             console.error(message);
         }
     }
@@ -41,10 +42,58 @@ class Logger {
     static trace(message, array, node) {
         if (Logger.TRACE) {
             if (node) { console.log(`TRACE (${node.id}) : ${message}`) } else { console.log(`TRACE : ${message}`) }
-            if (array && Logger.LEVEL>=Logger.INFORMATION) for (var i=0; i<array.length; i++) { console.log(`  ${i} = ${array[i]}`) }
+            if (array && app.ui.settings.getSettingValue('AE.logging')>=Logger.INFORMATION) for (var i=0; i<array.length; i++) { console.log(`  ${i} = ${array[i]}`) }
         }
     }
 }
+
+class GraphConverter {
+    static _instance;
+    static instance() {
+        if (!GraphConverter._instance) GraphConverter._instance = new GraphConverter();
+        return GraphConverter._instance;
+    }
+
+    constructor() { 
+        this.node_input_map = {};
+        this.given_message = false;
+        this.did_conversion = false;
+     }
+
+    running_116_plus() {
+        const version = __COMFYUI_FRONTEND_VERSION__.split('.')
+        return (parseInt(version[0])>=1 && (parseInt(version[0])>1 || parseInt(version[1])>=16))
+    }
+
+    store_node_input_map(data) { 
+        this.node_input_map = {};
+        data?.nodes.forEach((node) => { this.node_input_map[node.id] = node.inputs.map((input) => input.name); })
+        Logger.log(Logger.DETAIL, "stored node_input_map", this.node_input_map);
+    }
+
+    convert_if_pre_116(node) {
+        if (!node) return;
+        if (!(node.properties)) node.properties = {};
+        if (node.properties.ue116converted) return
+
+        if (!this.given_message) {
+            Logger.log(Logger.INFORMATION, `Graph was saved with a version of ComfyUI before 1.16, so Anything Everywhere will try to work out which widgets are connectable`);
+            this.given_message = true;
+        }
+        
+        node.properties['widget_ue_connectable'] = {}
+        const widget_names = node.widgets?.map(w => w.name) || [];
+        this.node_input_map[node.id].filter((input_name)=>widget_names.includes(input_name)).forEach((input_name) => {
+            node.properties['widget_ue_connectable'][input_name] = true;
+            this.did_conversion = true;
+            Logger.log(Logger.INFORMATION, `node ${node.id} widget ${input_name} marked as accepting UE because it was an input when saved`);
+        });
+        
+        node.properties.ue116converted = true;
+    }
+}
+
+export const graphConverter = GraphConverter.instance();
 
 class LoopError extends Error {
     constructor(id, stack, ues) {

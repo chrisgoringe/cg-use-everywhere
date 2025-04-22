@@ -1,11 +1,9 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
-import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty } from "./use_everywhere_utilities.js";
+import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter } from "./use_everywhere_utilities.js";
 import { displayMessage, update_input_label, indicate_restriction, UpdateBlocker } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
-import { autoCreateMenu } from "./use_everywhere_autocreate.js";
-import { add_autoprompts } from "./use_everywhere_autoprompt.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { main_menu_settings, node_menu_settings, canvas_menu_settings, non_ue_menu_settings } from "./use_everywhere_settings.js";
 import { add_debug } from "./ue_debug.js";
@@ -149,21 +147,12 @@ app.registerExtension({
         setTimeout( ()=>{linkRenderController.mark_link_list_outdated()}, 100 );
     }, 
 
-    // When a graph node is loaded collapsed the UI need to know
-    // probably not needed now autocomplete is gone?
-    loadedGraphNode(node) { if (node.flags.collapsed && node.loaded_when_collapsed) node.loaded_when_collapsed(); },
+    // When a graph node is loaded convert it if needed
+    loadedGraphNode(node) { 
+        if (graphConverter.running_116_plus()) { graphConverter.convert_if_pre_116(node); }
+    },
 
 	async setup() {
-        /*
-        Add css for the autocomplete. Probably not needed now
-        */
-        const head = document.getElementsByTagName('HEAD')[0];
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.type = 'text/css';
-        link.href = 'extensions/cg-use-everywhere/ue.css';
-        head.appendChild(link);
-
         /*
         Listen for message-handler event from python code
         */
@@ -179,6 +168,20 @@ app.registerExtension({
         api.addEventListener("status", ({detail}) => {
             if (linkRenderController) linkRenderController.note_queue_size(detail ? detail.exec_info.queue_remaining : 0)
         });
+
+        /* if we are on version 1.16 or later, stash input data to convert nodes when they are loaded */
+        if (graphConverter.running_116_plus()) {
+            const original_loadGraphData = app.loadGraphData;
+            app.loadGraphData = function (data) {
+                graphConverter.store_node_input_map(data);
+                const cvw_was = app.ui.settings.getSettingValue("Comfy.Validation.Workflows")
+                if (app.ui.settings.getSettingValue("AE.block.validation")) {
+                    app.ui.settings.setSettingValue("Comfy.Validation.Workflows", false);
+                }
+                original_loadGraphData.apply(this, arguments);
+                app.ui.settings.setSettingValue("Comfy.Validation.Workflows", cvw_was);
+            }
+        }
 
         /*
         Don't modify the graph when saving the workflow or api
@@ -240,50 +243,34 @@ app.registerExtension({
             return options;
         }
 
-        /*
-        When you drag from a node, showConnectionMenu is called. If shift key is pressed call ours
-        Broken #219
-        */
-        const showSearchBox = LGraphCanvas.prototype.showSearchBox;
-        LGraphCanvas.prototype.showSearchBox = function (optPass) {
-            if (optPass.shiftKey) {
-                autoCreateMenu.apply(this, arguments);
-            } else {
-                this.use_original_menu = true;
-                showSearchBox.apply(this, arguments);
-                this.use_original_menu = false;
-            }
-        }
-
-        /*
-        To allow us to use the shift drag above, we need to intercept 'allow_searchbox' sometimes
-        (because searchbox is the default behaviour when shift dragging)
-        Broken #219
-        */
-        var original_allow_searchbox = app.canvas.allow_searchbox;
-        defineProperty(app.canvas, 'allow_searchbox', {
-            get : function() { 
-                if (this.use_original_menu) { return original_allow_searchbox; }
-                if(app.ui.settings.getSettingValue('AE.replacesearch') && this.connecting_output) {
-                    return false;
-                } else { return original_allow_searchbox; }
-            },
-            set : function(v) { original_allow_searchbox = v; }
-        });
-        
-
 	},
 
     init() {
         graphAnalyser = GraphAnalyser.instance();
         linkRenderController = LinkRenderController.instance(graphAnalyser);
 
+        var prompt_being_queued = false;
+
+        const original_graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
-            const ues = await graphAnalyser.analyse_graph(true);
-            return await graphAnalyser.graph_to_prompt(ues);
+            if (prompt_being_queued) {
+                return await graphAnalyser.graph_to_prompt( graphAnalyser.analyse_graph(true) );
+            } else {
+                return await original_graphToPrompt.apply(app, arguments);
+            }
+        }
+
+        const original_queuePrompt = app.queuePrompt;
+        app.queuePrompt = async function () {
+            prompt_being_queued = true;
+            try {
+                return await original_queuePrompt.apply(app, arguments);
+            } finally {
+                prompt_being_queued = false;
+            }
         }
         
-        add_autoprompts();
+        //add_autoprompts();
 
         if (false) add_debug();
 

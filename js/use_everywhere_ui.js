@@ -156,7 +156,7 @@ class LinkRenderController {
         if (this.ue_list) {
             this.ue_list = undefined;
             this.request_link_list_update();
-            Logger.log(Logger.INFORMATION, "link_list marked outdated");
+            Logger.log(Logger.DETAIL, "link_list marked outdated");
         } else {
             Logger.log(Logger.INFORMATION, "link_list was already outdated");
         }
@@ -172,7 +172,7 @@ class LinkRenderController {
         this.ue_list = value;
         this.ue_list_reloading = false;
         if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
-        Logger.log(Logger.INFORMATION, "link list update completed");
+        Logger.log(Logger.DETAIL, "link list update completed");
         Logger.log_call(Logger.DETAIL, this.ue_list.print_all.bind(this.ue_list));
     }.bind(this)
 
@@ -187,8 +187,12 @@ class LinkRenderController {
     request_link_list_update() {
         if (this.ue_list_reloading) return;                            // already doing it
         this.ue_list_reloading = true;                                 // stop any more requests
-        this.the_graph_analyser.analyse_graph().then(this.reload_resolve, this.reload_reject); // an async call is a promise; pass it two callbacks
-        Logger.log(Logger.INFORMATION, "link list update started");
+        try {
+            const ues = this.the_graph_analyser.analyse_graph()
+            this.reload_resolve(ues)
+        } catch (e) {
+            this.reload_reject(e);
+        }
     } 
 
     highlight_ue_connections(node, ctx) {

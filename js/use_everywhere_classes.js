@@ -24,9 +24,19 @@ class UseEverywhere {
         if (this.priority === undefined) this.priority = 0;
         const from_node = get_real_node(this?.output[0]);
         const to_node = get_real_node(this?.controller.id);
-        this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]].name} (${this?.output[0]}.${this?.output[1]}) ` +
-                           `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index].name} (${this?.controller.id}.${this?.control_node_input_index}) ` +
-                           `"${this.type}" <-  (priority ${this.priority})`;
+        try {
+            if (this.control_node_input_index>=0) {
+                this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]].name} (${this?.output[0]}.${this?.output[1]}) ` +
+                                `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index].name} (${this?.controller.id}.${this?.control_node_input_index}) ` +
+                                `"${this.type}" <-  (priority ${this.priority})`;
+            } else {
+                this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]].name} (${this?.output[0]}.${this?.output[1]}) ` +
+                                `"${this.type}" <-  (priority ${this.priority})`;
+            }                
+        } catch (e) {
+            // for breakpointing
+            throw e;
+        }
         // this.description = `source ${this?.output[0]}.${this?.output[1]} -> control ${this?.controller.id}.${this?.control_node_input_index} "${this.type}" <-  (priority ${this.priority})`;
         if (this.title_regex) this.description += ` - node title regex '${this.title_regex.source}'`;
         if (this.input_regex) this.description += ` - input name regex '${this.input_regex.source}'`;
@@ -141,13 +151,19 @@ class UseEverywhereList {
         }
         if (real_node.properties["priority_boost"]) params.priority += real_node.properties["priority_boost"];
         
-        const ue = new UseEverywhere(params);
-        const error = validity_errors(params);
+        var error = ""
+        var ue = null;
+        try {
+            ue = new UseEverywhere(params);
+            error = validity_errors(params);
+        } catch (e) {
+            error = `Error creating UseEverywhere object: ${e}`;
+        }
         if (error==="") { 
             this.ues.push(ue);
-            Logger.log(Logger.INFORMATION, `Added ${ue.description}`)
+            Logger.log(Logger.DETAIL, `Added ${ue.description}`)
         } else {
-            Logger.log(Logger.PROBLEM, `Rejected ${ue.description} because ${error}`, params);
+            Logger.log(Logger.PROBLEM, `Rejected ${ue?.description} because ${error}`, params);
         }
     }
 
@@ -157,7 +173,7 @@ class UseEverywhereList {
             candidate.matches(node, input)
         ));
         if (matches.length==0) {
-            Logger.log(Logger.INFORMATION, `'${display_name(node)}' optional input '${input.name}' unmatched`)
+            Logger.log(Logger.DETAIL, `'${display_name(node)}' optional input '${input.name}' unmatched`)
             return undefined; 
         }
         if (matches.length>1) {
@@ -175,7 +191,7 @@ class UseEverywhereList {
             }
         }
         matches[0].note_sending_to(node, input);
-        Logger.log(Logger.INFORMATION,`'${display_name(node)}' input '${input.name}' matched to ${matches[0].description}`);
+        Logger.log(Logger.DETAIL,`'${display_name(node)}' input '${input.name}' matched to ${matches[0].description}`);
         return matches[0];        
     }
 

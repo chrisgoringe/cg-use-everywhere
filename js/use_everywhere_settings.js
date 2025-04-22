@@ -55,10 +55,18 @@ function main_menu_settings() {
         onChange: app.graph.change.bind(app.graph),
     });
     app.ui.settings.addSetting({
-        id: "AE.replacesearch",
-        name: "Anything Everywhere replace search",
+        id: "AE.logging",
+        name: "Anything Everywhere logging",
+        type: "combo",
+        options: [ {value:0, text:"Errors Only"}, {value:1, text:"Problems"}, {value:2, text:"Information"}, {value:3, text:"Detail"}, ],
+        defaultValue: 1,
+    });
+    app.ui.settings.addSetting({
+        id: "AE.block.validation",
+        name: "Anything Everywhere block validation",
         type: "boolean",
         defaultValue: true,
+        tooltip: "Turn off workflow validation (which tends to replace UE links with real ones)",
     });
 }
 
@@ -103,6 +111,26 @@ function priority_boost_submenu(value, options, e, menu, node) {
     if (current_element) current_element.style.borderLeft = "2px solid #484";
 }
 
+function widget_ue_submenu(value, options, e, menu, node) {
+    if (!(node.properties['widget_ue_connectable'])) node.properties['widget_ue_connectable'] = {};
+    const names = []
+    node.widgets.forEach((widget) => { names.push(widget.name) });
+    const submenu = new LiteGraph.ContextMenu(
+        names,
+        { event: e, callback: function (v) { 
+            node.properties['widget_ue_connectable'][v] = !!!node.properties['widget_ue_connectable'][v]; 
+            LinkRenderController.instance().mark_link_list_outdated();
+        },
+        parentMenu: menu, node:node}
+    )
+    names.forEach((name, i) => {
+        if (node.properties['widget_ue_connectable'][name]) {
+            const current_element = submenu.root.querySelector(`:nth-child(${i+1})`);
+            if (current_element) current_element.style.borderLeft = "2px solid #484";
+        }
+    })
+}
+
 function non_ue_menu_settings(options, node) {
     options.push(null);
     options.push(
@@ -112,6 +140,16 @@ function non_ue_menu_settings(options, node) {
             callback: () => { node.properties.rejects_ue_links = !!!node.properties.rejects_ue_links  },
         }
     )
+    if (node.widgets?.length) {
+        options.push(
+            {
+                content: "UE Connectable Widgets",
+                has_submenu: true,
+                callback: widget_ue_submenu,
+            }            
+        )
+    }
+    options.push(null);
 }
 
 function node_menu_settings(options, node) {
@@ -137,7 +175,7 @@ function node_menu_settings(options, node) {
         {
             content: "Convert to real links",
             callback: async () => {
-                const ues = await GraphAnalyser.instance().analyse_graph();
+                const ues = GraphAnalyser.instance().analyse_graph();
                 convert_to_links(ues, node.id);
                 app.graph.remove(node);
             }
@@ -160,7 +198,7 @@ function canvas_menu_settings(options) {
         content: "Convert all UEs to real links",
         callback: async () => {
             if (window.confirm("This will convert all links created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
-                const ues = await GraphAnalyser.instance().analyse_graph();
+                const ues = GraphAnalyser.instance().analyse_graph();
                 LinkRenderController.instance().pause();
                 convert_to_links(ues, -1);
                 remove_all_ues();
