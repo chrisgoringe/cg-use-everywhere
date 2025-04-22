@@ -177,7 +177,7 @@ app.registerExtension({
                     graphConverter.store_node_input_map(data);
                 } catch (e) { Logger.log_error(Logger.ERROR, `in loadGraphData ${e}`); }
                 const cvw_was = app.ui.settings.getSettingValue("Comfy.Validation.Workflows")
-                if (app.ui.settings.getSettingValue("AE.block.validation")) {
+                if (app.ui.settings.getSettingValue("AE.block_graph_validation")) {
                     app.ui.settings.setSettingValue("Comfy.Validation.Workflows", false);
                 }
                 original_loadGraphData.apply(this, arguments);
@@ -272,7 +272,6 @@ app.registerExtension({
             }
         }
         
-        //add_autoprompts();
         app.canvas.__node_over = app.canvas.node_over;
         defineProperty(app.canvas, 'node_over', {
             get: ( )=>{return app.canvas.__node_over },

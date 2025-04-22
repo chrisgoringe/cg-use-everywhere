@@ -13,12 +13,6 @@ function main_menu_settings() {
         defaultValue: false,
     });
     app.ui.settings.addSetting({
-        id: "AE.autoprompt",
-        name: "Anything Everywhere? autocomplete (may require page reload)",
-        type: "boolean",
-        defaultValue: true,
-    });
-    app.ui.settings.addSetting({
         id: "AE.checkloops",
         name: "Anything Everywhere check loops",
         type: "boolean",
@@ -41,7 +35,7 @@ function main_menu_settings() {
         onChange: app.graph.change.bind(app.graph),
     });
     app.ui.settings.addSetting({
-        id: "AE.stop.animation.running",
+        id: "AE.stop_animation_when_running",
         name: "Anything Everywhere turn animation off when running",
         type: "boolean",
         defaultValue: true,
@@ -62,8 +56,8 @@ function main_menu_settings() {
         defaultValue: 1,
     });
     app.ui.settings.addSetting({
-        id: "AE.block.validation",
-        name: "Anything Everywhere block validation",
+        id: "AE.block_graph_validation",
+        name: "Block workflow validation",
         type: "boolean",
         defaultValue: true,
         tooltip: "Turn off workflow validation (which tends to replace UE links with real ones)",

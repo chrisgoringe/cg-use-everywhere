@@ -319,7 +319,7 @@ class LinkRenderController {
 
         const mode = app.ui.settings.getSettingValue('AE.showlinks');
         var animate = app.ui.settings.getSettingValue('AE.animate');
-        if (app.ui.settings.getSettingValue('AE.stop.animation.running') && this.queue_size>0) animate = 0;
+        if (app.ui.settings.getSettingValue('AE.stop_animation_when_running') && this.queue_size>0) animate = 0;
         if (animate==2 || animate==3) this.animate_step(ctx);
 
         var any_links_shown = false;

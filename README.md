@@ -29,9 +29,12 @@ Things to notice:
 - There is a new menu `UE Connectable Widgets` which lists all the widgets. Those marked as connectable have a green bar to the left of the name.
   - Select a widget to toggle its value
 - Next to the widget, where an input would be, the connectable widgets have a graphical indication of their state.
-  - The smaller dark circle indicate a connectable node which is not connected
+  - The smaller dark circle indicate a connectable node which is not connected (widget value will be used)
+  - The light circle and strike-through of the widget indicates that a UE node will provide the value
 
-If you submit a workflow with a connectable widget unconnected, it will use the value of the widget.
+You'll probably find that turning the `showlinks` option on helps, and the highlight options helps a lot.
+
+![options116](docs/options116.png)
 
 Hopefully old workflows will be automatically converted when you load them. Hopefully.
 
