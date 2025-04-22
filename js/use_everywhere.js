@@ -173,7 +173,9 @@ app.registerExtension({
         if (graphConverter.running_116_plus()) {
             const original_loadGraphData = app.loadGraphData;
             app.loadGraphData = function (data) {
-                graphConverter.store_node_input_map(data);
+                try {
+                    graphConverter.store_node_input_map(data);
+                } catch (e) { Logger.log_error(Logger.ERROR, `in loadGraphData ${e}`); }
                 const cvw_was = app.ui.settings.getSettingValue("Comfy.Validation.Workflows")
                 if (app.ui.settings.getSettingValue("AE.block.validation")) {
                     app.ui.settings.setSettingValue("Comfy.Validation.Workflows", false);
