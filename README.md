@@ -12,6 +12,32 @@ Shameless plug for my other nodes -> Check out [Image Picker](https://github.com
 
 ---
 
+## Update for ComfyUI front end 1.16
+
+ComfyUI front end 1.16 made a major change to the way that inputs and widgets work, which had a significant impact on the UE nodes.
+
+A widget is no longer converted to an input in order to connect to it; instead, you just connect an output to it, and it converts.
+
+This is quite cool - except that it meant that there was no way for UE to tell if a widget was supposed to be an empty input for UE to feed.
+
+So there is a new mechanism for this. Here's a picture of a node that I have right-clicked:
+
+![116](docs/116.png)
+
+Things to notice:
+
+- There is a new menu `UE Connectable Widgets` which lists all the widgets. Those marked as connectable have a green bar to the left of the name.
+  - Select a widget to toggle its value
+- Next to the widget, where an input would be, the connectable widgets have a graphical indication of their state.
+  - The smaller dark circle indicate a connectable node which is not connected
+
+If you submit a workflow with a connectable widget unconnected, it will use the value of the widget.
+
+Hopefully old workflows will be automatically converted when you load them. Hopefully.
+
+
+---
+
 ## Test workflow
 
 |This workflow uses all five nodes, and can be used to test (and understand!) the nodes. You wouldn't build it like this, it's just an example...|Here's an image with the workflow in|

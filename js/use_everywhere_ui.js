@@ -162,6 +162,11 @@ class LinkRenderController {
         }
     }
 
+    node_over_changed(v) {
+        const mode = app.ui.settings.getSettingValue('AE.showlinks');
+        if (mode==2 || mode==3) app.canvas.setDirty(true,true)
+    }
+
     periodically_mark_link_list_outdated() {
         this.mark_link_list_outdated();
         setTimeout(this.periodically_mark_link_list_outdated.bind(this), 1000);
@@ -209,37 +214,64 @@ class LinkRenderController {
         //if (this._ue_links_visible) return;
         if (!this.list_ready()) return;
 
-        if (this.ue_list.all_connected_inputs) {
-            this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
-                if (!ue_connection.control_node) { // control node deleted...
-                    this.mark_link_list_outdated();
-                    return; 
-                }
-                var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
+        try {
+            const unconnected_connectables = node.properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.widget_ue_connectable).filter((name) => (node.properties.widget_ue_connectable[name]))) : new Set()
+            node.inputs.filter((input)=>(input.link)).forEach((input) => { unconnected_connectables.delete(input.name) });
+
+            if (this.ue_list.all_connected_inputs) {
+                this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
+                    if (!ue_connection.control_node) { // control node deleted...
+                        this.mark_link_list_outdated();
+                        return; 
+                    }
+                    const name_sent_to = node.inputs[ue_connection.input_index].name;
+                    unconnected_connectables.delete(name_sent_to); // remove the name from the list of connectables
+                    var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
+                    pos2[0] -= node.pos[0];
+                    pos2[1] -= node.pos[1];
+                    ctx.save();
+                    ctx.lineWidth = 1;
+                    var radius=5
+                    ctx.strokeStyle = LGraphCanvas.link_type_colors[ue_connection.type];
+                    ctx.shadowColor = "white"; 
+                    ctx.shadowBlur = 10;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                    ctx.beginPath();
+                    ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.strokeStyle = "black";
+                    ctx.shadowBlur = 0;
+                    radius = radius - 1;
+                    ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
+                    ctx.stroke();
+
+                    ctx.restore();
+                });
+            }
+            this.reading_list = false;
+
+            unconnected_connectables.forEach((name) => {
+                const index = node.inputs.findIndex((i) => i.name == name);
+                var pos2 = node.getConnectionPos(true, index, this.slot_pos1);
                 pos2[0] -= node.pos[0];
                 pos2[1] -= node.pos[1];
                 ctx.save();
-                ctx.lineWidth = 1;
-                var radius=5
-                ctx.strokeStyle = LGraphCanvas.link_type_colors[ue_connection.type];
-                ctx.shadowColor = "white"; 
+                ctx.strokeStyle = "black"; 
+                ctx.shadowColor = "green"; 
                 ctx.shadowBlur = 10;
                 ctx.shadowOffsetX = 0;
                 ctx.shadowOffsetY = 0;
+                var radius = 3;
                 ctx.beginPath();
                 ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
                 ctx.stroke();
-                ctx.beginPath();
-                ctx.strokeStyle = "black";
-                ctx.shadowBlur = 0;
-                radius = radius - 1;
-                ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
-                ctx.stroke();
-
                 ctx.restore();
-            });
+            })
+        } catch (e) {
+            Logger.log_error(Logger.ERROR, e);
         }
-        this.reading_list = false;
     }
 
     list_ready(make_latest) {

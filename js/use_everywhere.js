@@ -271,6 +271,11 @@ app.registerExtension({
         }
         
         //add_autoprompts();
+        app.canvas.__node_over = app.canvas.node_over;
+        defineProperty(app.canvas, 'node_over', {
+            get: ( )=>{return app.canvas.__node_over },
+            set: (v)=>{app.canvas.__node_over = v; linkRenderController.node_over_changed(v)}   
+        } )
 
         if (false) add_debug();
 
