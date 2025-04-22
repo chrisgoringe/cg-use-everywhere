@@ -215,6 +215,7 @@ class LinkRenderController {
         if (!this.list_ready()) return;
 
         try {
+            const all_widget_names = node.widgets.map((widget) => widget.name);
             const unconnected_connectables = node.properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.widget_ue_connectable).filter((name) => (node.properties.widget_ue_connectable[name]))) : new Set()
             node.inputs.filter((input)=>(input.link)).forEach((input) => { unconnected_connectables.delete(input.name) });
 
@@ -240,6 +241,14 @@ class LinkRenderController {
                     ctx.beginPath();
                     ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
                     ctx.stroke();
+                    ctx.shadowBlur = 0;
+                    if (all_widget_names.includes(name_sent_to) && !node.flags.collapsed) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = "#ffffff80"
+                        ctx.moveTo(pos2[0]+radius,pos2[1])
+                        ctx.lineTo(node.size[0]-radius,pos2[1]);
+                        ctx.stroke();
+                    }
                     ctx.beginPath();
                     ctx.strokeStyle = "black";
                     ctx.shadowBlur = 0;
