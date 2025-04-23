@@ -286,6 +286,11 @@ app.registerExtension({
 
         if (false) add_debug();
 
+        const version = __COMFYUI_FRONTEND_VERSION__.split('.')
+        if (parseInt(version[0])>=1 && (parseInt(version[0])>1 || parseInt(version[1])>=16)) {
+            alert("Use Everywhere nodes may not work correctly with this version of ComfyUI. See https://github.com/chrisgoringe/cg-use-everywhere/discussions/287.")
+        }
+
     }
 
 });
