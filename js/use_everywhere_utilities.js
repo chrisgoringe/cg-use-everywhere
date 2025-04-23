@@ -97,9 +97,15 @@ class GraphConverter {
 
         // set types to match
         node.input_type = node.inputs.map((i)=>{
-            if (i.type=='*' && i.label!='anything') return i.label
-            return i.type
-        })        
+            var type = i.type;
+            if (type=='*') {
+                if (i.link) type = app.graph.links[i.link].type;
+                else type = (i.label && i.label!='anything') ? i.label : i.name;      
+            }
+            return type
+        })
+
+        Logger.log(Logger.DETAIL, `clean_ue_node ${node.id} (${node.type})`, node.inputs, node.input_type);
     }
 
     convert_if_pre_116(node) {
@@ -117,11 +123,18 @@ class GraphConverter {
 
         node.properties['widget_ue_connectable'] = {}
         const widget_names = node.widgets?.map(w => w.name) || [];
-        this.node_input_map[node.id].filter((input_name)=>widget_names.includes(input_name)).forEach((input_name) => {
-            node.properties['widget_ue_connectable'][input_name] = true;
-            this.did_conversion = true;
-            Logger.log(Logger.INFORMATION, `node ${node.id} widget ${input_name} marked as accepting UE because it was an input when saved`);
-        });
+
+        if (!(this.node_input_map[node.id])) {
+            Logger.log(Logger.DETAIL, `node ${node.id} (${node.type} has no node_input_map`);
+        } else {
+            this.node_input_map[node.id].filter((input_name)=>widget_names.includes(input_name)).forEach((input_name) => {
+                node.properties['widget_ue_connectable'][input_name] = true;
+                this.did_conversion = true;
+                Logger.log(Logger.INFORMATION, `node ${node.id} widget ${input_name} marked as accepting UE because it was an input when saved`);
+            });
+        }
+
+
         
         //node.properties.ue116converted = true;
     }
