@@ -125,6 +125,12 @@ class GraphConverter {
         
         //node.properties.ue116converted = true;
     }
+
+    remove_saved_ue_links() {
+        if (app.graph.extra?.links_added_by_ue) {
+            app.graph.extra.links_added_by_ue.forEach((link) => { app.graph.links.delete(link); })
+        }
+    }
 }
 
 export const graphConverter = GraphConverter.instance();

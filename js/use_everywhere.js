@@ -184,23 +184,6 @@ app.registerExtension({
                 app.ui.settings.setSettingValue("Comfy.Validation.Workflows", cvw_was);
             }
         }
-
-        /*
-        Don't modify the graph when saving the workflow or api
-        */
-        const _original_save_onclick = document.getElementById('comfy-save-button').onclick;
-        document.getElementById('comfy-save-button').onclick = function() {
-            graphAnalyser.pause();
-            _original_save_onclick();
-            graphAnalyser.unpause()
-        }
-        const _original_save_api_onclick = document.getElementById('comfy-dev-save-api-button').onclick;
-        document.getElementById('comfy-dev-save-api-button').onclick = function() {
-            graphAnalyser.pause();
-            // should check for UE links here and give a warning: #217
-            _original_save_api_onclick();
-            graphAnalyser.unpause();
-        }
         
         /* 
         When we draw a node, render the virtual connection points
@@ -280,6 +263,10 @@ app.registerExtension({
 
         if (false) add_debug();
 
+    },
+
+    afterConfigureGraph() {
+        graphConverter.remove_saved_ue_links()
     }
 
 });

@@ -30,6 +30,7 @@ class GraphAnalyser {
         try { // For each UseEverywhere object add its connections
             convert_to_links(cur_list, -1, addedLinks);
             // Now create the prompt using the ComfyUI original functionality and the patched graph
+            app.graph.extra['links_added_by_ue'] = addedLinks;
             p = await this.original_graphToPrompt.apply(app);
             // Remove the added virtual links
             addedLinks.forEach(id => { app.graph.removeLink(id); });
