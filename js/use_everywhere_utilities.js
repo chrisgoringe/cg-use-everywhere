@@ -71,16 +71,46 @@ class GraphConverter {
         Logger.log(Logger.DETAIL, "stored node_input_map", this.node_input_map);
     }
 
+    clean_ue_node(node) {
+        var expected_inputs = 1
+        if (node.type == "Seed Everywhere") expected_inputs = 0
+        if (node.type == "Prompts Everywhere") expected_inputs = 2
+        if (node.type == "Anything Everywhere3") expected_inputs = 3
+        if (node.type == "Anything Everywhere?") expected_inputs = 4
+
+        // remove all the 'anything' inputs (because they may be duplicated)
+        const removed = node.inputs.filter(i=>i.label=='anything')
+        node.inputs   = node.inputs.filter(i=>i.label!='anything') 
+        // add them back as required
+        while (node.inputs.length < expected_inputs) { node.inputs.push(removed.pop()) }
+        // the input comes before the regex widgets in UE?
+        if (expected_inputs==4) node.inputs.unshift(node.inputs.pop()) 
+        // fix the localized names
+        node.inputs = node.inputs.map((input) => {
+            if (input.localized_name=='anything') input.localized_name = input.name
+            return input;
+        })
+
+        // set types to match
+        node.input_type = node.inputs.map((i)=>{
+            if (i.type=='*' && i.name!='anything') return i.name
+            return i.type
+        })        
+    }
+
     convert_if_pre_116(node) {
         if (!node) return;
         if (!(node.properties)) node.properties = {};
-        if (node.properties.ue116converted) return
+
+        if (node.IS_UE) this.clean_ue_node(node)
+        
+        if (node.properties.widget_ue_connectable) return
 
         if (!this.given_message) {
             Logger.log(Logger.INFORMATION, `Graph was saved with a version of ComfyUI before 1.16, so Anything Everywhere will try to work out which widgets are connectable`);
             this.given_message = true;
         }
-        
+
         node.properties['widget_ue_connectable'] = {}
         const widget_names = node.widgets?.map(w => w.name) || [];
         this.node_input_map[node.id].filter((input_name)=>widget_names.includes(input_name)).forEach((input_name) => {
@@ -89,7 +119,7 @@ class GraphConverter {
             Logger.log(Logger.INFORMATION, `node ${node.id} widget ${input_name} marked as accepting UE because it was an input when saved`);
         });
         
-        node.properties.ue116converted = true;
+        //node.properties.ue116converted = true;
     }
 }
 

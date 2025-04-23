@@ -215,7 +215,7 @@ class LinkRenderController {
         if (!this.list_ready()) return;
 
         try {
-            const all_widget_names = node.widgets.map((widget) => widget.name);
+            const all_widget_names = node.widgets?.map((widget) => widget.name) || [];
             const unconnected_connectables = node.properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.widget_ue_connectable).filter((name) => (node.properties.widget_ue_connectable[name]))) : new Set()
             node.inputs.filter((input)=>(input.link)).forEach((input) => { unconnected_connectables.delete(input.name) });
 

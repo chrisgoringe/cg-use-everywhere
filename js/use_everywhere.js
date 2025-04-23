@@ -94,9 +94,6 @@ app.registerExtension({
     },
 
     async nodeCreated(node) {
-        if (graphConverter.running_116_plus()) {
-            node.properties.ue116converted = true; 
-        }
         if (!node.__mode) {
             node.__mode = node.mode
             defineProperty(node, "mode", {

@@ -43,7 +43,7 @@ function get_available_input_name(inputs, the_input, type) {
 }
 
 function get_connection(node, i, override_type) {
-    const in_link = node?.inputs[i].link;
+    const in_link = node?.inputs[i]?.link;
     var type = override_type;
     var link = undefined;
     if (in_link) {
