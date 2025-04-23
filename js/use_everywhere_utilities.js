@@ -93,7 +93,7 @@ class GraphConverter {
 
         // set types to match
         node.input_type = node.inputs.map((i)=>{
-            if (i.type=='*' && i.name!='anything') return i.name
+            if (i.type=='*' && i.label!='anything') return i.label
             return i.type
         })        
     }
