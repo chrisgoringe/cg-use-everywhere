@@ -84,7 +84,11 @@ class GraphConverter {
         // add them back as required
         while (node.inputs.length < expected_inputs) { node.inputs.push(removed.pop()) }
         // the input comes before the regex widgets in UE?
-        if (expected_inputs==4) node.inputs.unshift(node.inputs.pop()) 
+        if (expected_inputs==4) {
+            while(node.inputs[0].name.includes('regex')) {
+                node.inputs.unshift(node.inputs.pop()) 
+            }
+        }
         // fix the localized names
         node.inputs = node.inputs.map((input) => {
             if (input.localized_name=='anything') input.localized_name = input.name
