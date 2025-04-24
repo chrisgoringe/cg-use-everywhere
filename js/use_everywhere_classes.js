@@ -54,6 +54,11 @@ class UseEverywhere {
     Does this broadcast match a given node,input?
     */
     matches(node, input) {
+        if (!node) {
+            Logger.log(Logger.PROBLEM, `UseEverywhere.matches called with no node`);
+            return false;
+        }
+
         if (this.output[0] == node.id) return false;
         if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;
         const input_label = input.label ? input.label : input.name;
