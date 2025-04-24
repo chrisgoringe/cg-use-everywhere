@@ -66,37 +66,41 @@ class GraphAnalyser {
         // List all unconnected inputs on non-UE nodes which are connectable
         const connectable = []
         live_nodes.filter((node) => !is_UEnode(node)).forEach(node => {
-            const nd = get_real_node(node.id, Logger.DETAIL);
+            const real_node = get_real_node(node.id, Logger.DETAIL);
 
-            if (nd && !nd.properties.rejects_ue_links) {
-                var gpData = GroupNodeHandler.getGroupData(nd);
+            if (real_node && !real_node.properties.rejects_ue_links) {
+                var gpData = GroupNodeHandler.getGroupData(real_node);
                 const isGrp = !!gpData;
                 const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;
-                const widget_names = nd.widgets?.map(w => w.name) || [];
-                nd.inputs?.forEach(input => {
+                const widget_names = real_node.widgets?.map(w => w.name) || [];
+                real_node.inputs?.forEach(input => {
                     if (is_connected(input)) return;  
-                    if (nd.reject_ue_connection && nd.reject_ue_connection(input)) return;
-                    if (widget_names.includes(input.name) && !(nd.properties['widget_ue_connectable'] && nd.properties['widget_ue_connectable'][input.name])) return;
-                    connectable.push({node, input, isGrp, o2n});
+                    if (real_node.reject_ue_connection && real_node.reject_ue_connection(input)) return;
+                    if (widget_names.includes(input.name) && !(real_node.properties['widget_ue_connectable'] && real_node.properties['widget_ue_connectable'][input.name])) return;
+                    connectable.push({real_node, input, isGrp, o2n});
                 })
             }
         })
 
         // see if we can connect them
         const links_added = new Set();
-        connectable.forEach(({node, input, isGrp, o2n}) => {
-            var ue = ues.find_best_match(node, input, this.ambiguity_messages);
+        connectable.forEach(({real_node, input, isGrp, o2n}) => {
+            var ue = ues.find_best_match(real_node, input, this.ambiguity_messages);
             if (ue) {
 
                 // Get the real node and slot (taking into account group nodes)
-                var real_target_node = node;
+                var real_target_node = real_node;
                 var real_target_node_slot = -1;
                 if (isGrp) { // the node we are looking at is a group node
                     const in_index = node.inputs.findIndex((i)=>i==input);
                     const inner_node_index = o2n.findIndex((l)=>Object.values(l[1]).includes(in_index));
-                    const inner_node_slot_index = Object.values(o2n[inner_node_index][1]).findIndex((l)=>l==in_index);
-                    real_target_node_slot = Object.keys(o2n[inner_node_index][1])[inner_node_slot_index];
-                    real_target_node = nd.getInnerNodes()[o2n[inner_node_index][0]];
+                    if (o2n[inner_node_index]) {
+                        const inner_node_slot_index = Object.values(o2n[inner_node_index][1]).findIndex((l)=>l==in_index);
+                        real_target_node_slot = Object.keys(o2n[inner_node_index][1])[inner_node_slot_index];
+                        real_target_node = nd.getInnerNodes()[o2n[inner_node_index][0]];
+                    } else {
+                        Logger.log(Logger.PROBLEM, `Group node ${node.id} doesn't have an entry in gpData.oldToNewInputMap`)
+                    }
                 }
 
                 const upstream_node = get_real_node(ue.output[0]);
