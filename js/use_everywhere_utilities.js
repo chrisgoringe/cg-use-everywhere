@@ -72,6 +72,13 @@ class GraphConverter {
     }
 
     clean_ue_node(node) {
+
+        const gpData = GroupNodeHandler.getGroupData(node)
+        const isGrp  = !!gpData;
+        if (isGrp) {
+            let a;
+        }
+        
         var expected_inputs = 1
         if (node.type == "Seed Everywhere") expected_inputs = 0
         if (node.type == "Prompts Everywhere") expected_inputs = 2
