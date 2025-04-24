@@ -200,6 +200,32 @@ class LinkRenderController {
         }
     } 
 
+    disable_connected_widgets(node) {
+        try {
+            if (node.widgets && app.graph.extra['ue_links']) {
+                app.graph.extra['ue_links'].filter((uel) => { return uel.downstream==node.id }).forEach((uel) => {
+                    const name = node.inputs[uel.downstream_slot].name;
+                    const widget = node.widgets?.find((w) => w.name === name);
+                    if (widget) {
+                        widget._true_disabled = widget.disabled;
+                        widget.disabled = true;
+                    }
+                })
+            }
+        } catch (e) {
+            Logger.log_error(Logger.ERROR, e);
+        }
+    }
+    undisable_connected_widgets(node) {
+        if (node.widgets) {
+            node.widgets.forEach((widget) => {
+                if (widget._true_disabled) {
+                    widget.disabled = widget._true_disabled;
+                }
+            })
+        }
+    }
+
     highlight_ue_connections(node, ctx) {
         try {
             this._highlight_ue_connections(node, ctx);
@@ -242,6 +268,7 @@ class LinkRenderController {
                     ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
                     ctx.stroke();
                     ctx.shadowBlur = 0;
+                    /* no longer needed because we disable the widgets
                     if (all_widget_names.includes(name_sent_to) && !node.flags.collapsed) {
                         ctx.beginPath();
                         ctx.strokeStyle = "#ffffff80"
@@ -249,6 +276,7 @@ class LinkRenderController {
                         ctx.lineTo(node.size[0]-pos2[0],pos2[1]);
                         ctx.stroke();
                     }
+                        */
                     ctx.beginPath();
                     ctx.strokeStyle = "black";
                     ctx.shadowBlur = 0;

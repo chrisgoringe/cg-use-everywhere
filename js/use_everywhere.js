@@ -192,7 +192,9 @@ app.registerExtension({
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             UpdateBlocker.push()
             try {
+                linkRenderController.disable_connected_widgets(node);
                 const v = original_drawNode.apply(this, arguments);
+                linkRenderController.undisable_connected_widgets(node);
                 linkRenderController.highlight_ue_connections(node, ctx);
                 return v
             } finally { UpdateBlocker.pop() }
