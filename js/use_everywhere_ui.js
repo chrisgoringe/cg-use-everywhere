@@ -161,7 +161,12 @@ class LinkRenderController extends Pausable {
     reload_resolve = function (value) {
         this.ue_list = value;
         this.ue_list_reloading = false;
-        if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
+        try {
+            if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
+        } catch (e) {
+            Logger.log_error(Logger.ERROR, `link list update resolve ${e}`)
+        }
+        
         Logger.log(Logger.DETAIL, "link list update completed");
         Logger.log_call(Logger.DETAIL, this.ue_list.print_all.bind(this.ue_list));
     }.bind(this)
@@ -178,7 +183,11 @@ class LinkRenderController extends Pausable {
         if (this.ue_list_reloading) return;                            // already doing it
         this.ue_list_reloading = true;                                 // stop any more requests
         try {
-            const ues = this.the_graph_analyser.analyse_graph()
+            const ues = this.the_graph_analyser.analyse_graph(false)
+            if (ues==null) {
+                Logger.log(Logger.DETAIL, "link list update skipped due to pause");
+                return
+            }
             this.reload_resolve(ues)
         } catch (e) {
             this.reload_reject(e);

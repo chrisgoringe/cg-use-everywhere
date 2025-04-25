@@ -37,8 +37,13 @@ class GraphAnalyser extends Pausable {
         return p;
     }
 
-    analyse_graph(check_for_loops=false) {
-        if (this.paused()) { return this.original_graphToPrompt.apply(app) }
+    analyse_graph(wait_if_blocked, about_to_submit) {
+        if (this.paused()) { 
+            if (wait_if_blocked) {
+                Logger.log_error(Logger.ERROR, "Don't know how to wait")
+            } 
+            return null
+        }
         this.ambiguity_messages = [];
         var p = { workflow:app.graph.serialize() };
         const live_nodes = p.workflow.nodes.filter((node) => node_is_live(node))
@@ -121,7 +126,7 @@ class GraphAnalyser extends Pausable {
         if (this.ambiguity_messages.length) Logger.log(Logger.PROBLEM, "Ambiguous connections", this.ambiguity_messages, Logger.CAT_AMBIGUITY);
     
         // if there are loops report them and raise an exception
-        if (check_for_loops && app.ui.settings.getSettingValue('AE.checkloops')) {
+        if (about_to_submit && app.ui.settings.getSettingValue('AE.checkloops')) {
             try {
                 node_in_loop(live_nodes, links_added);
             } catch (e) {

@@ -264,7 +264,7 @@ app.registerExtension({
         const original_graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
             if (prompt_being_queued) {
-                return await graphAnalyser.graph_to_prompt( graphAnalyser.analyse_graph(true) );
+                return await graphAnalyser.graph_to_prompt( graphAnalyser.analyse_graph(true, true) );
             } else {
                 return await original_graphToPrompt.apply(app, arguments);
             }

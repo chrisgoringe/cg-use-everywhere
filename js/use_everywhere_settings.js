@@ -172,7 +172,7 @@ export function node_menu_settings(options, node) {
         {
             content: "Convert to real links",
             callback: async () => {
-                const ues = GraphAnalyser.instance().analyse_graph();
+                const ues = GraphAnalyser.instance().analyse_graph(true);
                 convert_to_links(ues, node.id);
                 app.graph.remove(node);
             }
@@ -195,7 +195,7 @@ export function canvas_menu_settings(options) {
         content: "Convert all UEs to real links",
         callback: async () => {
             if (window.confirm("This will convert all links created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
-                const ues = GraphAnalyser.instance().analyse_graph();
+                const ues = GraphAnalyser.instance().analyse_graph(true);
                 LinkRenderController.instance().pause("convert");
                 try {
                     convert_to_links(ues, -1);
