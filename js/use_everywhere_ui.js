@@ -116,7 +116,7 @@ class LinkRenderController extends Pausable {
         return this._instance
     }
     constructor() {
-        super()
+        super('LinkRenderController')
         this.the_graph_analyser = null;
         this.periodically_mark_link_list_outdated();
      }

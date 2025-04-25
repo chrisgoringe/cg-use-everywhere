@@ -13,7 +13,7 @@ class GraphAnalyser extends Pausable {
     }
 
     constructor() {
-        super()
+        super('GraphAnalyser')
         this.original_graphToPrompt = app.graphToPrompt;
         this.ambiguity_messages = [];
     }

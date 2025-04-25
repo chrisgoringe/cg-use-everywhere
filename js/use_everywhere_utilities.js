@@ -401,22 +401,29 @@ export function defineProperty(instance, property, desc) {
   }
 
 export class Pausable {
+    constructor(name) {
+        this.name = name
+        this.pause_depth = 0
+    }
     pause(note, ms) {
-        this.pause_depth = (this.pause_depth || 0) + 1;
-        Logger.log(Logger.INFORMATION, `pause ${note} with ${ms}`)
+        this.pause_depth += 1;
+        if (this.pause_depth>10) {
+            Logger.log(Logger.ERROR, `${this.name} Over pausing`)
+        }
+        Logger.log(Logger.INFORMATION, `${this.name} pause ${note} with ${ms}`)
         if (ms) setTimeout( this.unpause.bind(this), ms );
     }
     unpause() { 
         this.pause_depth -= 1
-        Logger.log(Logger.INFORMATION, `unpause`)
+        Logger.log(Logger.INFORMATION, `${this.name} unpause`)
         if (this.pause_depth<0) {
-            Logger.log(Logger.ERROR, "Over unpausing")
+            Logger.log(Logger.ERROR, `${this.name} Over unpausing`)
             this.pause_depth = 0
         }
     this.on_unpause()
     }
     paused() {
-        return (this.pause_depth && this.pause_depth>0)
+        return (this.pause_depth>0)
     }
     on_unpause(){}
 }
