@@ -401,12 +401,14 @@ export function defineProperty(instance, property, desc) {
   }
 
 export class Pausable {
-    pause(ms) {
+    pause(note, ms) {
         this.pause_depth = (this.pause_depth || 0) + 1;
+        Logger.log(Logger.INFORMATION, `pause ${note} with ${ms}`)
         if (ms) setTimeout( this.unpause.bind(this), ms );
     }
     unpause() { 
         this.pause_depth -= 1
+        Logger.log(Logger.INFORMATION, `unpause`)
         if (this.pause_depth<0) {
             Logger.log(Logger.ERROR, "Over unpausing")
             this.pause_depth = 0

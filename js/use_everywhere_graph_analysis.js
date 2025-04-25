@@ -1,9 +1,8 @@
 import { GroupNodeHandler } from "../core/groupNode.js";
-import { UseEverywhereList, display_name } from "./use_everywhere_classes.js";
+import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { add_ue_from_node, add_ue_from_node_in_group } from "./use_everywhere_nodes.js";
 import { node_in_loop, node_is_live, is_connected, is_UEnode, Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
-import { UpdateBlocker } from "./use_everywhere_ui.js";
 import { app } from "../../scripts/app.js";
 
 class GraphAnalyser extends Pausable {
@@ -23,7 +22,7 @@ class GraphAnalyser extends Pausable {
         var p;
         // Convert the virtual links into real connections
         const addedLinks = [];
-        UpdateBlocker.push();  // Block updates while we modify the connections
+        this.pause('graph_to_prompt')
         try { // For each UseEverywhere object add its connections
             convert_to_links(cur_list, -1, addedLinks);
             // Now create the prompt using the ComfyUI original functionality and the patched graph
@@ -31,14 +30,10 @@ class GraphAnalyser extends Pausable {
             p = await this.original_graphToPrompt.apply(app);
             // Remove the added virtual links
             addedLinks.forEach(id => { app.graph.removeLink(id); });
-        } finally { UpdateBlocker.pop(); }
+        } finally { 
+            this.unpause()
+        }
 
-        /*try {
-            p = JSON.parse(JSON.stringify(p));
-        } catch (error) {
-            console.error("Error during JSON cloning:", error);
-            return null;
-        }*/
         return p;
     }
 

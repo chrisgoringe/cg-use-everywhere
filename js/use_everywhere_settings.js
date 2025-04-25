@@ -4,65 +4,68 @@ import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
 import { has_priority_boost } from "./use_everywhere_utilities.js";
 
-function main_menu_settings() {
+function call_graph_change() {
+    app.graph?.change.bind(app.graph)
+}
 
-    app.ui.settings.addSetting({
+export const SETTINGS = [
+    {
         id: "AE.details",
         name: "Anything Everywhere show node details",
         type: "boolean",
         defaultValue: false,
-    });
-    app.ui.settings.addSetting({
+    },
+    {
         id: "AE.checkloops",
         name: "Anything Everywhere check loops",
         type: "boolean",
         defaultValue: true,
-    });
-    app.ui.settings.addSetting({
+    },
+    {
         id: "AE.showlinks",
         name: "Anything Everywhere show links",
         type: "combo",
         options: [ {value:0, text:"All off"}, {value:1, text:"Selected nodes"}, {value:2, text:"Mouseover node"}, {value:3, text:"Selected and mouseover nodes"}, {value:4, text:"All on"}],
         defaultValue: 0,
-        onChange: app.graph.change.bind(app.graph),
-    });      
-    app.ui.settings.addSetting({
+        onChange: call_graph_change,
+    },      
+    {
         id: "AE.animate",
         name: "Anything Everywhere animate UE links",
         type: "combo",
         options: [ {value:0, text:"Off"}, {value:1, text:"Dots"}, {value:2, text:"Pulse"}, {value:3, text:"Both"}, ],
         defaultValue: 3,
-        onChange: app.graph.change.bind(app.graph),
-    });
-    app.ui.settings.addSetting({
+        onChange: call_graph_change,
+    },
+    {
         id: "AE.stop_animation_when_running",
         name: "Anything Everywhere turn animation off when running",
         type: "boolean",
         defaultValue: true,
-        onChange: app.graph.change.bind(app.graph),
-    });    
-    app.ui.settings.addSetting({
+        onChange: call_graph_change,
+    },    
+    {
         id: "AE.highlight",
         name: "Anything Everywhere highlight connected nodes",
         type: "boolean",
         defaultValue: true,
-        onChange: app.graph.change.bind(app.graph),
-    });
-    app.ui.settings.addSetting({
+        onChange: call_graph_change,
+    },
+    {
         id: "AE.logging",
         name: "Anything Everywhere logging",
         type: "combo",
         options: [ {value:0, text:"Errors Only"}, {value:1, text:"Problems"}, {value:2, text:"Information"}, {value:3, text:"Detail"}, ],
         defaultValue: 1,
-    });
-    app.ui.settings.addSetting({
+    },
+    {
         id: "AE.block_graph_validation",
         name: "Block workflow validation",
         type: "boolean",
         defaultValue: true,
         tooltip: "Turn off workflow validation (which tends to replace UE links with real ones)",
-    });
-}
+    },
+]
 
 function submenu(properties, property, options, e, menu, node) {
     const current = properties[property] ? (properties[property]==2 ? 3 : 2 ) : 1; 
@@ -125,7 +128,7 @@ function widget_ue_submenu(value, options, e, menu, node) {
     })
 }
 
-function non_ue_menu_settings(options, node) {
+export function non_ue_menu_settings(options, node) {
     options.push(null);
     options.push(
         {
@@ -146,7 +149,7 @@ function non_ue_menu_settings(options, node) {
     options.push(null);
 }
 
-function node_menu_settings(options, node) {
+export function node_menu_settings(options, node) {
     options.push(null);
     if (has_priority_boost(node)) options.push(
         {
@@ -178,7 +181,7 @@ function node_menu_settings(options, node) {
     options.push(null);
 }
 
-function canvas_menu_settings(options) {
+export function canvas_menu_settings(options) {
     options.push(null); // divider
     options.push({
         content: (app.ui.settings.getSettingValue('AE.showlinks')>0) ? "Hide UE links" : "Show UE links",
@@ -193,7 +196,7 @@ function canvas_menu_settings(options) {
         callback: async () => {
             if (window.confirm("This will convert all links created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
                 const ues = GraphAnalyser.instance().analyse_graph();
-                LinkRenderController.instance().pause();
+                LinkRenderController.instance().pause("convert");
                 try {
                     convert_to_links(ues, -1);
                     remove_all_ues();
@@ -216,4 +219,3 @@ function canvas_menu_settings(options) {
     options.push(null); // divider
 }
 
-export { main_menu_settings, node_menu_settings, canvas_menu_settings, non_ue_menu_settings }

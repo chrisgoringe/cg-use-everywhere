@@ -2,10 +2,10 @@ import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
 import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter } from "./use_everywhere_utilities.js";
-import { displayMessage, update_input_label, indicate_restriction, UpdateBlocker } from "./use_everywhere_ui.js";
+import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
-import { main_menu_settings, node_menu_settings, canvas_menu_settings, non_ue_menu_settings } from "./use_everywhere_settings.js";
+import { node_menu_settings, canvas_menu_settings, non_ue_menu_settings, SETTINGS } from "./use_everywhere_settings.js";
 import { add_debug } from "./ue_debug.js";
 
 /*
@@ -31,6 +31,7 @@ function inject_outdating_into_object_method(object, methodname, tracetext) {
 
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
+    settings: SETTINGS, 
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         /*
@@ -190,23 +191,30 @@ app.registerExtension({
         */
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
-            UpdateBlocker.push()
             try {
                 //linkRenderController.disable_connected_widgets(node);
                 const v = original_drawNode.apply(this, arguments);
                 //linkRenderController.undisable_connected_widgets(node);
                 linkRenderController.highlight_ue_connections(node, ctx);
                 return v
-            } finally { UpdateBlocker.pop() }
+            } catch (e) {
+                Logger.log_error(Logger.ERROR, e)
+            } 
         }
 
         const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
         LGraphCanvas.prototype.drawFrontCanvas = function() {
-            linkRenderController.disable_all_connected_widgets(true)
             try {
+                linkRenderController.disable_all_connected_widgets(true)
                 return original_drawFrontCanvas.apply(this, arguments);
+            }  catch (e) {
+                Logger.log_error(Logger.ERROR, e)
             } finally {
-                linkRenderController.disable_all_connected_widgets(false)
+                try {
+                    linkRenderController.disable_all_connected_widgets(false)
+                } catch (e) {
+                    Logger.log_error(Logger.ERROR, e)
+                }
             }
         }
 
@@ -216,13 +224,18 @@ app.registerExtension({
         const drawConnections = LGraphCanvas.prototype.drawConnections;
         LGraphCanvas.prototype.drawConnections = function(ctx) {
             drawConnections?.apply(this, arguments);
-            linkRenderController.render_all_ue_links(ctx);
+            try {
+                linkRenderController.render_all_ue_links(ctx);
+            } catch (e) {
+                Logger.log_error(Logger.ERROR, e)
+            }
         }
 
         /*
-        Add to the main settings
+        Add to the main settings 
+        now specified as a parameter of register
         */
-        main_menu_settings();
+        //main_menu_settings();
         
         /* 
         Canvas menu is the right click on backdrop.
@@ -278,8 +291,8 @@ app.registerExtension({
     },
 
     beforeConfigureGraph() {
-        linkRenderController.pause(1000)
-        graphAnalyser.pause(1000)
+        linkRenderController.pause("before configure", 1000)
+        graphAnalyser.pause("before configure", 1000)
     },
 
     afterConfigureGraph() {

@@ -1,11 +1,6 @@
-import { Logger, get_real_node, get_group_node, get_all_nodes_within, Pausable } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, get_group_node, Pausable } from "./use_everywhere_utilities.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
-
-export class UpdateBlocker {
-    static push() { LinkRenderController._instance?.pause() }
-    static pop() { LinkRenderController._instance?.unpause() }
-}
 
 function nodes_in_my_group(node_id) {
     const nodes_in = new Set();
@@ -191,7 +186,7 @@ class LinkRenderController extends Pausable {
     }
 
     disable_all_connected_widgets( disable ) {
-        app.graph.extra['ue_links'].forEach((uel) => {
+        app.graph.extra['ue_links']?.forEach((uel) => {
             const node = app.graph._nodes_by_id[uel.downstream]
             const name = node.inputs[uel.downstream_slot].name;
             const widget = node.widgets?.find((w) => w.name === name);
