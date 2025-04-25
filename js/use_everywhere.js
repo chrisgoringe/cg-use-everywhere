@@ -114,7 +114,7 @@ app.registerExtension({
         node.afterChangeMade = (p, v) => {
             acm?.(p,v)
             if (p==='bgcolor') {
-                if (node.mode!=4) linkRenderController.mark_link_list_outdated();
+            //    if (node.mode!=4) linkRenderController.mark_link_list_outdated();
             }
             if (p==='mode') {
                 linkRenderController.mark_link_list_outdated();
@@ -202,20 +202,20 @@ app.registerExtension({
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             try {
-                //linkRenderController.disable_connected_widgets(node);
+                linkRenderController.pause('drawNode')
                 const v = original_drawNode.apply(this, arguments);
-                //linkRenderController.undisable_connected_widgets(node);
                 linkRenderController.highlight_ue_connections(node, ctx);
                 return v
             } catch (e) {
                 Logger.log_error(Logger.ERROR, e)
-            } 
+            } finally {
+                linkRenderController.unpause()
+            }
         }
 
         const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
         LGraphCanvas.prototype.drawFrontCanvas = function() {
             try {
-                linkRenderController.pause('drawfrontcanvas')
                 linkRenderController.disable_all_connected_widgets(true)
                 return original_drawFrontCanvas.apply(this, arguments);
             }  catch (e) {
@@ -225,9 +225,7 @@ app.registerExtension({
                     linkRenderController.disable_all_connected_widgets(false)
                 } catch (e) {
                     Logger.log_error(Logger.ERROR, e)
-                } finally {
-                    linkRenderController.unpause()
-                }
+                } 
             }
         }
 

@@ -119,70 +119,61 @@ class LinkRenderController extends Pausable {
     constructor() {
         super('LinkRenderController')
         this.the_graph_analyser = null;
-        //this.periodically_mark_link_list_outdated();
-        this.ue_list_reloading = false;     // true when a reload has been requested but not completed
-        this.ue_list = undefined;           // the most current ue list - set to undefined if we know it is out of date
-        this.last_used_ue_list = undefined; // the last ue list we actually used to generate graphics
+        this.ue_list            = undefined; // the most current ue list - set to undefined if we know it is out of date
+        this.last_used_ue_list  = undefined; // the last ue list we actually used to generate graphics
+        this.link_list_outdated = false;
+        setInterval(this.try_to_update_link_list.bind(this), 100);
      }
-
-    
-    
-    
-    reading_list = false; // don't outdate the list while we read it (because reading it can trigger outdates!)
     
     queue_size = null;
     note_queue_size(x) { this.queue_size = x; }
     
-    on_unpause() {app.graph.change();}
 
-    set_list_reloading(v, comment) {
-        this.ue_list_reloading = v
-        Logger.log(Logger.INFORMATION, `${comment} set_list_reloading(${v})`)
-    }
-    is_list_reloading() {
-        return this.ue_list_reloading
+    //on_unpause() {app.graph.change();}
+
+    node_over_changed(v) {
+        const mode = settingsCache.getSettingValue('AE.showlinks');
+        if (mode==2 || mode==3) app.canvas.setDirty(true,true)
     }
     
     // memory reuse
     slot_pos1 = new Float32Array(2); //to reuse
     slot_pos2 = new Float32Array(2); //to reuse
 
+
+    /* 
+    Outdating.
+
+    Convention is that methods starting _ should only be called inside a pause()/unpause()
+    */
+
     mark_link_list_outdated() {
+        this.link_list_outdated = true
+    }
+
+    try_to_update_link_list() {
+        if (!this.link_list_outdated) return;
         if (this.paused()) return;
-        if (this.reading_list) return;
-        if (this.ue_list) {
+        try {
+            this.pause()
             this.ue_list = undefined;
-            this.request_link_list_update();
-            Logger.log(Logger.DETAIL, "link_list marked outdated");
-        } else {
-            Logger.log(Logger.INFORMATION, "link_list was already outdated");
+            if (this._request_link_list_update()) this.link_list_outdated = false;
+        } finally {
+            this.unpause()
         }
     }
 
-    node_over_changed(v) {
-        const mode = settingsCache.getSettingValue('AE.showlinks');
-        if (mode==2 || mode==3) app.canvas.setDirty(true,true)
-    }
-
-    // request an update to the ue_list. 
-    request_link_list_update() {
-        if (this.is_list_reloading()) return;                            // already doing it
+    _request_link_list_update() {
         try {
-            this.set_list_reloading(true, 'request_llu');                // stop any more requests
             const ues = this.the_graph_analyser.analyse_graph(false)
-            if (ues==null) {
-                Logger.log(Logger.DETAIL, "link list update skipped due to pause");
-                return
-            }
+            if (ues==null) return false // graph analyser was paused
             this.ue_list = ues;
             if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
-            Logger.log(Logger.DETAIL, "link list update completed");
+            return true
         } catch (e) {
-            Logger.log_error(Logger.ERROR, `reload_reject ${reason}`);
-        } finally {
-            this.set_list_reloading(false, 'request_llu'); 
-            setTimeout(this.mark_link_list_outdated.bind(this), 1000);
-        }
+            Logger.log_error(Logger.ERROR, `request_link_list_update ${e}`);
+            return false
+        } 
     }
 
     disable_all_connected_widgets( disable ) {
@@ -203,48 +194,13 @@ class LinkRenderController extends Pausable {
         })            
     }
 
-    disable_connected_widgets(node) {
-        try {
-            if (node.widgets && app.graph.extra['ue_links']) {
-                app.graph.extra['ue_links'].filter((uel) => { return uel.downstream==node.id }).forEach((uel) => {
-                    const name = node.inputs[uel.downstream_slot].name;
-                    const widget = node._getWidgetByName(name) //      node.widgets?.find((w) => w.name === name);
-                    if (widget) {
-                        widget._true_disabled = widget.disabled;
-                        widget.disabled = true;
-                    }
-                })
-            }
-        } catch (e) {
-            Logger.log_error(Logger.ERROR, e);
-        }
-    }
-
-    undisable_connected_widgets(node) {
-        if (node.widgets) {
-            node.widgets.forEach((widget) => {
-                if (widget._true_disabled) {
-                    widget.disabled = widget._true_disabled;
-                }
-            })
-        }
-    }
-
-    highlight_ue_connections(node, ctx) {
-        try {
-            this._highlight_ue_connections(node, ctx);
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
-    _highlight_ue_connections(node, ctx) {
-        this.reading_list = true;
+    highlight_ue_connections(node, ctx) {        
         if (!settingsCache.getSettingValue('AE.highlight')) return;
         //if (this._ue_links_visible) return;
-        if (!this.list_ready()) return;
+        if (!this._list_ready()) return;
 
         try {
+            this.pause()
             const unconnected_connectables = node.properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.widget_ue_connectable).filter((name) => (node.properties.widget_ue_connectable[name]))) : new Set()
             node.inputs.filter((input)=>(input.link)).forEach((input) => { unconnected_connectables.delete(input.name) });
 
@@ -281,7 +237,7 @@ class LinkRenderController extends Pausable {
                     ctx.restore();
                 });
             }
-            this.reading_list = false;
+            
 
             unconnected_connectables.forEach((name) => {
                 const index = node.inputs.findIndex((i) => i.name == name);
@@ -302,14 +258,17 @@ class LinkRenderController extends Pausable {
             })
         } catch (e) {
             Logger.log_error(Logger.ERROR, e);
+        } finally {
+            this.unpause()
         }
     }
 
-    list_ready(make_latest) {
-        if (this.paused()) return false;
+    _list_ready(make_latest) {
         if (!this.the_graph_analyser) return false; // we don't have the analyser yet (still loading)
-        if (!this.ue_list) this.request_link_list_update();
-        if (!this.ue_list) return false;
+        if (!this.ue_list) {
+            this.mark_link_list_outdated();
+            return false;
+        }
         if (make_latest) this.last_used_ue_list = this.ue_list;
         return true;
     }
@@ -326,16 +285,18 @@ class LinkRenderController extends Pausable {
     render_all_ue_links(ctx) {
         if (this.paused()) return;
         try {
+            this.pause()
             this._render_all_ue_links(ctx);
         } catch (e) {
             console.error(e);
+        } finally {
+            this.unpause()
         }
     }
 
     _render_all_ue_links(ctx) {
-        if (!this.list_ready(true)) return;
+        if (!this._list_ready(true)) return;
 
-        this.reading_list = true;
         ctx.save();
         const orig_hqr = app.canvas.highquality_render;
         app.canvas.highquality_render = false;
@@ -366,11 +327,11 @@ class LinkRenderController extends Pausable {
             /*
             If animating, we want to mark the visuals as changed so the animation updates - but not often!
             If links shown:
-              - If showing dots, wait 30ms
-              - Otherwise, wait 100ms
+            - If showing dots, wait 30ms
+            - Otherwise, wait 100ms
             If no links are shown
-              - If there are links, and our mode is mouseover, wait 200ms
-              - Otherwise don't request an update (there are no links that could be shown without something else requesting a redraw)
+            - If there are links, and our mode is mouseover, wait 200ms
+            - Otherwise don't request an update (there are no links that could be shown without something else requesting a redraw)
             */
             const timeout = (any_links_shown) ? ((animate%2 == 1) ? 30 : 100) : ((mode==2 || mode==3) && any_links) ? 200 : -1;
             if (timeout>0) setTimeout( app.graph.change.bind(app.graph), timeout );
@@ -378,7 +339,7 @@ class LinkRenderController extends Pausable {
 
         app.canvas.highquality_render = orig_hqr;
         ctx.restore();
-        this.reading_list = false;
+
     }
 
 
