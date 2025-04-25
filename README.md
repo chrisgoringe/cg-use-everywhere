@@ -8,7 +8,38 @@ Problems? Jump down to [logging and debugging](https://github.com/chrisgoringe/c
 
 Ideas for how to improve the nodes (or bug reports) - [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues)
 
-Shameless plug for my other nodes -> Check out [Image Picker](https://github.com/chrisgoringe/cg-image-picker) for another way to make some workflows smoother. And leave a star if you like something!
+Shameless plug for my other nodes -> Check out [Image Picker](https://github.com/chrisgoringe/cg-image-filter) for another way to make some workflows smoother. And leave a star if you like something!
+
+---
+
+## Update for ComfyUI front end 1.16
+
+ComfyUI front end 1.16 made a major change to the way that inputs and widgets work, which had a significant impact on the UE nodes.
+
+A widget is no longer converted to an input in order to connect to it; instead, you just connect an output to it, and it converts.
+
+This is quite cool - except that it meant that there was no way for UE to tell if a widget was supposed to be an empty input for UE to feed.
+
+So there is a new mechanism for this. Here's a picture of a node that I have right-clicked:
+
+![116](docs/116.png)
+
+Things to notice:
+
+- There is a new menu `UE Connectable Widgets` which lists all the widgets. Those marked as connectable have a green bar to the left of the name.
+  - Select a widget to toggle its value
+- Next to the widget, where an input would be, the connectable widgets have a graphical indication of their state.
+  - The smaller dark circle (next to steps) indicate a connectable node which is not connected (widget value will be used)
+  - The light circle (next to cfg) and greying out the widget indicates that a UE node will provide the value
+  - No icon (all the other widgets) indicates that they are not UE connectable
+- Other inputs still have the indications of normal connection or UE connection (here model is a UE connection)
+
+You'll probably find that turning the `showlinks` option on helps, and the `highlight` option is required for those widget indicators which help a lot.
+
+![options116](docs/options116.png)
+
+Hopefully old workflows will be automatically converted when you load them. Hopefully.
+
 
 ---
 
@@ -35,6 +66,9 @@ UE nodes mostly work with group nodes. But there are a couple of important thing
 - when you create a group node the input names and node names can change. This might break UE? regex connections.
 
 ## Latest updates
+
+6.0 (April 2025)
+- Very major rebuild to deal with latest version of Comfy
 
 5.0 (6th August 2024)
 - Significant change to core logic. Should greatly reduce incompatibility issues, but may have unexpoected consequences!

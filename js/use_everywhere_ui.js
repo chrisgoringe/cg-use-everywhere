@@ -1,13 +1,7 @@
-import { Logger, get_real_node, get_group_node, get_all_nodes_within } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, get_group_node, Pausable } from "./use_everywhere_utilities.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
-
-export class UpdateBlocker {
-    static depth = 0
-    static push() { UpdateBlocker.depth += 1 }
-    static pop() { UpdateBlocker.depth -= 1 }
-    static blocking() { return UpdateBlocker.depth>0 }
-}
+import { settingsCache } from "./use_everywhere_cache.js";
 
 function nodes_in_my_group(node_id) {
     const nodes_in = new Set();
@@ -93,7 +87,7 @@ function displayMessage(id, message) {
     const node = get_real_node(id);
     if (!node) return;
     var w = node.widgets?.find((w) => w.name === "display_text_widget");
-    if (app.ui.settings.getSettingValue('AE.details') || w) {
+    if (settingsCache.getSettingValue('AE.details') || w) {
         if (!w) {
             w = ComfyWidgets["STRING"](this, "display_text_widget", ["STRING", { multiline: true }], app).widget;
             w.inputEl.readOnly = true;
@@ -115,7 +109,7 @@ function update_input_label(node, slot, app) {
     }
 }
 
-class LinkRenderController {
+class LinkRenderController extends Pausable {
     static _instance;
     static instance(tga) {
         if (!this._instance) this._instance = new LinkRenderController();
@@ -123,127 +117,156 @@ class LinkRenderController {
         return this._instance
     }
     constructor() {
+        super('LinkRenderController')
         this.the_graph_analyser = null;
-        this.periodically_mark_link_list_outdated();
+        this.ue_list            = undefined; // the most current ue list - set to undefined if we know it is out of date
+        this.last_used_ue_list  = undefined; // the last ue list we actually used to generate graphics
+        this.link_list_outdated = false;
+        setInterval(this.try_to_update_link_list.bind(this), 100);
      }
-
-    ue_list = undefined;           // the most current ue list - set to undefined if we know it is out of date
-    ue_list_reloading = false;     // true when a reload has been requested but not completed
-    last_used_ue_list = undefined; // the last ue list we actually used to generate graphics
-    paused = false; 
-    reading_list = false; // don't outdate the list while we read it (because reading it can trigger outdates!)
     
     queue_size = null;
     note_queue_size(x) { this.queue_size = x; }
+    
 
-    pause(ms) {
-        this.paused = true;
-        if (!ms) ms = 100;
-        setTimeout( this.unpause.bind(this), ms );
-    }
-    unpause() { 
-        this.paused = false;
-        app.graph.change();
-    }
+    //on_unpause() {app.graph.change();}
 
+    node_over_changed(v) {
+        const mode = settingsCache.getSettingValue('AE.showlinks');
+        if (mode==2 || mode==3) app.canvas.setDirty(true,true)
+    }
+    
     // memory reuse
     slot_pos1 = new Float32Array(2); //to reuse
     slot_pos2 = new Float32Array(2); //to reuse
 
+
+    /* 
+    Outdating.
+
+    Convention is that methods starting _ should only be called inside a pause()/unpause()
+    */
+
     mark_link_list_outdated() {
-        if (UpdateBlocker.blocking()) return;
-        if (this.reading_list) return;
-        if (this.ue_list) {
-            this.ue_list = undefined;
-            this.request_link_list_update();
-            Logger.log(Logger.INFORMATION, "link_list marked outdated");
-        } else {
-            Logger.log(Logger.INFORMATION, "link_list was already outdated");
-        }
+        this.link_list_outdated = true
     }
 
-    periodically_mark_link_list_outdated() {
-        this.mark_link_list_outdated();
-        setTimeout(this.periodically_mark_link_list_outdated.bind(this), 1000);
-    }
-
-    // callback when the_graph_analyser finishes - store the result and note reloading is false
-    reload_resolve = function (value) {
-        this.ue_list = value;
-        this.ue_list_reloading = false;
-        if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
-        Logger.log(Logger.INFORMATION, "link list update completed");
-        Logger.log_call(Logger.DETAIL, this.ue_list.print_all.bind(this.ue_list));
-    }.bind(this)
-
-    // callback for when the_graph_analyser fails - note reloading is false and log
-    reload_reject = function(reason) {
-        this.ue_list_reloading=false;
-        Logger.log(Logger.ERROR, "link list update failed");
-        Logger.log_error(Logger.ERROR, reason);
-    }.bind(this)
-
-    // request an update to the ue_list. 
-    request_link_list_update() {
-        if (this.ue_list_reloading) return;                            // already doing it
-        this.ue_list_reloading = true;                                 // stop any more requests
-        this.the_graph_analyser.analyse_graph().then(this.reload_resolve, this.reload_reject); // an async call is a promise; pass it two callbacks
-        Logger.log(Logger.INFORMATION, "link list update started");
-    } 
-
-    highlight_ue_connections(node, ctx) {
+    try_to_update_link_list() {
+        if (!this.link_list_outdated) return;
+        if (this.paused()) return;
         try {
-            this._highlight_ue_connections(node, ctx);
-        } catch (e) {
-            console.error(e);
+            this.pause()
+            this.ue_list = undefined;
+            if (this._request_link_list_update()) this.link_list_outdated = false;
+        } finally {
+            this.unpause()
         }
     }
 
-    _highlight_ue_connections(node, ctx) {
-        this.reading_list = true;
-        if (!app.ui.settings.getSettingValue('AE.highlight')) return;
-        //if (this._ue_links_visible) return;
-        if (!this.list_ready()) return;
+    _request_link_list_update() {
+        try {
+            const ues = this.the_graph_analyser.analyse_graph(false)
+            if (ues==null) return false // graph analyser was paused
+            this.ue_list = ues;
+            if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
+            return true
+        } catch (e) {
+            Logger.log_error(Logger.ERROR, `request_link_list_update ${e}`);
+            return false
+        } 
+    }
 
-        if (this.ue_list.all_connected_inputs) {
-            this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
-                if (!ue_connection.control_node) { // control node deleted...
-                    this.mark_link_list_outdated();
-                    return; 
+    disable_all_connected_widgets( disable ) {
+        app.graph.extra['ue_links']?.forEach((uel) => {
+            const node = app.graph._nodes_by_id[uel.downstream]
+            const name = node.inputs[uel.downstream_slot].name;
+            const widget = node._getWidgetByName(name) 
+            if (widget) {
+                if (disable) {
+                    widget._true_disabled = widget.disabled;
+                    widget.disabled = true;
+                } else {
+                    if (widget._true_disabled) {
+                        widget.disabled = widget._true_disabled;
+                    }
                 }
-                var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
+            }
+        })            
+    }
+
+    highlight_ue_connections(node, ctx) {        
+        if (!settingsCache.getSettingValue('AE.highlight')) return;
+        
+        try {
+            this.pause()
+            if (!this._list_ready()) return;
+            const unconnected_connectables = node.properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.widget_ue_connectable).filter((name) => (node.properties.widget_ue_connectable[name]))) : new Set()
+            node.inputs.filter((input)=>(input.link)).forEach((input) => { unconnected_connectables.delete(input.name) });
+
+            if (this.ue_list.all_connected_inputs) {
+                this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
+                    if (!ue_connection.control_node) { // control node deleted...
+                        this.mark_link_list_outdated();
+                        return; 
+                    }
+                    const name_sent_to = node.inputs[ue_connection.input_index].name;
+                    unconnected_connectables.delete(name_sent_to); // remove the name from the list of connectables
+                    var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
+                    pos2[0] -= node.pos[0];
+                    pos2[1] -= node.pos[1];
+                    ctx.save();
+                    ctx.lineWidth = 1;
+                    var radius=5
+                    ctx.strokeStyle = LGraphCanvas.link_type_colors[ue_connection.type];
+                    ctx.shadowColor = "white"; 
+                    ctx.shadowBlur = 10;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                    ctx.beginPath();
+                    ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                    ctx.beginPath();
+                    ctx.strokeStyle = "black";
+                    ctx.shadowBlur = 0;
+                    radius = radius - 1;
+                    ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
+                    ctx.stroke();
+
+                    ctx.restore();
+                });
+            }
+            
+            unconnected_connectables.forEach((name) => {
+                const index = node.inputs.findIndex((i) => i.name == name);
+                var pos2 = node.getConnectionPos(true, index, this.slot_pos1);
                 pos2[0] -= node.pos[0];
                 pos2[1] -= node.pos[1];
                 ctx.save();
-                ctx.lineWidth = 1;
-                var radius=5
-                ctx.strokeStyle = LGraphCanvas.link_type_colors[ue_connection.type];
-                ctx.shadowColor = "white"; 
+                ctx.strokeStyle = "black"; 
+                ctx.shadowColor = "green"; 
                 ctx.shadowBlur = 10;
                 ctx.shadowOffsetX = 0;
                 ctx.shadowOffsetY = 0;
+                var radius = 3;
                 ctx.beginPath();
                 ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
                 ctx.stroke();
-                ctx.beginPath();
-                ctx.strokeStyle = "black";
-                ctx.shadowBlur = 0;
-                radius = radius - 1;
-                ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
-                ctx.stroke();
-
                 ctx.restore();
-            });
+            })
+        } catch (e) {
+            Logger.log_error(Logger.ERROR, e);
+        } finally {
+            this.unpause()
         }
-        this.reading_list = false;
     }
 
-    list_ready(make_latest) {
-        if (this.paused) return false;
+    _list_ready() {
         if (!this.the_graph_analyser) return false; // we don't have the analyser yet (still loading)
-        if (!this.ue_list) this.request_link_list_update();
-        if (!this.ue_list) return false;
-        if (make_latest) this.last_used_ue_list = this.ue_list;
+        if (!this.ue_list) {
+            this.mark_link_list_outdated();
+            return false;
+        }
         return true;
     }
 
@@ -257,24 +280,28 @@ class LinkRenderController {
     }
 
     render_all_ue_links(ctx) {
+        if (this.paused()) return;
         try {
+            this.pause()
             this._render_all_ue_links(ctx);
         } catch (e) {
             console.error(e);
+        } finally {
+            this.unpause()
         }
     }
 
     _render_all_ue_links(ctx) {
-        if (!this.list_ready(true)) return;
+        if (!this._list_ready()) return;
+        this.last_used_ue_list = this.ue_list;
 
-        this.reading_list = true;
         ctx.save();
         const orig_hqr = app.canvas.highquality_render;
         app.canvas.highquality_render = false;
 
-        const mode = app.ui.settings.getSettingValue('AE.showlinks');
-        var animate = app.ui.settings.getSettingValue('AE.animate');
-        if (app.ui.settings.getSettingValue('AE.stop.animation.running') && this.queue_size>0) animate = 0;
+        const mode = settingsCache.getSettingValue('AE.showlinks');
+        var animate = settingsCache.getSettingValue('AE.animate');
+        if (settingsCache.getSettingValue('AE.stop_animation_when_running') && this.queue_size>0) animate = 0;
         if (animate==2 || animate==3) this.animate_step(ctx);
 
         var any_links_shown = false;
@@ -298,11 +325,11 @@ class LinkRenderController {
             /*
             If animating, we want to mark the visuals as changed so the animation updates - but not often!
             If links shown:
-              - If showing dots, wait 30ms
-              - Otherwise, wait 100ms
+            - If showing dots, wait 30ms
+            - Otherwise, wait 100ms
             If no links are shown
-              - If there are links, and our mode is mouseover, wait 200ms
-              - Otherwise don't request an update (there are no links that could be shown without something else requesting a redraw)
+            - If there are links, and our mode is mouseover, wait 200ms
+            - Otherwise don't request an update (there are no links that could be shown without something else requesting a redraw)
             */
             const timeout = (any_links_shown) ? ((animate%2 == 1) ? 30 : 100) : ((mode==2 || mode==3) && any_links) ? 200 : -1;
             if (timeout>0) setTimeout( app.graph.change.bind(app.graph), timeout );
@@ -310,9 +337,8 @@ class LinkRenderController {
 
         app.canvas.highquality_render = orig_hqr;
         ctx.restore();
-        this.reading_list = false;
-    }
 
+    }
 
     _render_ue_link(ue_connection, ctx, animate) {
         try {

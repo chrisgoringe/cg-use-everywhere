@@ -13,13 +13,13 @@ def message(id,message):
     PromptServer.instance.send_sync("ue-message-handler", {"id": id, "message":string})
 
 class Base():
-    OUTPUT_NODE = True
+    #OUTPUT_NODE = True
     FUNCTION = "func"
     CATEGORY = "everywhere"
     RETURN_TYPES = ()
 
 class SimpleString(Base):
-    OUTPUT_NODE = False
+    #OUTPUT_NODE = False
     @classmethod
     def INPUT_TYPES(s):
         return {"required":{ "string": ("STRING", {"default": ""}) }}

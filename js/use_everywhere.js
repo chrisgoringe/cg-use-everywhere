@@ -1,14 +1,13 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
-import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty } from "./use_everywhere_utilities.js";
-import { displayMessage, update_input_label, indicate_restriction, UpdateBlocker } from "./use_everywhere_ui.js";
+import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter } from "./use_everywhere_utilities.js";
+import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
-import { autoCreateMenu } from "./use_everywhere_autocreate.js";
-import { add_autoprompts } from "./use_everywhere_autoprompt.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
-import { main_menu_settings, node_menu_settings, canvas_menu_settings, non_ue_menu_settings } from "./use_everywhere_settings.js";
+import { node_menu_settings, canvas_menu_settings, non_ue_menu_settings, SETTINGS } from "./use_everywhere_settings.js";
 import { add_debug } from "./ue_debug.js";
+import { settingsCache } from "./use_everywhere_cache.js";
 
 /*
 The ui component that looks after the link rendering
@@ -33,6 +32,7 @@ function inject_outdating_into_object_method(object, methodname, tracetext) {
 
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
+    settings: SETTINGS, 
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         /*
@@ -71,6 +71,8 @@ app.registerExtension({
             }
             inject_outdating_into_objects(options,'callback',`menu option on ${this.id}`);
         }
+
+
 
         /*
         When a UE node is created, we set the group and color restriction properties.
@@ -113,12 +115,13 @@ app.registerExtension({
         const acm = node.afterChangeMade
         node.afterChangeMade = (p, v) => {
             acm?.(p,v)
-            if (p==='bgcolor') {
-                if (node.mode!=4) linkRenderController.mark_link_list_outdated();
-            }
+            //if (p==='bgcolor') {
+            //    if (node._being_drawn) return; // the bgcolor gets set by the built in node draw...
+            //    linkRenderController.mark_link_list_outdated();
+            //}
             if (p==='mode') {
                 linkRenderController.mark_link_list_outdated();
-                node.widgets?.forEach((widget) => {widget.onModeChange?.(v)});
+                node.widgets?.forEach((widget) => {widget.onModeChange?.(v)}); // no idea why I have this?
             }
         }
 
@@ -138,6 +141,7 @@ app.registerExtension({
             }
         }
 
+
         if (is_helper(node)) { // editing a helper node makes the list dirty
             inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
         }
@@ -149,21 +153,12 @@ app.registerExtension({
         setTimeout( ()=>{linkRenderController.mark_link_list_outdated()}, 100 );
     }, 
 
-    // When a graph node is loaded collapsed the UI need to know
-    // probably not needed now autocomplete is gone?
-    loadedGraphNode(node) { if (node.flags.collapsed && node.loaded_when_collapsed) node.loaded_when_collapsed(); },
+    // When a graph node is loaded convert it if needed
+    loadedGraphNode(node) { 
+        if (graphConverter.running_116_plus()) { graphConverter.convert_if_pre_116(node); }
+    },
 
 	async setup() {
-        /*
-        Add css for the autocomplete. Probably not needed now
-        */
-        const head = document.getElementsByTagName('HEAD')[0];
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.type = 'text/css';
-        link.href = 'extensions/cg-use-everywhere/ue.css';
-        head.appendChild(link);
-
         /*
         Listen for message-handler event from python code
         */
@@ -180,21 +175,20 @@ app.registerExtension({
             if (linkRenderController) linkRenderController.note_queue_size(detail ? detail.exec_info.queue_remaining : 0)
         });
 
-        /*
-        Don't modify the graph when saving the workflow or api
-        */
-        const _original_save_onclick = document.getElementById('comfy-save-button').onclick;
-        document.getElementById('comfy-save-button').onclick = function() {
-            graphAnalyser.pause();
-            _original_save_onclick();
-            graphAnalyser.unpause()
-        }
-        const _original_save_api_onclick = document.getElementById('comfy-dev-save-api-button').onclick;
-        document.getElementById('comfy-dev-save-api-button').onclick = function() {
-            graphAnalyser.pause();
-            // should check for UE links here and give a warning: #217
-            _original_save_api_onclick();
-            graphAnalyser.unpause();
+        /* if we are on version 1.16 or later, stash input data to convert nodes when they are loaded */
+        if (graphConverter.running_116_plus()) {
+            const original_loadGraphData = app.loadGraphData;
+            app.loadGraphData = function (data) {
+                try {
+                    graphConverter.store_node_input_map(data);
+                } catch (e) { Logger.log_error(Logger.ERROR, `in loadGraphData ${e}`); }
+                const cvw_was = settingsCache.getSettingValue("Comfy.Validation.Workflows")
+                if (settingsCache.getSettingValue("AE.block_graph_validation")) {
+                    app.ui.settings.setSettingValue("Comfy.Validation.Workflows", false);
+                }
+                original_loadGraphData.apply(this, arguments);
+                app.ui.settings.setSettingValue("Comfy.Validation.Workflows", cvw_was);
+            }
         }
         
         /* 
@@ -202,12 +196,35 @@ app.registerExtension({
         */
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
-            UpdateBlocker.push()
+            
             try {
+                linkRenderController.pause('drawNode')
                 const v = original_drawNode.apply(this, arguments);
                 linkRenderController.highlight_ue_connections(node, ctx);
+                if (node._last_seen_bg !== node.bgcolor) linkRenderController.mark_link_list_outdated();
+                node._last_seen_bg = node.bgcolor
                 return v
-            } finally { UpdateBlocker.pop() }
+            } catch (e) {
+                Logger.log_error(Logger.ERROR, e)
+            } finally {          
+                linkRenderController.unpause()
+            }
+        }
+
+        const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
+        LGraphCanvas.prototype.drawFrontCanvas = function() {
+            try {
+                linkRenderController.disable_all_connected_widgets(true)
+                return original_drawFrontCanvas.apply(this, arguments);
+            }  catch (e) {
+                Logger.log_error(Logger.ERROR, e)
+            } finally {
+                try {
+                    linkRenderController.disable_all_connected_widgets(false)
+                } catch (e) {
+                    Logger.log_error(Logger.ERROR, e)
+                } 
+            }
         }
 
         /*
@@ -216,13 +233,18 @@ app.registerExtension({
         const drawConnections = LGraphCanvas.prototype.drawConnections;
         LGraphCanvas.prototype.drawConnections = function(ctx) {
             drawConnections?.apply(this, arguments);
-            linkRenderController.render_all_ue_links(ctx);
+            try {
+                linkRenderController.render_all_ue_links(ctx);
+            } catch (e) {
+                Logger.log_error(Logger.ERROR, e)
+            }
         }
 
         /*
-        Add to the main settings
+        Add to the main settings 
+        now specified as a parameter of register
         */
-        main_menu_settings();
+        //main_menu_settings();
         
         /* 
         Canvas menu is the right click on backdrop.
@@ -240,57 +262,65 @@ app.registerExtension({
             return options;
         }
 
-        /*
-        When you drag from a node, showConnectionMenu is called. If shift key is pressed call ours
-        Broken #219
+                        /*
+        Finding a widget by it's name is something done a lot of times in rendering, 
+        so add a method that caches the names that can be used deep in the rendering code.
+
+        TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
         */
-        const showSearchBox = LGraphCanvas.prototype.showSearchBox;
-        LGraphCanvas.prototype.showSearchBox = function (optPass) {
-            if (optPass.shiftKey) {
-                autoCreateMenu.apply(this, arguments);
-            } else {
-                this.use_original_menu = true;
-                showSearchBox.apply(this, arguments);
-                this.use_original_menu = false;
+        LGraphNode.prototype._getWidgetByName = function(nm) {
+            if (this._widgetNameMap === undefined) {
+                this._widgetNameMap = {}
+                this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
             }
+            return this._widgetNameMap[nm]
         }
 
-        /*
-        To allow us to use the shift drag above, we need to intercept 'allow_searchbox' sometimes
-        (because searchbox is the default behaviour when shift dragging)
-        Broken #219
-        */
-        var original_allow_searchbox = app.canvas.allow_searchbox;
-        defineProperty(app.canvas, 'allow_searchbox', {
-            get : function() { 
-                if (this.use_original_menu) { return original_allow_searchbox; }
-                if(app.ui.settings.getSettingValue('AE.replacesearch') && this.connecting_output) {
-                    return false;
-                } else { return original_allow_searchbox; }
-            },
-            set : function(v) { original_allow_searchbox = v; }
-        });
-        
 
 	},
 
     init() {
         graphAnalyser = GraphAnalyser.instance();
-        app.graphToPrompt = async function () {
-            return graphAnalyser.analyse_graph(true, true, false);
-        }
-        
         linkRenderController = LinkRenderController.instance(graphAnalyser);
 
-        add_autoprompts();
+        var prompt_being_queued = false;
+
+        const original_graphToPrompt = app.graphToPrompt;
+        app.graphToPrompt = async function () {
+            if (prompt_being_queued) {
+                return await graphAnalyser.graph_to_prompt( graphAnalyser.analyse_graph(true, true) );
+            } else {
+                return await original_graphToPrompt.apply(app, arguments);
+            }
+        }
+
+        const original_queuePrompt = app.queuePrompt;
+        app.queuePrompt = async function () {
+            prompt_being_queued = true;
+            try {
+                return await original_queuePrompt.apply(app, arguments);
+            } finally {
+                prompt_being_queued = false;
+            }
+        }
+        
+        app.canvas.__node_over = app.canvas.node_over;
+        defineProperty(app.canvas, 'node_over', {
+            get: ( )=>{return app.canvas.__node_over },
+            set: (v)=>{app.canvas.__node_over = v; linkRenderController.node_over_changed(v)}   
+        } )
 
         if (false) add_debug();
 
-        const version = __COMFYUI_FRONTEND_VERSION__.split('.')
-        if (parseInt(version[0])>=1 && (parseInt(version[0])>1 || parseInt(version[1])>=16)) {
-            alert("Use Everywhere nodes may not work correctly with this version of ComfyUI. See https://github.com/chrisgoringe/cg-use-everywhere/discussions/287.")
-        }
+    },
 
+    beforeConfigureGraph() {
+        linkRenderController.pause("before configure", 1000)
+        graphAnalyser.pause("before configure", 1000)
+    },
+
+    afterConfigureGraph() {
+        graphConverter.remove_saved_ue_links()
     }
 
 });

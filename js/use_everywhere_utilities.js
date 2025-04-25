@@ -1,5 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { GroupNodeHandler } from "../core/groupNode.js";
+import { settingsCache } from "./use_everywhere_cache.js";
+
 
 class Logger {
     static ERROR       = 0; // actual errors
@@ -7,7 +9,6 @@ class Logger {
     static INFORMATION = 2; // record of good things
     static DETAIL      = 3; // details
 
-    static LEVEL = Logger.PROBLEM;
     static TRACE = false;   // most of the method calls
 
     static CAT_AMBIGUITY = 1;
@@ -19,7 +20,7 @@ class Logger {
             const elapsed = (new Date()) - Logger.last_reported_category[category];
             if (elapsed < Logger.category_cooloff[category]) return;
         }
-        if (level <= Logger.LEVEL) {
+        if (level <= settingsCache.getSettingValue('AE.logging')) {
             console.log(message);
             if (array) for (var i=0; i<array.length; i++) { console.log(array[i]) }
             if (category) Logger.last_reported_category[category] = new Date();
@@ -27,13 +28,13 @@ class Logger {
     }
 
     static log_call(level, method) {
-        if (level <= Logger.LEVEL) {
+        if (level <= settingsCache.getSettingValue('AE.logging')) {
             method();
         }
     }
 
     static log_error(level, message) {
-        if (level <= Logger.LEVEL) {
+        if (level <= settingsCache.getSettingValue('AE.logging')) {
             console.error(message);
         }
     }
@@ -41,10 +42,118 @@ class Logger {
     static trace(message, array, node) {
         if (Logger.TRACE) {
             if (node) { console.log(`TRACE (${node.id}) : ${message}`) } else { console.log(`TRACE : ${message}`) }
-            if (array && Logger.LEVEL>=Logger.INFORMATION) for (var i=0; i<array.length; i++) { console.log(`  ${i} = ${array[i]}`) }
+            if (array && settingsCache.getSettingValue('AE.logging')>=Logger.INFORMATION) for (var i=0; i<array.length; i++) { console.log(`  ${i} = ${array[i]}`) }
         }
     }
 }
+
+class GraphConverter {
+    static _instance;
+    static instance() {
+        if (!GraphConverter._instance) GraphConverter._instance = new GraphConverter();
+        return GraphConverter._instance;
+    }
+
+    constructor() { 
+        this.node_input_map = {};
+        this.given_message = false;
+        this.did_conversion = false;
+     }
+
+    running_116_plus() {
+        const version = __COMFYUI_FRONTEND_VERSION__.split('.')
+        return (parseInt(version[0])>=1 && (parseInt(version[0])>1 || parseInt(version[1])>=16))
+    }
+
+    store_node_input_map(data) { 
+        this.node_input_map = {};
+        data?.nodes.forEach((node) => { this.node_input_map[node.id] = node.inputs.map((input) => input.name); })
+        Logger.log(Logger.DETAIL, "stored node_input_map", this.node_input_map);
+    }
+
+    clean_ue_node(node) {
+
+        const gpData = GroupNodeHandler.getGroupData(node)
+        const isGrp  = !!gpData;
+        if (isGrp) {
+            let a;
+        }
+        
+        var expected_inputs = 1
+        if (node.type == "Seed Everywhere") expected_inputs = 0
+        if (node.type == "Prompts Everywhere") expected_inputs = 2
+        if (node.type == "Anything Everywhere3") expected_inputs = 3
+        if (node.type == "Anything Everywhere?") expected_inputs = 4
+
+        // remove all the 'anything' inputs (because they may be duplicated)
+        const removed = node.inputs.filter(i=>i.label=='anything')
+        node.inputs   = node.inputs.filter(i=>i.label!='anything') 
+        // add them back as required
+        while (node.inputs.length < expected_inputs) { node.inputs.push(removed.pop()) }
+        // the input comes before the regex widgets in UE?
+        if (expected_inputs==4) {
+            while(node.inputs[0].name.includes('regex')) {
+                node.inputs.unshift(node.inputs.pop()) 
+            }
+        }
+        // fix the localized names
+        node.inputs = node.inputs.map((input) => {
+            if (input.localized_name=='anything') input.localized_name = input.name
+            return input;
+        })
+
+        // set types to match
+        node.input_type = node.inputs.map((i)=>{
+            var type = i.type;
+            if (type=='*') {
+                if (i.link) type = app.graph.links[i.link].type;
+                else type = (i.label && i.label!='anything') ? i.label : i.name;      
+            }
+            return type
+        })
+
+        Logger.log(Logger.DETAIL, `clean_ue_node ${node.id} (${node.type})`, node.inputs, node.input_type);
+    }
+
+    convert_if_pre_116(node) {
+        if (!node) return;
+        if (!(node.properties)) node.properties = {};
+
+        if (node.IS_UE) this.clean_ue_node(node)
+        
+        if (node.properties.widget_ue_connectable) return
+
+        if (!this.given_message) {
+            Logger.log(Logger.INFORMATION, `Graph was saved with a version of ComfyUI before 1.16, so Anything Everywhere will try to work out which widgets are connectable`);
+            this.given_message = true;
+        }
+
+        node.properties['widget_ue_connectable'] = {}
+        const widget_names = node.widgets?.map(w => w.name) || [];
+
+        if (!(this.node_input_map[node.id])) {
+            Logger.log(Logger.DETAIL, `node ${node.id} (${node.type} has no node_input_map`);
+        } else {
+            this.node_input_map[node.id].filter((input_name)=>widget_names.includes(input_name)).forEach((input_name) => {
+                node.properties['widget_ue_connectable'][input_name] = true;
+                this.did_conversion = true;
+                Logger.log(Logger.INFORMATION, `node ${node.id} widget ${input_name} marked as accepting UE because it was an input when saved`);
+            });
+        }
+
+
+        
+        //node.properties.ue116converted = true;
+    }
+
+    remove_saved_ue_links() {
+        if (app.graph.extra?.links_added_by_ue) {
+            app.graph.extra.links_added_by_ue.forEach((link) => { app.graph.links.delete(link); })
+        }
+    }
+}
+
+export const graphConverter = GraphConverter.instance();
 
 class LoopError extends Error {
     constructor(id, stack, ues) {
@@ -290,3 +399,31 @@ export function defineProperty(instance, property, desc) {
     }
     return Object.defineProperty(instance, property, desc);
   }
+
+export class Pausable {
+    constructor(name) {
+        this.name = name
+        this.pause_depth = 0
+    }
+    pause(note, ms) {
+        this.pause_depth += 1;
+        if (this.pause_depth>10) {
+            Logger.log(Logger.ERROR, `${this.name} Over pausing`)
+        }
+        Logger.log(Logger.INFORMATION, `${this.name} pause ${note} with ${ms}`)
+        if (ms) setTimeout( this.unpause.bind(this), ms );
+    }
+    unpause() { 
+        this.pause_depth -= 1
+        Logger.log(Logger.INFORMATION, `${this.name} unpause`)
+        if (this.pause_depth<0) {
+            Logger.log(Logger.ERROR, `${this.name} Over unpausing`)
+            this.pause_depth = 0
+        }
+    this.on_unpause()
+    }
+    paused() {
+        return (this.pause_depth>0)
+    }
+    on_unpause(){}
+}

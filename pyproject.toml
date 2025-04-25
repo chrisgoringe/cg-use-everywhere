@@ -1,7 +1,7 @@
 [project]
 name = "cg-use-everywhere"
 description = "A set of nodes that allow data to be 'broadcast' to some or all unconnected inputs. Greatly reduces link spaghetti."
-version = "5.0.10"
+version = "6.0.0"
 license = { file = "LICENSE" }
 
 [project.urls]
