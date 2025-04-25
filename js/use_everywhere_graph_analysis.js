@@ -4,6 +4,7 @@ import { add_ue_from_node, add_ue_from_node_in_group } from "./use_everywhere_no
 import { node_in_loop, node_is_live, is_connected, is_UEnode, Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { app } from "../../scripts/app.js";
+import { settingsCache } from "./use_everywhere_cache.js";
 
 class GraphAnalyser extends Pausable {
     static _instance;
@@ -69,11 +70,11 @@ class GraphAnalyser extends Pausable {
                 var gpData = GroupNodeHandler.getGroupData(real_node);
                 const isGrp = !!gpData;
                 const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;
-                if (!real_node._widget_name_map) real_node._widget_name_map =  real_node.widgets?.map(w => w.name) || [];
+                //if (!real_node._widget_name_map) real_node._widget_name_map =  real_node.widgets?.map(w => w.name) || [];
                 real_node.inputs?.forEach(input => {
                     if (is_connected(input)) return;  
                     if (real_node.reject_ue_connection && real_node.reject_ue_connection(input)) return;
-                    if (real_node._widget_name_map.includes(input.name) && !(real_node.properties['widget_ue_connectable'] && real_node.properties['widget_ue_connectable'][input.name])) return;
+                    if (real_node._getWidgetByName(input.name) && !(real_node.properties['widget_ue_connectable'] && real_node.properties['widget_ue_connectable'][input.name])) return;
                     connectable.push({real_node, input, isGrp, o2n});
                 })
             }
@@ -126,7 +127,7 @@ class GraphAnalyser extends Pausable {
         if (this.ambiguity_messages.length) Logger.log(Logger.PROBLEM, "Ambiguous connections", this.ambiguity_messages, Logger.CAT_AMBIGUITY);
     
         // if there are loops report them and raise an exception
-        if (about_to_submit && app.ui.settings.getSettingValue('AE.checkloops')) {
+        if (about_to_submit && settingsCache.getSettingValue('AE.checkloops')) {
             try {
                 node_in_loop(live_nodes, links_added);
             } catch (e) {

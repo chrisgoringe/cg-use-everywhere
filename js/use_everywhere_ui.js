@@ -1,6 +1,7 @@
 import { Logger, get_real_node, get_group_node, Pausable } from "./use_everywhere_utilities.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
+import { settingsCache } from "./use_everywhere_cache.js";
 
 function nodes_in_my_group(node_id) {
     const nodes_in = new Set();
@@ -86,7 +87,7 @@ function displayMessage(id, message) {
     const node = get_real_node(id);
     if (!node) return;
     var w = node.widgets?.find((w) => w.name === "display_text_widget");
-    if (app.ui.settings.getSettingValue('AE.details') || w) {
+    if (settingsCache.getSettingValue('AE.details') || w) {
         if (!w) {
             w = ComfyWidgets["STRING"](this, "display_text_widget", ["STRING", { multiline: true }], app).widget;
             w.inputEl.readOnly = true;
@@ -159,14 +160,9 @@ class LinkRenderController extends Pausable {
     }
 
     node_over_changed(v) {
-        const mode = app.ui.settings.getSettingValue('AE.showlinks');
+        const mode = settingsCache.getSettingValue('AE.showlinks');
         if (mode==2 || mode==3) app.canvas.setDirty(true,true)
     }
-
-    //periodically_mark_link_list_outdated() {
-    //    this.mark_link_list_outdated();
-    //    setTimeout(this.periodically_mark_link_list_outdated.bind(this), 1000);
-    //}
 
     // request an update to the ue_list. 
     request_link_list_update() {
@@ -193,7 +189,7 @@ class LinkRenderController extends Pausable {
         app.graph.extra['ue_links']?.forEach((uel) => {
             const node = app.graph._nodes_by_id[uel.downstream]
             const name = node.inputs[uel.downstream_slot].name;
-            const widget = node.widgets?.find((w) => w.name === name);
+            const widget = node._getWidgetByName(name) //      node.widgets?.find((w) => w.name === name);
             if (widget) {
                 if (disable) {
                     widget._true_disabled = widget.disabled;
@@ -212,7 +208,7 @@ class LinkRenderController extends Pausable {
             if (node.widgets && app.graph.extra['ue_links']) {
                 app.graph.extra['ue_links'].filter((uel) => { return uel.downstream==node.id }).forEach((uel) => {
                     const name = node.inputs[uel.downstream_slot].name;
-                    const widget = node.widgets?.find((w) => w.name === name);
+                    const widget = node._getWidgetByName(name) //      node.widgets?.find((w) => w.name === name);
                     if (widget) {
                         widget._true_disabled = widget.disabled;
                         widget.disabled = true;
@@ -244,12 +240,11 @@ class LinkRenderController extends Pausable {
 
     _highlight_ue_connections(node, ctx) {
         this.reading_list = true;
-        if (!app.ui.settings.getSettingValue('AE.highlight')) return;
+        if (!settingsCache.getSettingValue('AE.highlight')) return;
         //if (this._ue_links_visible) return;
         if (!this.list_ready()) return;
 
         try {
-            const all_widget_names = node.widgets?.map((widget) => widget.name) || [];
             const unconnected_connectables = node.properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.widget_ue_connectable).filter((name) => (node.properties.widget_ue_connectable[name]))) : new Set()
             node.inputs.filter((input)=>(input.link)).forEach((input) => { unconnected_connectables.delete(input.name) });
 
@@ -345,9 +340,9 @@ class LinkRenderController extends Pausable {
         const orig_hqr = app.canvas.highquality_render;
         app.canvas.highquality_render = false;
 
-        const mode = app.ui.settings.getSettingValue('AE.showlinks');
-        var animate = app.ui.settings.getSettingValue('AE.animate');
-        if (app.ui.settings.getSettingValue('AE.stop_animation_when_running') && this.queue_size>0) animate = 0;
+        const mode = settingsCache.getSettingValue('AE.showlinks');
+        var animate = settingsCache.getSettingValue('AE.animate');
+        if (settingsCache.getSettingValue('AE.stop_animation_when_running') && this.queue_size>0) animate = 0;
         if (animate==2 || animate==3) this.animate_step(ctx);
 
         var any_links_shown = false;

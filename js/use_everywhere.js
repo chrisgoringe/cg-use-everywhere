@@ -7,6 +7,7 @@ import { LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { node_menu_settings, canvas_menu_settings, non_ue_menu_settings, SETTINGS } from "./use_everywhere_settings.js";
 import { add_debug } from "./ue_debug.js";
+import { settingsCache } from "./use_everywhere_cache.js";
 
 /*
 The ui component that looks after the link rendering
@@ -137,6 +138,15 @@ app.registerExtension({
             }
         }
 
+        node._getWidgetByName = function(nm) {
+            if (this._widgetNameMap === undefined) {
+                this._widgetNameMap = {}
+                this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
+            }
+            return this._widgetNameMap[nm]
+        }
+        
+
         if (is_helper(node)) { // editing a helper node makes the list dirty
             inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
         }
@@ -177,8 +187,8 @@ app.registerExtension({
                 try {
                     graphConverter.store_node_input_map(data);
                 } catch (e) { Logger.log_error(Logger.ERROR, `in loadGraphData ${e}`); }
-                const cvw_was = app.ui.settings.getSettingValue("Comfy.Validation.Workflows")
-                if (app.ui.settings.getSettingValue("AE.block_graph_validation")) {
+                const cvw_was = settingsCache.getSettingValue("Comfy.Validation.Workflows")
+                if (settingsCache.getSettingValue("AE.block_graph_validation")) {
                     app.ui.settings.setSettingValue("Comfy.Validation.Workflows", false);
                 }
                 original_loadGraphData.apply(this, arguments);

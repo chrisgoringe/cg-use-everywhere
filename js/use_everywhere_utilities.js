@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { GroupNodeHandler } from "../core/groupNode.js";
-
+import { settingsCache } from "./use_everywhere_cache.js";
 
 
 class Logger {
@@ -20,7 +20,7 @@ class Logger {
             const elapsed = (new Date()) - Logger.last_reported_category[category];
             if (elapsed < Logger.category_cooloff[category]) return;
         }
-        if (level <= app.ui.settings.getSettingValue('AE.logging')) {
+        if (level <= settingsCache.getSettingValue('AE.logging')) {
             console.log(message);
             if (array) for (var i=0; i<array.length; i++) { console.log(array[i]) }
             if (category) Logger.last_reported_category[category] = new Date();
@@ -28,13 +28,13 @@ class Logger {
     }
 
     static log_call(level, method) {
-        if (level <= app.ui.settings.getSettingValue('AE.logging')) {
+        if (level <= settingsCache.getSettingValue('AE.logging')) {
             method();
         }
     }
 
     static log_error(level, message) {
-        if (level <= app.ui.settings.getSettingValue('AE.logging')) {
+        if (level <= settingsCache.getSettingValue('AE.logging')) {
             console.error(message);
         }
     }
@@ -42,7 +42,7 @@ class Logger {
     static trace(message, array, node) {
         if (Logger.TRACE) {
             if (node) { console.log(`TRACE (${node.id}) : ${message}`) } else { console.log(`TRACE : ${message}`) }
-            if (array && app.ui.settings.getSettingValue('AE.logging')>=Logger.INFORMATION) for (var i=0; i<array.length; i++) { console.log(`  ${i} = ${array[i]}`) }
+            if (array && settingsCache.getSettingValue('AE.logging')>=Logger.INFORMATION) for (var i=0; i<array.length; i++) { console.log(`  ${i} = ${array[i]}`) }
         }
     }
 }

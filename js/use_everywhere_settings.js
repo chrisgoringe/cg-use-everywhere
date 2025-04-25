@@ -3,10 +3,13 @@ import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
 import { has_priority_boost } from "./use_everywhere_utilities.js";
+import { settingsCache } from "./use_everywhere_cache.js";
 
 function call_graph_change() {
     app.graph?.change.bind(app.graph)
 }
+
+
 
 export const SETTINGS = [
     {
@@ -14,12 +17,14 @@ export const SETTINGS = [
         name: "Anything Everywhere show node details",
         type: "boolean",
         defaultValue: false,
+        onChange: settingsCache.onSettingChange,
     },
     {
         id: "AE.checkloops",
         name: "Anything Everywhere check loops",
         type: "boolean",
         defaultValue: true,
+        onChange: settingsCache.onSettingChange,
     },
     {
         id: "AE.showlinks",
@@ -27,7 +32,7 @@ export const SETTINGS = [
         type: "combo",
         options: [ {value:0, text:"All off"}, {value:1, text:"Selected nodes"}, {value:2, text:"Mouseover node"}, {value:3, text:"Selected and mouseover nodes"}, {value:4, text:"All on"}],
         defaultValue: 0,
-        onChange: call_graph_change,
+        onChange: settingsCache.onSettingChangeChange,
     },      
     {
         id: "AE.animate",
@@ -35,21 +40,21 @@ export const SETTINGS = [
         type: "combo",
         options: [ {value:0, text:"Off"}, {value:1, text:"Dots"}, {value:2, text:"Pulse"}, {value:3, text:"Both"}, ],
         defaultValue: 3,
-        onChange: call_graph_change,
+        onChange: settingsCache.onSettingChangeChange,
     },
     {
         id: "AE.stop_animation_when_running",
         name: "Anything Everywhere turn animation off when running",
         type: "boolean",
         defaultValue: true,
-        onChange: call_graph_change,
+        onChange: settingsCache.onSettingChangeChange,
     },    
     {
         id: "AE.highlight",
         name: "Anything Everywhere highlight connected nodes",
         type: "boolean",
         defaultValue: true,
-        onChange: call_graph_change,
+        onChange: settingsCache.onSettingChangeChange,
     },
     {
         id: "AE.logging",
@@ -57,6 +62,7 @@ export const SETTINGS = [
         type: "combo",
         options: [ {value:0, text:"Errors Only"}, {value:1, text:"Problems"}, {value:2, text:"Information"}, {value:3, text:"Detail"}, ],
         defaultValue: 1,
+        onChange: settingsCache.onSettingChange,
     },
     {
         id: "AE.block_graph_validation",
@@ -64,8 +70,11 @@ export const SETTINGS = [
         type: "boolean",
         defaultValue: true,
         tooltip: "Turn off workflow validation (which tends to replace UE links with real ones)",
+        onChange: settingsCache.onSettingChange,
     },
 ]
+
+
 
 function submenu(properties, property, options, e, menu, node) {
     const current = properties[property] ? (properties[property]==2 ? 3 : 2 ) : 1; 
