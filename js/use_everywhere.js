@@ -72,19 +72,7 @@ app.registerExtension({
             inject_outdating_into_objects(options,'callback',`menu option on ${this.id}`);
         }
 
-        /*
-        Finding a widget by it's name is something done a lot of times in rendering, 
-        so add a method that caches the names that can be used deep in the rendering code.
 
-        TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
-        */
-        nodeType.prototype._getWidgetByName = function(nm) {
-            if (this._widgetNameMap === undefined) {
-                this._widgetNameMap = {}
-                this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
-            }
-            return this._widgetNameMap[nm]
-        }
 
         /*
         When a UE node is created, we set the group and color restriction properties.
@@ -151,6 +139,20 @@ app.registerExtension({
                 original_onDrawTitleBar?.apply(this, arguments);
                 if (node.properties.group_restricted || node.properties.color_restricted) indicate_restriction(ctx, title_height);
             }
+        }
+
+                /*
+        Finding a widget by it's name is something done a lot of times in rendering, 
+        so add a method that caches the names that can be used deep in the rendering code.
+
+        TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
+        */
+        node._getWidgetByName = function(nm) {
+            if (this._widgetNameMap === undefined) {
+                this._widgetNameMap = {}
+                this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
+            }
+            return this._widgetNameMap[nm]
         }
 
         if (is_helper(node)) { // editing a helper node makes the list dirty
