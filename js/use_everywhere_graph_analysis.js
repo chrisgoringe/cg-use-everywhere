@@ -1,12 +1,12 @@
 import { GroupNodeHandler } from "../core/groupNode.js";
 import { UseEverywhereList, display_name } from "./use_everywhere_classes.js";
 import { add_ue_from_node, add_ue_from_node_in_group } from "./use_everywhere_nodes.js";
-import { node_in_loop, node_is_live, is_connected, is_UEnode, Logger, get_real_node } from "./use_everywhere_utilities.js";
+import { node_in_loop, node_is_live, is_connected, is_UEnode, Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { UpdateBlocker } from "./use_everywhere_ui.js";
 import { app } from "../../scripts/app.js";
 
-class GraphAnalyser {
+class GraphAnalyser extends Pausable {
     static _instance;
     static instance() {
         if (!this._instance) this._instance = new GraphAnalyser();
@@ -14,13 +14,10 @@ class GraphAnalyser {
     }
 
     constructor() {
+        super()
         this.original_graphToPrompt = app.graphToPrompt;
         this.ambiguity_messages = [];
-        this.pause_depth = 0;
     }
-
-    pause() { this.pause_depth += 1; }
-    unpause() { this.pause_depth -= 1; }
 
     async graph_to_prompt(cur_list) {
         var p;
@@ -46,7 +43,7 @@ class GraphAnalyser {
     }
 
     analyse_graph(check_for_loops=false) {
-        if (this.pause_depth > 0) { return this.original_graphToPrompt.apply(app) }
+        if (this.paused()) { return this.original_graphToPrompt.apply(app) }
         this.ambiguity_messages = [];
         var p = { workflow:app.graph.serialize() };
         const live_nodes = p.workflow.nodes.filter((node) => node_is_live(node))

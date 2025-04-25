@@ -192,12 +192,22 @@ app.registerExtension({
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             UpdateBlocker.push()
             try {
-                linkRenderController.disable_connected_widgets(node);
+                //linkRenderController.disable_connected_widgets(node);
                 const v = original_drawNode.apply(this, arguments);
-                linkRenderController.undisable_connected_widgets(node);
+                //linkRenderController.undisable_connected_widgets(node);
                 linkRenderController.highlight_ue_connections(node, ctx);
                 return v
             } finally { UpdateBlocker.pop() }
+        }
+
+        const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
+        LGraphCanvas.prototype.drawFrontCanvas = function() {
+            linkRenderController.disable_all_connected_widgets(true)
+            try {
+                return original_drawFrontCanvas.apply(this, arguments);
+            } finally {
+                linkRenderController.disable_all_connected_widgets(false)
+            }
         }
 
         /*
@@ -265,6 +275,11 @@ app.registerExtension({
 
         if (false) add_debug();
 
+    },
+
+    beforeConfigureGraph() {
+        linkRenderController.pause(1000)
+        graphAnalyser.pause(1000)
     },
 
     afterConfigureGraph() {

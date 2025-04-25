@@ -399,3 +399,22 @@ export function defineProperty(instance, property, desc) {
     }
     return Object.defineProperty(instance, property, desc);
   }
+
+export class Pausable {
+    pause(ms) {
+        this.pause_depth = (this.pause_depth || 0) + 1;
+        if (ms) setTimeout( this.unpause.bind(this), ms );
+    }
+    unpause() { 
+        this.pause_depth -= 1
+        if (this.pause_depth<0) {
+            Logger.log(Logger.ERROR, "Over unpausing")
+            this.pause_depth = 0
+        }
+    this.on_unpause()
+    }
+    paused() {
+        return (this.pause_depth && this.pause_depth>0)
+    }
+    on_unpause(){}
+}

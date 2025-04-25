@@ -1,12 +1,10 @@
-import { Logger, get_real_node, get_group_node, get_all_nodes_within } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, get_group_node, get_all_nodes_within, Pausable } from "./use_everywhere_utilities.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 
 export class UpdateBlocker {
-    static depth = 0
-    static push() { UpdateBlocker.depth += 1 }
-    static pop() { UpdateBlocker.depth -= 1 }
-    static blocking() { return UpdateBlocker.depth>0 }
+    static push() { LinkRenderController._instance?.pause() }
+    static pop() { LinkRenderController._instance?.unpause() }
 }
 
 function nodes_in_my_group(node_id) {
@@ -115,7 +113,7 @@ function update_input_label(node, slot, app) {
     }
 }
 
-class LinkRenderController {
+class LinkRenderController extends Pausable {
     static _instance;
     static instance(tga) {
         if (!this._instance) this._instance = new LinkRenderController();
@@ -123,6 +121,7 @@ class LinkRenderController {
         return this._instance
     }
     constructor() {
+        super()
         this.the_graph_analyser = null;
         this.periodically_mark_link_list_outdated();
      }
@@ -130,28 +129,19 @@ class LinkRenderController {
     ue_list = undefined;           // the most current ue list - set to undefined if we know it is out of date
     ue_list_reloading = false;     // true when a reload has been requested but not completed
     last_used_ue_list = undefined; // the last ue list we actually used to generate graphics
-    paused = false; 
     reading_list = false; // don't outdate the list while we read it (because reading it can trigger outdates!)
     
     queue_size = null;
     note_queue_size(x) { this.queue_size = x; }
-
-    pause(ms) {
-        this.paused = true;
-        if (!ms) ms = 100;
-        setTimeout( this.unpause.bind(this), ms );
-    }
-    unpause() { 
-        this.paused = false;
-        app.graph.change();
-    }
-
+    
+    on_unpause() {app.graph.change();}
+    
     // memory reuse
     slot_pos1 = new Float32Array(2); //to reuse
     slot_pos2 = new Float32Array(2); //to reuse
 
     mark_link_list_outdated() {
-        if (UpdateBlocker.blocking()) return;
+        if (this.paused()) return;
         if (this.reading_list) return;
         if (this.ue_list) {
             this.ue_list = undefined;
@@ -198,7 +188,25 @@ class LinkRenderController {
         } catch (e) {
             this.reload_reject(e);
         }
-    } 
+    }
+
+    disable_all_connected_widgets( disable ) {
+        app.graph.extra['ue_links'].forEach((uel) => {
+            const node = app.graph._nodes_by_id[uel.downstream]
+            const name = node.inputs[uel.downstream_slot].name;
+            const widget = node.widgets?.find((w) => w.name === name);
+            if (widget) {
+                if (disable) {
+                    widget._true_disabled = widget.disabled;
+                    widget.disabled = true;
+                } else {
+                    if (widget._true_disabled) {
+                        widget.disabled = widget._true_disabled;
+                    }
+                }
+            }
+        })            
+    }
 
     disable_connected_widgets(node) {
         try {
@@ -216,6 +224,7 @@ class LinkRenderController {
             Logger.log_error(Logger.ERROR, e);
         }
     }
+
     undisable_connected_widgets(node) {
         if (node.widgets) {
             node.widgets.forEach((widget) => {
@@ -268,15 +277,6 @@ class LinkRenderController {
                     ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
                     ctx.stroke();
                     ctx.shadowBlur = 0;
-                    /* no longer needed because we disable the widgets
-                    if (all_widget_names.includes(name_sent_to) && !node.flags.collapsed) {
-                        ctx.beginPath();
-                        ctx.strokeStyle = "#ffffff80"
-                        ctx.moveTo(pos2[0]+radius,pos2[1])
-                        ctx.lineTo(node.size[0]-pos2[0],pos2[1]);
-                        ctx.stroke();
-                    }
-                        */
                     ctx.beginPath();
                     ctx.strokeStyle = "black";
                     ctx.shadowBlur = 0;
@@ -312,7 +312,7 @@ class LinkRenderController {
     }
 
     list_ready(make_latest) {
-        if (this.paused) return false;
+        if (this.paused()) return false;
         if (!this.the_graph_analyser) return false; // we don't have the analyser yet (still loading)
         if (!this.ue_list) this.request_link_list_update();
         if (!this.ue_list) return false;
@@ -330,6 +330,7 @@ class LinkRenderController {
     }
 
     render_all_ue_links(ctx) {
+        if (this.paused()) return;
         try {
             this._render_all_ue_links(ctx);
         } catch (e) {
