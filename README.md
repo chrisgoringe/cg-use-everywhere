@@ -34,7 +34,7 @@ Things to notice:
   - No icon (all the other widgets) indicates that they are not UE connectable
 - Other inputs still have the indications of normal connection or UE connection (here model is a UE connection)
 
-You'll probably find that turning the `showlinks` option on helps, and the highlight options helps a lot.
+You'll probably find that turning the `showlinks` option on helps, and the `highlight` option is required for those widget indicators which help a lot.
 
 ![options116](docs/options116.png)
 
