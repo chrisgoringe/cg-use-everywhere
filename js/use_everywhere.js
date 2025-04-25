@@ -141,19 +141,6 @@ app.registerExtension({
             }
         }
 
-                /*
-        Finding a widget by it's name is something done a lot of times in rendering, 
-        so add a method that caches the names that can be used deep in the rendering code.
-
-        TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
-        */
-        node._getWidgetByName = function(nm) {
-            if (this._widgetNameMap === undefined) {
-                this._widgetNameMap = {}
-                this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
-            }
-            return this._widgetNameMap[nm]
-        }
 
         if (is_helper(node)) { // editing a helper node makes the list dirty
             inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
@@ -274,6 +261,21 @@ app.registerExtension({
 
             return options;
         }
+
+                        /*
+        Finding a widget by it's name is something done a lot of times in rendering, 
+        so add a method that caches the names that can be used deep in the rendering code.
+
+        TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
+        */
+        LGraphNode.prototype._getWidgetByName = function(nm) {
+            if (this._widgetNameMap === undefined) {
+                this._widgetNameMap = {}
+                this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
+            }
+            return this._widgetNameMap[nm]
+        }
+
 
 	},
 
