@@ -180,7 +180,7 @@ class LinkRenderController extends Pausable {
         app.graph.extra['ue_links']?.forEach((uel) => {
             const node = app.graph._nodes_by_id[uel.downstream]
             const name = node.inputs[uel.downstream_slot].name;
-            const widget = node._getWidgetByName(name) //      node.widgets?.find((w) => w.name === name);
+            const widget = node._getWidgetByName(name) 
             if (widget) {
                 if (disable) {
                     widget._true_disabled = widget.disabled;
@@ -196,11 +196,10 @@ class LinkRenderController extends Pausable {
 
     highlight_ue_connections(node, ctx) {        
         if (!settingsCache.getSettingValue('AE.highlight')) return;
-        //if (this._ue_links_visible) return;
-        if (!this._list_ready()) return;
-
+        
         try {
             this.pause()
+            if (!this._list_ready()) return;
             const unconnected_connectables = node.properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.widget_ue_connectable).filter((name) => (node.properties.widget_ue_connectable[name]))) : new Set()
             node.inputs.filter((input)=>(input.link)).forEach((input) => { unconnected_connectables.delete(input.name) });
 
@@ -238,7 +237,6 @@ class LinkRenderController extends Pausable {
                 });
             }
             
-
             unconnected_connectables.forEach((name) => {
                 const index = node.inputs.findIndex((i) => i.name == name);
                 var pos2 = node.getConnectionPos(true, index, this.slot_pos1);
@@ -263,13 +261,12 @@ class LinkRenderController extends Pausable {
         }
     }
 
-    _list_ready(make_latest) {
+    _list_ready() {
         if (!this.the_graph_analyser) return false; // we don't have the analyser yet (still loading)
         if (!this.ue_list) {
             this.mark_link_list_outdated();
             return false;
         }
-        if (make_latest) this.last_used_ue_list = this.ue_list;
         return true;
     }
 
@@ -295,7 +292,8 @@ class LinkRenderController extends Pausable {
     }
 
     _render_all_ue_links(ctx) {
-        if (!this._list_ready(true)) return;
+        if (!this._list_ready()) return;
+        this.last_used_ue_list = this.ue_list;
 
         ctx.save();
         const orig_hqr = app.canvas.highquality_render;
@@ -341,7 +339,6 @@ class LinkRenderController extends Pausable {
         ctx.restore();
 
     }
-
 
     _render_ue_link(ue_connection, ctx, animate) {
         try {
