@@ -73,6 +73,20 @@ app.registerExtension({
         }
 
         /*
+        Finding a widget by it's name is something done a lot of times in rendering, 
+        so add a method that caches the names that can be used deep in the rendering code.
+
+        TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
+        */
+        nodeType.prototype._getWidgetByName = function(nm) {
+            if (this._widgetNameMap === undefined) {
+                this._widgetNameMap = {}
+                this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
+            }
+            return this._widgetNameMap[nm]
+        }
+
+        /*
         When a UE node is created, we set the group and color restriction properties.
         We also create pseudo-widgets for all the inputs so that they can be searched
         and to avoid other code throwing errors.
@@ -113,12 +127,13 @@ app.registerExtension({
         const acm = node.afterChangeMade
         node.afterChangeMade = (p, v) => {
             acm?.(p,v)
-            if (p==='bgcolor') {
-            //    if (node.mode!=4) linkRenderController.mark_link_list_outdated();
-            }
+            //if (p==='bgcolor') {
+            //    if (node._being_drawn) return; // the bgcolor gets set by the built in node draw...
+            //    linkRenderController.mark_link_list_outdated();
+            //}
             if (p==='mode') {
                 linkRenderController.mark_link_list_outdated();
-                node.widgets?.forEach((widget) => {widget.onModeChange?.(v)});
+                node.widgets?.forEach((widget) => {widget.onModeChange?.(v)}); // no idea why I have this?
             }
         }
 
@@ -137,15 +152,6 @@ app.registerExtension({
                 if (node.properties.group_restricted || node.properties.color_restricted) indicate_restriction(ctx, title_height);
             }
         }
-
-        node._getWidgetByName = function(nm) {
-            if (this._widgetNameMap === undefined) {
-                this._widgetNameMap = {}
-                this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
-            }
-            return this._widgetNameMap[nm]
-        }
-        
 
         if (is_helper(node)) { // editing a helper node makes the list dirty
             inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
@@ -201,14 +207,17 @@ app.registerExtension({
         */
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
+            
             try {
                 linkRenderController.pause('drawNode')
                 const v = original_drawNode.apply(this, arguments);
                 linkRenderController.highlight_ue_connections(node, ctx);
+                if (node._last_seen_bg !== node.bgcolor) linkRenderController.mark_link_list_outdated();
+                node._last_seen_bg = node.bgcolor
                 return v
             } catch (e) {
                 Logger.log_error(Logger.ERROR, e)
-            } finally {
+            } finally {          
                 linkRenderController.unpause()
             }
         }
