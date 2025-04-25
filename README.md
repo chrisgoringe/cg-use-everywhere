@@ -67,6 +67,9 @@ UE nodes mostly work with group nodes. But there are a couple of important thing
 
 ## Latest updates
 
+6.0 (April 2025)
+- Very major rebuild to deal with latest version of Comfy
+
 5.0 (6th August 2024)
 - Significant change to core logic. Should greatly reduce incompatibility issues, but may have unexpoected consequences!
 - Added to right-click menu on nodes the option to make a node reject all UE connections.
