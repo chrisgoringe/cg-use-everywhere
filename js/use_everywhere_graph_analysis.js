@@ -69,11 +69,11 @@ class GraphAnalyser extends Pausable {
                 var gpData = GroupNodeHandler.getGroupData(real_node);
                 const isGrp = !!gpData;
                 const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;
-                const widget_names = real_node.widgets?.map(w => w.name) || [];
+                if (!real_node._widget_name_map) real_node._widget_name_map =  real_node.widgets?.map(w => w.name) || [];
                 real_node.inputs?.forEach(input => {
                     if (is_connected(input)) return;  
                     if (real_node.reject_ue_connection && real_node.reject_ue_connection(input)) return;
-                    if (widget_names.includes(input.name) && !(real_node.properties['widget_ue_connectable'] && real_node.properties['widget_ue_connectable'][input.name])) return;
+                    if (real_node._widget_name_map.includes(input.name) && !(real_node.properties['widget_ue_connectable'] && real_node.properties['widget_ue_connectable'][input.name])) return;
                     connectable.push({real_node, input, isGrp, o2n});
                 })
             }

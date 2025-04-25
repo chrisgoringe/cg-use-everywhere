@@ -118,7 +118,7 @@ class LinkRenderController extends Pausable {
     constructor() {
         super('LinkRenderController')
         this.the_graph_analyser = null;
-        this.periodically_mark_link_list_outdated();
+        //this.periodically_mark_link_list_outdated();
         this.ue_list_reloading = false;     // true when a reload has been requested but not completed
         this.ue_list = undefined;           // the most current ue list - set to undefined if we know it is out of date
         this.last_used_ue_list = undefined; // the last ue list we actually used to generate graphics
@@ -163,10 +163,10 @@ class LinkRenderController extends Pausable {
         if (mode==2 || mode==3) app.canvas.setDirty(true,true)
     }
 
-    periodically_mark_link_list_outdated() {
-        this.mark_link_list_outdated();
-        setTimeout(this.periodically_mark_link_list_outdated.bind(this), 1000);
-    }
+    //periodically_mark_link_list_outdated() {
+    //    this.mark_link_list_outdated();
+    //    setTimeout(this.periodically_mark_link_list_outdated.bind(this), 1000);
+    //}
 
     // request an update to the ue_list. 
     request_link_list_update() {
@@ -185,6 +185,7 @@ class LinkRenderController extends Pausable {
             Logger.log_error(Logger.ERROR, `reload_reject ${reason}`);
         } finally {
             this.set_list_reloading(false, 'request_llu'); 
+            setTimeout(this.mark_link_list_outdated.bind(this), 1000);
         }
     }
 

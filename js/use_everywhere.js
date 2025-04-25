@@ -205,6 +205,7 @@ app.registerExtension({
         const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
         LGraphCanvas.prototype.drawFrontCanvas = function() {
             try {
+                linkRenderController.pause('drawfrontcanvas')
                 linkRenderController.disable_all_connected_widgets(true)
                 return original_drawFrontCanvas.apply(this, arguments);
             }  catch (e) {
@@ -214,6 +215,8 @@ app.registerExtension({
                     linkRenderController.disable_all_connected_widgets(false)
                 } catch (e) {
                     Logger.log_error(Logger.ERROR, e)
+                } finally {
+                    linkRenderController.unpause()
                 }
             }
         }
