@@ -29,8 +29,10 @@ Things to notice:
 - There is a new menu `UE Connectable Widgets` which lists all the widgets. Those marked as connectable have a green bar to the left of the name.
   - Select a widget to toggle its value
 - Next to the widget, where an input would be, the connectable widgets have a graphical indication of their state.
-  - The smaller dark circle indicate a connectable node which is not connected (widget value will be used)
-  - The light circle and strike-through of the widget indicates that a UE node will provide the value
+  - The smaller dark circle (next to steps) indicate a connectable node which is not connected (widget value will be used)
+  - The light circle (next to cfg) and greying out the widget indicates that a UE node will provide the value
+  - No icon (all the other widgets) indicates that they are not UE connectable
+- Other inputs still have the indications of normal connection or UE connection (here model is a UE connection)
 
 You'll probably find that turning the `showlinks` option on helps, and the highlight options helps a lot.
 

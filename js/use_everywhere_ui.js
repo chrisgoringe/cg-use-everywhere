@@ -119,17 +119,28 @@ class LinkRenderController extends Pausable {
         super('LinkRenderController')
         this.the_graph_analyser = null;
         this.periodically_mark_link_list_outdated();
+        this.ue_list_reloading = false;     // true when a reload has been requested but not completed
+        this.ue_list = undefined;           // the most current ue list - set to undefined if we know it is out of date
+        this.last_used_ue_list = undefined; // the last ue list we actually used to generate graphics
      }
 
-    ue_list = undefined;           // the most current ue list - set to undefined if we know it is out of date
-    ue_list_reloading = false;     // true when a reload has been requested but not completed
-    last_used_ue_list = undefined; // the last ue list we actually used to generate graphics
+    
+    
+    
     reading_list = false; // don't outdate the list while we read it (because reading it can trigger outdates!)
     
     queue_size = null;
     note_queue_size(x) { this.queue_size = x; }
     
     on_unpause() {app.graph.change();}
+
+    set_list_reloading(v, comment) {
+        this.ue_list_reloading = v
+        Logger.log(Logger.INFORMATION, `${comment} set_list_reloading(${v})`)
+    }
+    is_list_reloading() {
+        return this.ue_list_reloading
+    }
     
     // memory reuse
     slot_pos1 = new Float32Array(2); //to reuse
@@ -157,40 +168,23 @@ class LinkRenderController extends Pausable {
         setTimeout(this.periodically_mark_link_list_outdated.bind(this), 1000);
     }
 
-    // callback when the_graph_analyser finishes - store the result and note reloading is false
-    reload_resolve = function (value) {
-        this.ue_list = value;
-        this.ue_list_reloading = false;
-        try {
-            if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
-        } catch (e) {
-            Logger.log_error(Logger.ERROR, `link list update resolve ${e}`)
-        }
-        
-        Logger.log(Logger.DETAIL, "link list update completed");
-        Logger.log_call(Logger.DETAIL, this.ue_list.print_all.bind(this.ue_list));
-    }.bind(this)
-
-    // callback for when the_graph_analyser fails - note reloading is false and log
-    reload_reject = function(reason) {
-        this.ue_list_reloading=false;
-        Logger.log(Logger.ERROR, "link list update failed");
-        Logger.log_error(Logger.ERROR, reason);
-    }.bind(this)
-
     // request an update to the ue_list. 
     request_link_list_update() {
-        if (this.ue_list_reloading) return;                            // already doing it
-        this.ue_list_reloading = true;                                 // stop any more requests
+        if (this.is_list_reloading()) return;                            // already doing it
         try {
+            this.set_list_reloading(true, 'request_llu');                // stop any more requests
             const ues = this.the_graph_analyser.analyse_graph(false)
             if (ues==null) {
                 Logger.log(Logger.DETAIL, "link list update skipped due to pause");
                 return
             }
-            this.reload_resolve(ues)
+            this.ue_list = ues;
+            if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
+            Logger.log(Logger.DETAIL, "link list update completed");
         } catch (e) {
-            this.reload_reject(e);
+            Logger.log_error(Logger.ERROR, `reload_reject ${reason}`);
+        } finally {
+            this.set_list_reloading(false, 'request_llu'); 
         }
     }
 
