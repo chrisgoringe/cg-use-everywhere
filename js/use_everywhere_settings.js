@@ -5,12 +5,6 @@ import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
 import { has_priority_boost } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 
-function call_graph_change() {
-    app.graph?.change.bind(app.graph)
-}
-
-
-
 export const SETTINGS = [
     {
         id: "AE.details",
@@ -117,6 +111,21 @@ function priority_boost_submenu(value, options, e, menu, node) {
     if (current_element) current_element.style.borderLeft = "2px solid #484";
 }
 
+function highlight_selected(submenu_root, node, names) {
+    names.forEach((name, i) => {
+        const current_element = submenu_root?.querySelector(`:nth-child(${i+1})`);
+        if (current_element) {
+            if (node.properties['widget_ue_connectable'][name]) {
+                current_element.style.borderLeft = "2px solid #484";
+            } else {
+                current_element.style.borderLeft = "";
+            }
+        } else {
+            let a;
+        }
+    })
+}
+
 function widget_ue_submenu(value, options, e, menu, node) {
     if (!(node.properties['widget_ue_connectable'])) node.properties['widget_ue_connectable'] = {};
     const names = []
@@ -126,15 +135,12 @@ function widget_ue_submenu(value, options, e, menu, node) {
         { event: e, callback: function (v) { 
             node.properties['widget_ue_connectable'][v] = !!!node.properties['widget_ue_connectable'][v]; 
             LinkRenderController.instance().mark_link_list_outdated();
+            highlight_selected(this.parentElement, node, names)
+            return true; // keep open
         },
         parentMenu: menu, node:node}
     )
-    names.forEach((name, i) => {
-        if (node.properties['widget_ue_connectable'][name]) {
-            const current_element = submenu.root.querySelector(`:nth-child(${i+1})`);
-            if (current_element) current_element.style.borderLeft = "2px solid #484";
-        }
-    })
+    highlight_selected(submenu.root, node, names)
 }
 
 export function non_ue_menu_settings(options, node) {
