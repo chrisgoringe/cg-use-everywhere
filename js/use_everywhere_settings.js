@@ -208,7 +208,7 @@ export function canvas_menu_settings(options) {
                 LinkRenderController.instance().pause("convert");
                 try {
                     convert_to_links(ues, -1);
-                    remove_all_ues();
+                    remove_all_ues(true);
                 } finally {
                     app.graph.change();
                     LinkRenderController.instance().unpause()

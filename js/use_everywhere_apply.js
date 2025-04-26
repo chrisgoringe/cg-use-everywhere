@@ -33,12 +33,12 @@ function convert_to_links(ues, control_node_id, added_links=undefined) {
     return added_links;
 }
 
-function remove_all_ues() {
-    var match = app.graph._nodes.find((node)=>is_UEnode(node));
-    while (match) {
-        app.graph.remove(match);
-        match = app.graph._nodes.find((node)=>is_UEnode(node));
-    }
+function remove_this(node, keep_seed_everywhere) {
+    return  (is_UEnode(node) && !(keep_seed_everywhere && node.comfyClass=="Seed Everywhere") ) 
+}
+
+function remove_all_ues(keep_seed_everywhere) {
+    app.graph._nodes.filter((node)=>remove_this(node, keep_seed_everywhere)).forEach((node)=>{app.graph.remove(node)})
 }
 
 export {convert_to_links, remove_all_ues}
