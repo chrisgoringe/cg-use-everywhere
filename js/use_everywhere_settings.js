@@ -131,7 +131,7 @@ function widget_ue_submenu(value, options, e, menu, node) {
     const names = []
     const linkedWidgets = new Set()
     node.widgets.forEach((widget) => { widget.linkedWidgets?.forEach((lw)=>{linkedWidgets.add(lw)}) });
-    node.widgets.filter(w => !linkedWidgets.has(w)).forEach((widget) => { names.push(widget.name) });
+    node.widgets.filter(w => !linkedWidgets.has(w)).filter(w => !w.hidden).forEach((widget) => { names.push(widget.name) });
     const submenu = new LiteGraph.ContextMenu(
         names,
         { event: e, callback: function (v) { 
