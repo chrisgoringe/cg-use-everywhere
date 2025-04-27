@@ -58,6 +58,7 @@ class GraphConverter {
         this.node_input_map = {};
         this.given_message = false;
         this.did_conversion = false;
+        this.graph_being_configured = false;
      }
 
     running_116_plus() {
@@ -69,6 +70,24 @@ class GraphConverter {
         this.node_input_map = {};
         data?.nodes.forEach((node) => { this.node_input_map[node.id] = node.inputs.map((input) => input.name); })
         Logger.log(Logger.DETAIL, "stored node_input_map", this.node_input_map);
+    }
+
+    on_node_created(node) {
+        if (this.graph_being_configured) {
+            /*
+            If the graph is being configured, we are still loading old nodes. 
+            These might need to be converted, but we can't do that yet
+            */
+            return;
+        }
+        
+        if (!(node.properties)) node.properties = {};
+        if (node.properties.widget_ue_connectable) {
+            console.log(`already has widget_ue_connectable`)
+            return 
+        }
+        node.properties['widget_ue_connectable'] = {}
+        console.log(`added widget_ue_connectable`)
     }
 
     clean_ue_node(node) {
