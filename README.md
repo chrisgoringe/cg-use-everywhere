@@ -12,7 +12,7 @@ Shameless plug for my other nodes -> Check out [Image Picker](https://github.com
 
 ---
 
-## Update for ComfyUI front end 1.16
+# Update for ComfyUI front end 1.16 and above
 
 ComfyUI front end 1.16 made a major change to the way that inputs and widgets work, which had a significant impact on the UE nodes.
 
@@ -39,6 +39,16 @@ You'll probably find that turning the `showlinks` option on helps, and the `high
 ![options116](docs/options116.png)
 
 Hopefully old workflows will be automatically converted when you load them. Hopefully.
+
+## Naming widgets
+
+The `Prompts Everywhere`, `Seed Everywhere`, and `Anything Everywhere?` all make use of the name of an input. On some occasions this might mean you want to rename an input.
+
+For an input that can't be a widget, that's trivial - right click on the input dot and select `Rename Slot`. The name will be updated, and the new name displayed next to the dot.
+
+If an input *can* be a widget, you can rename it in the same way, but the new name *does not get displayed*. The name has changed, and the UE nodes will use the new name, but the old name is still shown.
+
+I consider this to be a bug in the Comfy front-end, and have raised an issue [here](https://github.com/Comfy-Org/ComfyUI_frontend/issues/3654)
 
 
 ---
