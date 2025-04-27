@@ -149,6 +149,8 @@ app.registerExtension({
         // removing a node makes the list dirty
         inject_outdating_into_object_method(node, 'onRemoved', `node ${node.id} removed`)
 
+        graphConverter.on_node_created(node)
+
         // creating a node makes the link list dirty - but give the system a moment to finish
         setTimeout( ()=>{linkRenderController.mark_link_list_outdated()}, 100 );
     }, 
@@ -317,10 +319,12 @@ app.registerExtension({
     beforeConfigureGraph() {
         linkRenderController.pause("before configure", 1000)
         graphAnalyser.pause("before configure", 1000)
+        graphConverter.graph_being_configured = true
     },
 
     afterConfigureGraph() {
         graphConverter.remove_saved_ue_links()
+        graphConverter.graph_being_configured = false
     }
 
 });

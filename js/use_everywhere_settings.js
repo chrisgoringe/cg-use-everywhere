@@ -129,7 +129,9 @@ function highlight_selected(submenu_root, node, names) {
 function widget_ue_submenu(value, options, e, menu, node) {
     if (!(node.properties['widget_ue_connectable'])) node.properties['widget_ue_connectable'] = {};
     const names = []
-    node.widgets.forEach((widget) => { names.push(widget.name) });
+    const linkedWidgets = new Set()
+    node.widgets.forEach((widget) => { widget.linkedWidgets?.forEach((lw)=>{linkedWidgets.add(lw)}) });
+    node.widgets.filter(w => !linkedWidgets.has(w)).forEach((widget) => { names.push(widget.name) });
     const submenu = new LiteGraph.ContextMenu(
         names,
         { event: e, callback: function (v) { 

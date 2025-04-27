@@ -71,50 +71,45 @@ class GraphAnalyser extends Pausable {
                 const isGrp = !!gpData;
                 const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;
                 //if (!real_node._widget_name_map) real_node._widget_name_map =  real_node.widgets?.map(w => w.name) || [];
-                real_node.inputs?.forEach(input => {
+                real_node.inputs?.forEach((input,index) => {
                     if (is_connected(input)) return;  
                     if (real_node.reject_ue_connection && real_node.reject_ue_connection(input)) return;
                     if (real_node._getWidgetByName(input.name) && !(real_node.properties['widget_ue_connectable'] && real_node.properties['widget_ue_connectable'][input.name])) return;
-                    connectable.push({real_node, input, isGrp, o2n});
+                    connectable.push({node, input, index, isGrp, real_node, o2n});
                 })
             }
         })
 
         // see if we can connect them
         const links_added = new Set();
-        connectable.forEach(({real_node, input, isGrp, o2n}) => {
+        connectable.forEach(({node, input, index, isGrp, real_node, o2n}) => {
+            /*
+            if isGrp, then
+            node refers to the outer node (group node), real_node to the inner node.
+            input and index are on real_node
+            if not isGRp, node==real_node
+            */
+
             var ue = ues.find_best_match(real_node, input, this.ambiguity_messages);
             if (ue) {
-
-                // Get the real node and slot (taking into account group nodes)
-                var real_target_node = real_node;
-                var real_target_node_slot = -1;
-                if (isGrp) { // the node we are looking at is a group node
-                    const in_index = node.inputs.findIndex((i)=>i==input);
-                    const inner_node_index = o2n.findIndex((l)=>Object.values(l[1]).includes(in_index));
-                    if (o2n[inner_node_index]) {
-                        const inner_node_slot_index = Object.values(o2n[inner_node_index][1]).findIndex((l)=>l==in_index);
-                        real_target_node_slot = Object.keys(o2n[inner_node_index][1])[inner_node_slot_index];
-                        real_target_node = nd.getInnerNodes()[o2n[inner_node_index][0]];
-                    } else {
-                        Logger.log(Logger.PROBLEM, `Group node ${node.id} doesn't have an entry in gpData.oldToNewInputMap`)
-                    }
-                }
-
-                const upstream_node = get_real_node(ue.output[0]);
+                const upstream_node_id   = ue.output[0]
+                const real_upstream_node = get_real_node(upstream_node_id);
                 var effective_output = [ue.output[0], ue.output[1]];  // [node_id, slot]
-                if (GroupNodeHandler.isGroupNode(upstream_node)) { // the upstream node is a group node, so get the inner node and slot
-                    const upGpData = GroupNodeHandler.getGroupData(upstream_node);
+
+
+                if (upstream_node_id!=real_upstream_node.id) { // the upstream node is a group node, so get the inner node and slot
+                    const upGpData = GroupNodeHandler.getGroupData(real_upstream_node);
                     const up_inner_node = upGpData.newToOldOutputMap[ue.output[1]].node;
                     const up_inner_node_index = up_inner_node.index;
-                    const up_inner_node_id = upstream_node.getInnerNodes()[up_inner_node_index].id;
+                    const up_inner_node_id = real_upstream_node.getInnerNodes()[up_inner_node_index].id;
                     const up_inner_node_slot = upGpData.newToOldOutputMap[ue.output[1]].slot;
                     effective_output = [`${up_inner_node_id}`, up_inner_node_slot];
                 }
 
-                if (real_target_node_slot==-1) real_target_node_slot = real_target_node.inputs.findIndex((i)=>(i.label ? i.label : i.name)===(input.label ? input.label : input.name));
+
                 links_added.add({
-                    "downstream":real_target_node.id, "downstream_slot":real_target_node_slot,
+                    //"downstream":real_target_node.id, "downstream_slot":real_target_node_slot,
+                    "downstream":real_node.id, "downstream_slot":index,
                     "upstream":effective_output[0], "upstream_slot":effective_output[1], 
                     "controller":ue.controller.id,
                     "type":ue.type
