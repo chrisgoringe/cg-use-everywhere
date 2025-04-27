@@ -123,6 +123,7 @@ class LinkRenderController extends Pausable {
         this.last_used_ue_list  = undefined; // the last ue list we actually used to generate graphics
         this.link_list_outdated = false;
         setInterval(this.try_to_update_link_list.bind(this), 100);
+        setInterval(this.mark_link_list_outdated.bind(this), 2000);
      }
     
     queue_size = null;
