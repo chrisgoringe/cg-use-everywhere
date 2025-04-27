@@ -1,4 +1,4 @@
-import { Logger, get_real_node, get_group_node, Pausable } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, get_group_node, Pausable, run_label_maker } from "./use_everywhere_utilities.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
@@ -199,7 +199,8 @@ class LinkRenderController extends Pausable {
         })            
     }
 
-    highlight_ue_connections(node, ctx) {        
+    highlight_ue_connections(node, ctx) {
+        run_label_maker()
         if (!settingsCache.getSettingValue('AE.highlight')) return;
         
         try {

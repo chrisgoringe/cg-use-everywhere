@@ -446,3 +446,15 @@ export class Pausable {
     }
     on_unpause(){}
 }
+
+export function run_label_maker() {
+    app.graph.nodes.forEach((node)=>{
+        node.inputs?.filter(i=>i.widget).forEach((input)=>{
+            const w = node._getWidgetByName(input.name)
+            if (w) w.label = input.label || input.localized_name || input.name
+            if (input.widget!==w) {
+                let a;
+            }
+        })
+    })
+}
