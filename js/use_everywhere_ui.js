@@ -188,10 +188,16 @@ class LinkRenderController extends Pausable {
                         widget._true_disabled = widget.disabled;
                         widget.disabled = true;
                     } else {
-                        if (widget._true_disabled) {
-                            widget.disabled = widget._true_disabled;
-                        }
+                        if (widget._true_disabled) { widget.disabled = widget._true_disabled; }
                     }
+                    widget.linkedWidgets.forEach((w)=>{
+                        if (disable) {
+                            w._true_disabled = w.disabled;
+                            w.disabled = true;
+                        } else {
+                            if (w._true_disabled) { w.disabled = w._true_disabled; }
+                        }                        
+                    })
                 }
             } else {
                 Logger.log(Logger.INFORMATION,`Couldn't find node ${uel.downstream}`)
