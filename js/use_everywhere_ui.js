@@ -190,7 +190,7 @@ class LinkRenderController extends Pausable {
                     } else {
                         if (widget._true_disabled) { widget.disabled = widget._true_disabled; }
                     }
-                    widget.linkedWidgets.forEach((w)=>{
+                    widget.linkedWidgets?.forEach((w)=>{
                         if (disable) {
                             w._true_disabled = w.disabled;
                             w.disabled = true;
