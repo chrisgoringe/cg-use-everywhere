@@ -46,9 +46,7 @@ The `Prompts Everywhere`, `Seed Everywhere`, and `Anything Everywhere?` all make
 
 For an input that can't be a widget, that's trivial - right click on the input dot and select `Rename Slot`. The name will be updated, and the new name displayed next to the dot.
 
-If an input *can* be a widget, you can rename it in the same way, but the new name *does not get displayed*. The name has changed, and the UE nodes will use the new name, but the old name is still shown.
-
-I consider this to be a bug in the Comfy front-end, and have raised an issue [here](https://github.com/Comfy-Org/ComfyUI_frontend/issues/3654)
+If an input *can* be a widget, you can rename it in the same way, but the new name *does not get displayed*. The name has changed, and the UE nodes will use the new name, but the old name is still shown. I consider this to be a bug in the Comfy front-end, and have raised an issue [here](https://github.com/Comfy-Org/ComfyUI_frontend/issues/3654). Unfortunately it appears that Comfy UI is going to remove the ability to rename a widget entirely, so best to avoid using widget input names if at all possible.
 
 
 ---
