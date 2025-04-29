@@ -299,6 +299,23 @@ app.registerExtension({
 
         if (false) add_debug();
 
+        const export_api_label = Array.from(document.getElementsByClassName('p-menubar-item-label')).find((e)=>e.innerText=='Export (API)')
+        if (export_api_label) {
+            export_api_label.addEventListener('click', (e)=>{
+                //const ues = GraphAnalyser.instance().analyse_graph(true);
+                const ue_links = app.graph.extra['ue_links'];
+                if (ue_links.length>0) {
+                    if (!confirm("This model contains links added by Use Everywhere which won't work with the API. " + 
+                        "You probably want to use 'Convert all UEs to real links' on the canvas right click menu before saving.\n\n" + 
+                        "Save anyway?")) 
+                    {
+                        e.stopImmediatePropagation()
+                        e.stopPropagation()
+                        e.preventDefault()
+                    }
+                }
+            })
+        }
     },
 
     beforeConfigureGraph() {
