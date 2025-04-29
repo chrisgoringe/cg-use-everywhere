@@ -1,16 +1,5 @@
-import torch
 
-from server import PromptServer
 from comfy.comfy_types.node_typing import IO
-
-def message(id,message):
-    if isinstance(message, torch.Tensor):
-        string = f"Tensor shape {message.shape}"
-    elif isinstance(message, dict) and "samples" in message and isinstance(message["samples"], torch.Tensor):
-        string = f"Latent shape {message['samples'].shape}"
-    else:
-        string = f"{message}"
-    PromptServer.instance.send_sync("ue-message-handler", {"id": id, "message":string})
 
 class Base():
     FUNCTION = "func"
@@ -35,7 +24,6 @@ class SeedEverywhere(Base):
     RETURN_TYPES = ("INT",)
 
     def func(self, seed, id):
-        message(id, seed)
         return (seed,)
 
 class AnythingEverywhere(Base):
@@ -45,9 +33,7 @@ class AnythingEverywhere(Base):
                 "optional": { "anything" : (IO.ANY, {}), },
                  "hidden": {"id":"UNIQUE_ID"} }
 
-    def func(self, id, **kwargs):
-        for key in kwargs:
-            message(id, kwargs[key],)
+    def func(self, **kwargs):
         return ()
 
 class AnythingEverywherePrompts(Base):
@@ -80,7 +66,5 @@ class AnythingSomewhere(Base):
                     },
                  "hidden": {"id":"UNIQUE_ID"} }
 
-    def func(self, id, title_regex=None, input_regex=None, group_regex=None, **kwargs):
-        for key in kwargs:
-            message(id, kwargs[key],)
+    def func(self, **kwargs):
         return ()

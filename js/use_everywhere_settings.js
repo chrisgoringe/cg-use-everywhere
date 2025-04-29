@@ -7,59 +7,67 @@ import { settingsCache } from "./use_everywhere_cache.js";
 
 export const SETTINGS = [
     {
-        id: "AE.details",
-        name: "Anything Everywhere show node details",
-        type: "boolean",
-        defaultValue: false,
-        onChange: settingsCache.onSettingChange,
+        id: "Use Everywhere. Version",
+        name: "Use Everywhere Version: 6.0.4",
+        type: () => {return document.createElement('span')},
     },
     {
-        id: "AE.checkloops",
-        name: "Anything Everywhere check loops",
-        type: "boolean",
-        defaultValue: true,
-        onChange: settingsCache.onSettingChange,
-    },
-    {
-        id: "AE.showlinks",
-        name: "Anything Everywhere show links",
+        id: "Use Everywhere.Graphics.showlinks",
+        name: "Show links",
         type: "combo",
         options: [ {value:0, text:"All off"}, {value:1, text:"Selected nodes"}, {value:2, text:"Mouseover node"}, {value:3, text:"Selected and mouseover nodes"}, {value:4, text:"All on"}],
-        defaultValue: 0,
+        defaultValue: 3,
         onChange: settingsCache.onSettingChangeChange,
     },      
     {
-        id: "AE.animate",
-        name: "Anything Everywhere animate UE links",
+        id: "Use Everywhere.Graphics.animate",
+        name: "Animate UE links",
         type: "combo",
         options: [ {value:0, text:"Off"}, {value:1, text:"Dots"}, {value:2, text:"Pulse"}, {value:3, text:"Both"}, ],
-        defaultValue: 3,
+        defaultValue: 0,
         onChange: settingsCache.onSettingChangeChange,
+        tooltip: "Animating links may have a negative impact on UI performance"
     },
     {
-        id: "AE.stop_animation_when_running",
-        name: "Anything Everywhere turn animation off when running",
+        id: "Use Everywhere.Graphics.stop_animation_when_running",
+        name: "Turn animation off when workflow is running",
         type: "boolean",
         defaultValue: true,
         onChange: settingsCache.onSettingChangeChange,
     },    
     {
-        id: "AE.highlight",
-        name: "Anything Everywhere highlight connected nodes",
+        id: "Use Everywhere.Graphics.highlight",
+        name: "Highlight connected and connectable inputs",
         type: "boolean",
         defaultValue: true,
         onChange: settingsCache.onSettingChangeChange,
     },
     {
-        id: "AE.logging",
-        name: "Anything Everywhere logging",
+        id: "Use Everywhere.Options.connect_to_bypassed",
+        name: "Connect to bypassed nodes",
+        type: "boolean",
+        defaultValue: false,
+        onChange: settingsCache.onSettingChange,
+        tooltip: "By default UE links are made to the node downstream of bypassed nodes."
+    },
+    {
+        id: "Use Everywhere.Options.checkloops",
+        name: "Check for loops before submitting",
+        type: "boolean",
+        defaultValue: true,
+        onChange: settingsCache.onSettingChange,
+        tooltip: "Check to see if UE links have created a loop that wasn't there before"
+    },
+    {
+        id: "Use Everywhere.Options.logging",
+        name: "Logging",
         type: "combo",
         options: [ {value:0, text:"Errors Only"}, {value:1, text:"Problems"}, {value:2, text:"Information"}, {value:3, text:"Detail"}, ],
         defaultValue: 1,
         onChange: settingsCache.onSettingChange,
     },
     {
-        id: "AE.block_graph_validation",
+        id: "Use Everywhere.Options.block_graph_validation",
         name: "Block workflow validation",
         type: "boolean",
         defaultValue: true,
@@ -201,10 +209,10 @@ export function node_menu_settings(options, node) {
 export function canvas_menu_settings(options) {
     options.push(null); // divider
     options.push({
-        content: (app.ui.settings.getSettingValue('AE.showlinks')>0) ? "Hide UE links" : "Show UE links",
+        content: (app.ui.settings.getSettingValue('Use Everywhere.Graphics.showlinks')>0) ? "Hide UE links" : "Show UE links",
         callback: () => {
-            const setTo = (app.ui.settings.getSettingValue('AE.showlinks')>0) ? 0 : 4;
-            app.ui.settings.setSettingValue('AE.showlinks', setTo);
+            const setTo = (app.ui.settings.getSettingValue('Use Everywhere.Graphics.showlinks')>0) ? 0 : 4;
+            app.ui.settings.setSettingValue('Use Everywhere.Graphics.showlinks', setTo);
             app.graph.change();
         }
     },

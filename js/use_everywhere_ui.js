@@ -83,22 +83,6 @@ function indicate_restriction(ctx, title_height) {
     ctx.restore();
 }
 
-function displayMessage(id, message) {
-    const node = get_real_node(id);
-    if (!node) return;
-    var w = node.widgets?.find((w) => w.name === "display_text_widget");
-    if (settingsCache.getSettingValue('AE.details') || w) {
-        if (!w) {
-            w = ComfyWidgets["STRING"](this, "display_text_widget", ["STRING", { multiline: true }], app).widget;
-            w.inputEl.readOnly = true;
-            w.inputEl.style.opacity = 0.6;
-            w.inputEl.style.fontSize = "9pt";
-        }
-        w.value = message;
-        this.onResize?.(this.size);
-    }
-}
-
 function update_input_label(node, slot, app) {
     if (node.input_type[slot]) {
         node.inputs[slot].label = node.input_type[slot];
@@ -133,7 +117,7 @@ class LinkRenderController extends Pausable {
     //on_unpause() {app.graph.change();}
 
     node_over_changed(v) {
-        const mode = settingsCache.getSettingValue('AE.showlinks');
+        const mode = settingsCache.getSettingValue('Use Everywhere.Graphics.showlinks');
         if (mode==2 || mode==3) app.canvas.setDirty(true,true)
     }
     
@@ -206,7 +190,7 @@ class LinkRenderController extends Pausable {
     }
 
     highlight_ue_connections(node, ctx) {        
-        if (!settingsCache.getSettingValue('AE.highlight')) return;
+        if (!settingsCache.getSettingValue('Use Everywhere.Graphics.highlight')) return;
         
         try {
             this.pause()
@@ -310,9 +294,9 @@ class LinkRenderController extends Pausable {
         const orig_hqr = app.canvas.highquality_render;
         app.canvas.highquality_render = false;
 
-        const mode = settingsCache.getSettingValue('AE.showlinks');
-        var animate = settingsCache.getSettingValue('AE.animate');
-        if (settingsCache.getSettingValue('AE.stop_animation_when_running') && this.queue_size>0) animate = 0;
+        const mode = settingsCache.getSettingValue('Use Everywhere.Graphics.showlinks');
+        var animate = settingsCache.getSettingValue('Use Everywhere.Graphics.animate');
+        if (settingsCache.getSettingValue('Use Everywhere.Graphics.stop_animation_when_running') && this.queue_size>0) animate = 0;
         if (animate==2 || animate==3) this.animate_step(ctx);
 
         var any_links_shown = false;
@@ -391,5 +375,5 @@ class LinkRenderController extends Pausable {
     }
 }
 
-export {displayMessage, update_input_label, nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
+export {update_input_label, nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
 export{ LinkRenderController}

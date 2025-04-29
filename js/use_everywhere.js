@@ -2,7 +2,7 @@ import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
 import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter } from "./use_everywhere_utilities.js";
-import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
+import { update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { node_menu_settings, canvas_menu_settings, non_ue_menu_settings, SETTINGS } from "./use_everywhere_settings.js";
@@ -127,8 +127,7 @@ app.registerExtension({
 
         node.IS_UE = is_UEnode(node);
         if (node.IS_UE) {
-            node.input_type = [undefined, undefined, undefined]; // for dynamic input types
-            node.displayMessage = displayMessage;                // receive messages from the python code           
+            node.input_type = [undefined, undefined, undefined]; // for dynamic input types       
 
             // If a widget on a UE node is edited, link list is dirty
             inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${node.id}`);
@@ -161,17 +160,6 @@ app.registerExtension({
     },
 
 	async setup() {
-        /*
-        Listen for message-handler event from python code
-        */
-        function messageHandler(event) {
-            const id = event.detail.id;
-            const message = event.detail.message;
-            const node = get_real_node(id);
-            if (node && node.displayMessage) node.displayMessage(id, message);
-            else (console.log(`node ${id} couldn't handle a message`));
-        }
-        api.addEventListener("ue-message-handler", messageHandler);
 
         api.addEventListener("status", ({detail}) => {
             if (linkRenderController) linkRenderController.note_queue_size(detail ? detail.exec_info.queue_remaining : 0)
@@ -185,7 +173,7 @@ app.registerExtension({
                     graphConverter.store_node_input_map(data);
                 } catch (e) { Logger.log_error(Logger.ERROR, `in loadGraphData ${e}`); }
                 const cvw_was = settingsCache.getSettingValue("Comfy.Validation.Workflows")
-                if (settingsCache.getSettingValue("AE.block_graph_validation")) {
+                if (settingsCache.getSettingValue("Use Everywhere.Options.block_graph_validation")) {
                     app.ui.settings.setSettingValue("Comfy.Validation.Workflows", false);
                 }
                 original_loadGraphData.apply(this, arguments);
