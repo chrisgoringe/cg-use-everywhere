@@ -140,7 +140,7 @@ class LinkRenderController extends Pausable {
         if (!this.link_list_outdated) return;
         if (this.paused()) return;
         try {
-            this.pause()
+            this.pause('try_to_update_link_list')
             this.ue_list = undefined;
             if (this._request_link_list_update()) this.link_list_outdated = false;
         } finally {
@@ -193,7 +193,7 @@ class LinkRenderController extends Pausable {
         if (!settingsCache.getSettingValue('Use Everywhere.Graphics.highlight')) return;
         
         try {
-            this.pause()
+            this.pause('highlight_ue_connections')
             if (!this._list_ready()) return;
             const unconnected_connectables = node.properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.widget_ue_connectable).filter((name) => (node.properties.widget_ue_connectable[name]))) : new Set()
             node.inputs.filter((input)=>(input.link)).forEach((input) => { unconnected_connectables.delete(input.name) });
@@ -277,7 +277,7 @@ class LinkRenderController extends Pausable {
     render_all_ue_links(ctx) {
         if (this.paused()) return;
         try {
-            this.pause()
+            this.pause('render_all_ue_links')
             this._render_all_ue_links(ctx);
         } catch (e) {
             console.error(e);

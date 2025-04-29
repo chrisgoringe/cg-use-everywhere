@@ -229,12 +229,6 @@ app.registerExtension({
                 Logger.log_error(Logger.ERROR, e)
             }
         }
-
-        /*
-        Add to the main settings 
-        now specified as a parameter of register
-        */
-        //main_menu_settings();
         
         /* 
         Canvas menu is the right click on backdrop.
@@ -259,9 +253,12 @@ app.registerExtension({
         TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
         */
         LGraphNode.prototype._getWidgetByName = function(nm) {
-            if (this._widgetNameMap === undefined) {
+            if (this._widgetNameMap === undefined || !this._widgetNameMap[nm]) {
                 this._widgetNameMap = {}
                 this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
+            }
+            if (!this._widgetNameMap[nm]) {
+                let breakpoint_be_here; // someone is asking for a widget that doesn't exist
             }
             return this._widgetNameMap[nm]
         }
