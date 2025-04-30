@@ -106,6 +106,7 @@ class LinkRenderController extends Pausable {
         this.ue_list            = undefined; // the most current ue list - set to undefined if we know it is out of date
         this.last_used_ue_list  = undefined; // the last ue list we actually used to generate graphics
         this.link_list_outdated = false;
+        this.widgets_disabled   = []
         setInterval(this.try_to_update_link_list.bind(this), 100);
         setInterval(this.mark_link_list_outdated.bind(this), 2000);
      }
@@ -162,31 +163,28 @@ class LinkRenderController extends Pausable {
     }
 
     disable_all_connected_widgets( disable ) {
-        app.graph.extra['ue_links']?.forEach((uel) => {
-            const node = app.graph._nodes_by_id[uel.downstream]
-            if (node) {
-                const name = node.inputs[uel.downstream_slot].name;
-                const widget = node._getWidgetByName(name) 
-                if (widget) {
-                    if (disable) {
-                        widget._true_disabled = widget.disabled;
+        if (disable) {
+            app.graph.extra['ue_links']?.forEach((uel) => {
+                const node = app.graph._nodes_by_id[uel.downstream]
+                if (node) {
+                    const name = node.inputs[uel.downstream_slot].name;
+                    const widget = node._getWidgetByName(name) 
+                    if (widget && !widget.disabled) {
+                        this.widgets_disabled.push(widget)
                         widget.disabled = true;
-                    } else {
-                        if (widget._true_disabled) { widget.disabled = widget._true_disabled; }
                     }
-                    widget.linkedWidgets?.forEach((w)=>{
-                        if (disable) {
-                            w._true_disabled = w.disabled;
-                            w.disabled = true;
-                        } else {
-                            if (w._true_disabled) { w.disabled = w._true_disabled; }
-                        }                        
+                    widget?.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
+                        this.widgets_disabled.push(w)
+                        w.disabled = true;
                     })
+                } else {
+                    Logger.log(Logger.INFORMATION,`Couldn't find node ${uel.downstream}`)
                 }
-            } else {
-                Logger.log(Logger.INFORMATION,`Couldn't find node ${uel.downstream}`)
-            }
-        })            
+            })   
+        } else {
+            this.widgets_disabled.forEach((w)=>w.disabled=false)
+            this.widgets_disabled = []
+        }     
     }
 
     highlight_ue_connections(node, ctx) {        
