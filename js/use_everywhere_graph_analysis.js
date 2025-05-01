@@ -31,6 +31,8 @@ class GraphAnalyser extends Pausable {
             p = await this.original_graphToPrompt.apply(app);
             // Remove the added virtual links
             addedLinks.forEach(id => { app.graph.removeLink(id); });
+        } catch (e) { 
+            Logger.log_error(Logger.ERROR,e)
         } finally { 
             this.unpause()
         }
