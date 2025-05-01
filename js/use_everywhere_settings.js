@@ -6,11 +6,7 @@ import { has_priority_boost } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 
 export const SETTINGS = [
-    {
-        id: "Use Everywhere. Version",
-        name: "Use Everywhere Version: 6.0.4",
-        type: () => {return document.createElement('span')},
-    },
+ 
     {
         id: "Use Everywhere.Graphics.showlinks",
         name: "Show links",
