@@ -22,15 +22,15 @@ class GraphAnalyser extends Pausable {
     async graph_to_prompt(cur_list) {
         var p;
         // Convert the virtual links into real connections
-        const addedLinks = [];
         this.pause('graph_to_prompt')
         try { // For each UseEverywhere object add its connections
-            convert_to_links(cur_list, -1, addedLinks);
+            const mods = convert_to_links(cur_list, -1);
             // Now create the prompt using the ComfyUI original functionality and the patched graph
-            app.graph.extra['links_added_by_ue'] = addedLinks;
+            app.graph.extra['links_added_by_ue'] = mods.added_links;
             p = await this.original_graphToPrompt.apply(app);
             // Remove the added virtual links
-            addedLinks.forEach(id => { app.graph.removeLink(id); });
+            mods.restorer()
+            //addedLinks.forEach(id => { app.graph.removeLink(id); });
         } catch (e) { 
             Logger.log_error(Logger.ERROR,e)
         } finally { 
