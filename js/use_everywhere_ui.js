@@ -356,9 +356,27 @@ class LinkRenderController extends Pausable {
 
             var color = LGraphCanvas.link_type_colors[ue_connection.type];
             if (color=="") color = app.canvas.default_link_color;
-            ctx.shadowColor = color;
-            
-            app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate%2, color, sta_direction, end_direction, undefined);
+
+            ctx.save() 
+            const rcb = app.canvas.render_connections_border;
+            try {
+                var skip_border = false
+                if (settingsCache.getSettingValue( "Use Everywhere.Graphics.fuzzlinks" )) {
+                    app.canvas.render_connections_border = false
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = 6;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;      
+                    skip_border = true         
+                }
+                app.canvas.renderLink(ctx, pos1, pos2, undefined, skip_border, animate%2, modify(color), sta_direction, end_direction, undefined);
+            } catch(e) { 
+                Logger.log(Logger.PROBLEM, `Issue with UE link ${ue_connection}.`);
+            } finally { 
+                ctx.restore() 
+                app.canvas.render_connections_border = rcb;
+            }
+
         } catch (e) {
             Logger.log(Logger.PROBLEM, `Couldn't render UE link ${ue_connection}. That's ok if something just got deleted.`);
         }
@@ -372,6 +390,14 @@ class LinkRenderController extends Pausable {
         ctx.shadowBlur = (step<max_blur) ? step + 4 : 3 + 2*max_blur - step;
     }
 }
+
+function modify(c) {
+    if (c.length==4) return c + "6"
+    if (c.length==7) return c + "66"
+    return c
+}
+
+
 
 export {update_input_label, nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
 export{ LinkRenderController}

@@ -20,13 +20,21 @@ export const SETTINGS = [
         onChange: settingsCache.onSettingChangeChange,
     },      
     {
+        id: "Use Everywhere.Graphics.fuzzlinks",
+        name: "Statically distinguish UE links",
+        type: "boolean",
+        tooltip: "Render UE links, when shown, differently from normal links. Much lower performance cost than animation.",
+        defaultValue: true,
+        onChange: settingsCache.onSettingChangeChange,
+    },  
+    {
         id: "Use Everywhere.Graphics.animate",
         name: "Animate UE links",
         type: "combo",
         options: [ {value:0, text:"Off"}, {value:1, text:"Dots"}, {value:2, text:"Pulse"}, {value:3, text:"Both"}, ],
         defaultValue: 0,
         onChange: settingsCache.onSettingChangeChange,
-        tooltip: "Animating links may have a negative impact on UI performance"
+        tooltip: "Animating links may have a negative impact on UI performance. Consider using Statically distinguish UE links instead."
     },
     {
         id: "Use Everywhere.Graphics.stop_animation_when_running",
