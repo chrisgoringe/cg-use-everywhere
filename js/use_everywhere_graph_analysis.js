@@ -49,7 +49,8 @@ class GraphAnalyser extends Pausable {
         }
         this.ambiguity_messages = [];
         var p = { workflow:app.graph.serialize() };
-        const live_nodes = p.workflow.nodes.filter((node) => node_is_live(node))
+        const treat_bypassed_as_live = settingsCache.getSettingValue("Use Everywhere.Options.connect_to_bypassed")
+        const live_nodes = p.workflow.nodes.filter((node) => node_is_live(node, treat_bypassed_as_live))
                 
         // Create a UseEverywhereList and populate it from all live (not bypassed) UE nodes
         const ues = new UseEverywhereList();
@@ -74,7 +75,7 @@ class GraphAnalyser extends Pausable {
                 const o2n = isGrp ? Object.entries(gpData.oldToNewInputMap) : null;
                 //if (!real_node._widget_name_map) real_node._widget_name_map =  real_node.widgets?.map(w => w.name) || [];
                 real_node.inputs?.forEach((input,index) => {
-                    if (is_connected(input)) return;  
+                    if (is_connected(input, treat_bypassed_as_live)) return;  
                     if (real_node.reject_ue_connection && real_node.reject_ue_connection(input)) return;
                     if (real_node._getWidgetByName(input.name) && !(real_node.properties['widget_ue_connectable'] && real_node.properties['widget_ue_connectable'][input.name])) return;
                     connectable.push({node, input, index, isGrp, real_node, o2n});
@@ -124,7 +125,7 @@ class GraphAnalyser extends Pausable {
         if (this.ambiguity_messages.length) Logger.log(Logger.PROBLEM, "Ambiguous connections", this.ambiguity_messages, Logger.CAT_AMBIGUITY);
     
         // if there are loops report them and raise an exception
-        if (about_to_submit && settingsCache.getSettingValue('AE.checkloops')) {
+        if (about_to_submit && settingsCache.getSettingValue('Use Everywhere.Options.checkloops')) {
             try {
                 node_in_loop(live_nodes, links_added);
             } catch (e) {

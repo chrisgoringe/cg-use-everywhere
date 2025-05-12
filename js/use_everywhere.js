@@ -2,7 +2,7 @@ import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
 import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter } from "./use_everywhere_utilities.js";
-import { displayMessage, update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
+import { update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { node_menu_settings, canvas_menu_settings, non_ue_menu_settings, SETTINGS } from "./use_everywhere_settings.js";
@@ -127,8 +127,7 @@ app.registerExtension({
 
         node.IS_UE = is_UEnode(node);
         if (node.IS_UE) {
-            node.input_type = [undefined, undefined, undefined]; // for dynamic input types
-            node.displayMessage = displayMessage;                // receive messages from the python code           
+            node.input_type = [undefined, undefined, undefined]; // for dynamic input types       
 
             // If a widget on a UE node is edited, link list is dirty
             inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${node.id}`);
@@ -161,17 +160,6 @@ app.registerExtension({
     },
 
 	async setup() {
-        /*
-        Listen for message-handler event from python code
-        */
-        function messageHandler(event) {
-            const id = event.detail.id;
-            const message = event.detail.message;
-            const node = get_real_node(id);
-            if (node && node.displayMessage) node.displayMessage(id, message);
-            else (console.log(`node ${id} couldn't handle a message`));
-        }
-        api.addEventListener("ue-message-handler", messageHandler);
 
         api.addEventListener("status", ({detail}) => {
             if (linkRenderController) linkRenderController.note_queue_size(detail ? detail.exec_info.queue_remaining : 0)
@@ -185,7 +173,7 @@ app.registerExtension({
                     graphConverter.store_node_input_map(data);
                 } catch (e) { Logger.log_error(Logger.ERROR, `in loadGraphData ${e}`); }
                 const cvw_was = settingsCache.getSettingValue("Comfy.Validation.Workflows")
-                if (settingsCache.getSettingValue("AE.block_graph_validation")) {
+                if (settingsCache.getSettingValue("Use Everywhere.Options.block_graph_validation")) {
                     app.ui.settings.setSettingValue("Comfy.Validation.Workflows", false);
                 }
                 original_loadGraphData.apply(this, arguments);
@@ -241,12 +229,6 @@ app.registerExtension({
                 Logger.log_error(Logger.ERROR, e)
             }
         }
-
-        /*
-        Add to the main settings 
-        now specified as a parameter of register
-        */
-        //main_menu_settings();
         
         /* 
         Canvas menu is the right click on backdrop.
@@ -271,9 +253,12 @@ app.registerExtension({
         TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
         */
         LGraphNode.prototype._getWidgetByName = function(nm) {
-            if (this._widgetNameMap === undefined) {
+            if (this._widgetNameMap === undefined || !this._widgetNameMap[nm]) {
                 this._widgetNameMap = {}
                 this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
+            }
+            if (!this._widgetNameMap[nm]) {
+                let breakpoint_be_here; // someone is asking for a widget that doesn't exist
             }
             return this._widgetNameMap[nm]
         }
@@ -314,6 +299,23 @@ app.registerExtension({
 
         if (false) add_debug();
 
+        const export_api_label = Array.from(document.getElementsByClassName('p-menubar-item-label')).find((e)=>e.innerText=='Export (API)')
+        if (export_api_label) {
+            export_api_label.addEventListener('click', (e)=>{
+                //const ues = GraphAnalyser.instance().analyse_graph(true);
+                const ue_links = app.graph.extra['ue_links'];
+                if (ue_links.length>0) {
+                    if (!confirm("This model contains links added by Use Everywhere which won't work with the API. " + 
+                        "You probably want to use 'Convert all UEs to real links' on the canvas right click menu before saving.\n\n" + 
+                        "Save anyway?")) 
+                    {
+                        e.stopImmediatePropagation()
+                        e.stopPropagation()
+                        e.preventDefault()
+                    }
+                }
+            })
+        }
     },
 
     beforeConfigureGraph() {

@@ -75,56 +75,12 @@ UE nodes mostly work with group nodes. But there are a couple of important thing
 
 ## Latest updates
 
+6.1 (May 2025)
+- Mostly some bug-fixes (#216, #217, #300)
+- New option to show UE links differently without animation for better performance
+
 6.0 (April 2025)
 - Very major rebuild to deal with latest version of Comfy
-
-5.0 (6th August 2024)
-- Significant change to core logic. Should greatly reduce incompatibility issues, but may have unexpoected consequences!
-- Added to right-click menu on nodes the option to make a node reject all UE connections.
-
-4.9 (2nd May 2024)
-- Fix incompatibility with Efficiency Nodes (#182)
-
-4.8 (18th March 2024)
-- Group and color sending have a `send to unmatched` mode
-- UE link animations can be the classic dots, or a pulsing glow (or both, or neither)
-- Show UE links can now be on, off, mouseover, selected nodes, or mouseover and selected nodes
-
-4.7 (1st March 2024)
-- UE now works in group nodes
-- Autocomplete on `Anything Everywhere?` nodes
-
-4.6
-- add Group Regex to `Anything Everywhere?` node
-- if you have workflow json files saved that now don't work, try 'workflow_fixer.py'
-
-4.5
-- add support for Comfy UI Group Nodes (UE nodes can be used to connect to group node inputs and outputs, but not within a group node)
-- add `convert to real links`
-
-4.4
-- add (limited) support for converting regex in the `Anything Everywhere?` node with inputs (only works if the link is from a node that is a simple string source)
-
-4.3
-- added support for targetting [Highway nodes](https://github.com/chrisgoringe/cg-use-everywhere#highway-nodes) 
-
-4.2
-- improved performance of loop detection, especially with [highway nodes](https://github.com/Trung0246/ComfyUI-0246)
-- updated docs to not use other custom nodes in examples
-
-4.1.2
-- tweaks to improve handling of bypass 
-- fixed connecting to Seed Everywhere 
-
-4.1.1
-- added option to turn animation off
-
-4.1 
-
-- added [loop detection](https://github.com/chrisgoringe/cg-use-everywhere#loop-checking) 
-- added [group restriction](https://github.com/chrisgoringe/cg-use-everywhere#group-restriction).
-
-The v1 nodes have been fully removed. If you were using one, you can just replace it with an `Anything Everywhere` node.
 
 ## Installing
 

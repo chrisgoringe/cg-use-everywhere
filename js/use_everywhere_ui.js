@@ -83,22 +83,6 @@ function indicate_restriction(ctx, title_height) {
     ctx.restore();
 }
 
-function displayMessage(id, message) {
-    const node = get_real_node(id);
-    if (!node) return;
-    var w = node.widgets?.find((w) => w.name === "display_text_widget");
-    if (settingsCache.getSettingValue('AE.details') || w) {
-        if (!w) {
-            w = ComfyWidgets["STRING"](this, "display_text_widget", ["STRING", { multiline: true }], app).widget;
-            w.inputEl.readOnly = true;
-            w.inputEl.style.opacity = 0.6;
-            w.inputEl.style.fontSize = "9pt";
-        }
-        w.value = message;
-        this.onResize?.(this.size);
-    }
-}
-
 function update_input_label(node, slot, app) {
     if (node.input_type[slot]) {
         node.inputs[slot].label = node.input_type[slot];
@@ -122,6 +106,7 @@ class LinkRenderController extends Pausable {
         this.ue_list            = undefined; // the most current ue list - set to undefined if we know it is out of date
         this.last_used_ue_list  = undefined; // the last ue list we actually used to generate graphics
         this.link_list_outdated = false;
+        this.widgets_disabled   = []
         setInterval(this.try_to_update_link_list.bind(this), 100);
         setInterval(this.mark_link_list_outdated.bind(this), 2000);
      }
@@ -133,7 +118,7 @@ class LinkRenderController extends Pausable {
     //on_unpause() {app.graph.change();}
 
     node_over_changed(v) {
-        const mode = settingsCache.getSettingValue('AE.showlinks');
+        const mode = settingsCache.getSettingValue('Use Everywhere.Graphics.showlinks');
         if (mode==2 || mode==3) app.canvas.setDirty(true,true)
     }
     
@@ -156,7 +141,7 @@ class LinkRenderController extends Pausable {
         if (!this.link_list_outdated) return;
         if (this.paused()) return;
         try {
-            this.pause()
+            this.pause('try_to_update_link_list')
             this.ue_list = undefined;
             if (this._request_link_list_update()) this.link_list_outdated = false;
         } finally {
@@ -178,38 +163,35 @@ class LinkRenderController extends Pausable {
     }
 
     disable_all_connected_widgets( disable ) {
-        app.graph.extra['ue_links']?.forEach((uel) => {
-            const node = app.graph._nodes_by_id[uel.downstream]
-            if (node) {
-                const name = node.inputs[uel.downstream_slot].name;
-                const widget = node._getWidgetByName(name) 
-                if (widget) {
-                    if (disable) {
-                        widget._true_disabled = widget.disabled;
+        if (disable) {
+            app.graph.extra['ue_links']?.forEach((uel) => {
+                const node = app.graph._nodes_by_id[uel.downstream]
+                if (node) {
+                    const name = node.inputs[uel.downstream_slot].name;
+                    const widget = node._getWidgetByName(name) 
+                    if (widget && !widget.disabled) {
+                        this.widgets_disabled.push(widget)
                         widget.disabled = true;
-                    } else {
-                        if (widget._true_disabled) { widget.disabled = widget._true_disabled; }
                     }
-                    widget.linkedWidgets?.forEach((w)=>{
-                        if (disable) {
-                            w._true_disabled = w.disabled;
-                            w.disabled = true;
-                        } else {
-                            if (w._true_disabled) { w.disabled = w._true_disabled; }
-                        }                        
+                    widget?.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
+                        this.widgets_disabled.push(w)
+                        w.disabled = true;
                     })
+                } else {
+                    Logger.log(Logger.INFORMATION,`Couldn't find node ${uel.downstream}`)
                 }
-            } else {
-                Logger.log(Logger.INFORMATION,`Couldn't find node ${uel.downstream}`)
-            }
-        })            
+            })   
+        } else {
+            this.widgets_disabled.forEach((w)=>w.disabled=false)
+            this.widgets_disabled = []
+        }     
     }
 
     highlight_ue_connections(node, ctx) {        
-        if (!settingsCache.getSettingValue('AE.highlight')) return;
+        if (!settingsCache.getSettingValue('Use Everywhere.Graphics.highlight')) return;
         
         try {
-            this.pause()
+            this.pause('highlight_ue_connections')
             if (!this._list_ready()) return;
             const unconnected_connectables = node.properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.widget_ue_connectable).filter((name) => (node.properties.widget_ue_connectable[name]))) : new Set()
             node.inputs.filter((input)=>(input.link)).forEach((input) => { unconnected_connectables.delete(input.name) });
@@ -293,7 +275,7 @@ class LinkRenderController extends Pausable {
     render_all_ue_links(ctx) {
         if (this.paused()) return;
         try {
-            this.pause()
+            this.pause('render_all_ue_links')
             this._render_all_ue_links(ctx);
         } catch (e) {
             console.error(e);
@@ -310,9 +292,9 @@ class LinkRenderController extends Pausable {
         const orig_hqr = app.canvas.highquality_render;
         app.canvas.highquality_render = false;
 
-        const mode = settingsCache.getSettingValue('AE.showlinks');
-        var animate = settingsCache.getSettingValue('AE.animate');
-        if (settingsCache.getSettingValue('AE.stop_animation_when_running') && this.queue_size>0) animate = 0;
+        const mode = settingsCache.getSettingValue('Use Everywhere.Graphics.showlinks');
+        var animate = settingsCache.getSettingValue('Use Everywhere.Graphics.animate');
+        if (settingsCache.getSettingValue('Use Everywhere.Graphics.stop_animation_when_running') && this.queue_size>0) animate = 0;
         if (animate==2 || animate==3) this.animate_step(ctx);
 
         var any_links_shown = false;
@@ -374,9 +356,27 @@ class LinkRenderController extends Pausable {
 
             var color = LGraphCanvas.link_type_colors[ue_connection.type];
             if (color=="") color = app.canvas.default_link_color;
-            ctx.shadowColor = color;
-            
-            app.canvas.renderLink(ctx, pos1, pos2, undefined, true, animate%2, color, sta_direction, end_direction, undefined);
+
+            ctx.save() 
+            const rcb = app.canvas.render_connections_border;
+            try {
+                var skip_border = false
+                if (settingsCache.getSettingValue( "Use Everywhere.Graphics.fuzzlinks" )) {
+                    app.canvas.render_connections_border = false
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = 6;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;      
+                    skip_border = true         
+                }
+                app.canvas.renderLink(ctx, pos1, pos2, undefined, skip_border, animate%2, modify(color), sta_direction, end_direction, undefined);
+            } catch(e) { 
+                Logger.log(Logger.PROBLEM, `Issue with UE link ${ue_connection}.`);
+            } finally { 
+                ctx.restore() 
+                app.canvas.render_connections_border = rcb;
+            }
+
         } catch (e) {
             Logger.log(Logger.PROBLEM, `Couldn't render UE link ${ue_connection}. That's ok if something just got deleted.`);
         }
@@ -391,5 +391,13 @@ class LinkRenderController extends Pausable {
     }
 }
 
-export {displayMessage, update_input_label, nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
+function modify(c) {
+    if (c.length==4) return c + "6"
+    if (c.length==7) return c + "66"
+    return c
+}
+
+
+
+export {update_input_label, nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
 export{ LinkRenderController}

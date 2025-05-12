@@ -20,7 +20,7 @@ class Logger {
             const elapsed = (new Date()) - Logger.last_reported_category[category];
             if (elapsed < Logger.category_cooloff[category]) return;
         }
-        if (level <= settingsCache.getSettingValue('AE.logging')) {
+        if (level <= settingsCache.getSettingValue('Use Everywhere.Options.logging')) {
             console.log(message);
             if (array) for (var i=0; i<array.length; i++) { console.log(array[i]) }
             if (category) Logger.last_reported_category[category] = new Date();
@@ -28,13 +28,13 @@ class Logger {
     }
 
     static log_call(level, method) {
-        if (level <= settingsCache.getSettingValue('AE.logging')) {
+        if (level <= settingsCache.getSettingValue('Use Everywhere.Options.logging')) {
             method();
         }
     }
 
     static log_error(level, message) {
-        if (level <= settingsCache.getSettingValue('AE.logging')) {
+        if (level <= settingsCache.getSettingValue('Use Everywhere.Options.logging')) {
             console.error(message);
         }
     }
@@ -42,7 +42,7 @@ class Logger {
     static trace(message, array, node) {
         if (Logger.TRACE) {
             if (node) { console.log(`TRACE (${node.id}) : ${message}`) } else { console.log(`TRACE : ${message}`) }
-            if (array && settingsCache.getSettingValue('AE.logging')>=Logger.INFORMATION) for (var i=0; i<array.length; i++) { console.log(`  ${i} = ${array[i]}`) }
+            if (array && settingsCache.getSettingValue('Use Everywhere.Options.logging')>=Logger.INFORMATION) for (var i=0; i<array.length; i++) { console.log(`  ${i} = ${array[i]}`) }
         }
     }
 }
@@ -265,10 +265,10 @@ function node_in_loop(live_nodes, links_added) {
 /*
 Is a node alive (ie not bypassed or set to never)
 */
-function node_is_live(node){
+function node_is_live(node, treat_bypassed_as_live){
     if (!node) return false;
     if (node.mode===0) return true;
-    if (node.mode===2 || node.mode===4) return false;
+    if (node.mode===2 || node.mode===4) return !!treat_bypassed_as_live;
     Logger.log(Logger.ERROR, `node ${node.id} has mode ${node.mode} - I only understand modes 0, 2 and 4`);
     return true;
 }
@@ -349,11 +349,12 @@ function get_all_nodes_within(node_id) {
 /*
 Does this input connect upstream to a live node?
 */
-function is_connected(input) {
+function is_connected(input, treat_bypassed_as_live) {
     const link_id = input.link;
     if (link_id === null) return false;                                    // no connection
     var the_link = app.graph.links[link_id];
     if (!the_link) return false; 
+    if (treat_bypassed_as_live) return true;
     the_link = handle_bypass(the_link, the_link.type);                       // find the link upstream of bypasses
     if (!the_link) return false;                                           // no source for data.
     return true;
@@ -429,12 +430,12 @@ export class Pausable {
         if (this.pause_depth>10) {
             Logger.log(Logger.ERROR, `${this.name} Over pausing`)
         }
-        Logger.log(Logger.INFORMATION, `${this.name} pause ${note} with ${ms}`)
+        Logger.log(Logger.DETAIL, `${this.name} pause ${note} with ${ms}`)
         if (ms) setTimeout( this.unpause.bind(this), ms );
     }
     unpause() { 
         this.pause_depth -= 1
-        Logger.log(Logger.INFORMATION, `${this.name} unpause`)
+        Logger.log(Logger.DETAIL, `${this.name} unpause`)
         if (this.pause_depth<0) {
             Logger.log(Logger.ERROR, `${this.name} Over unpausing`)
             this.pause_depth = 0
