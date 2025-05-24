@@ -7,7 +7,7 @@ function _convert_to_links(ue, added_links, removed_links) {
     const output_node_id = ue.output[0];
     const output_index = ue.output[1];
     const output_node = get_real_node(output_node_id);
-    Logger.log(Logger.INFORMATION, "Adding links for " + ue.description);
+    Logger.log_info("Adding links for " + ue.description);
     ue.sending_to.forEach((st) => {
         const input_node_id = st.node.id;
         const input_node = get_real_node(input_node_id);
@@ -23,7 +23,7 @@ function _convert_to_links(ue, added_links, removed_links) {
                           `${input_node_id}[${input_index}].`);
         else { // Memorize the links we are adding to remove them later
             if (added_links) added_links.push(new_link.id);
-            Logger.log(Logger.INFORMATION, `  -> ${display_name(st.node)}, ${st.input.name} ` +
+            Logger.log_info(`  -> ${display_name(st.node)}, ${st.input.name} ` +
                                            `(${st.node.id}.${st.input_index}) (ID: ${new_link.id})`);
         }
     });

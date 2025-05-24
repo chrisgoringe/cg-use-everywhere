@@ -8,7 +8,7 @@ import { settingsCache } from "./use_everywhere_cache.js";
 export const SETTINGS = [
     {
         id: "Use Everywhere.About",
-        name: "Version 6.1",
+        name: "Version 6.2",
         type: () => {return document.createElement('span')},
     },  
     {

@@ -55,7 +55,7 @@ class UseEverywhere {
     */
     matches(node, input) {
         if (!node) {
-            Logger.log(Logger.PROBLEM, `UseEverywhere.matches called with no node`);
+            Logger.log_problem(`UseEverywhere.matches called with no node`);
             return false;
         }
 
@@ -132,7 +132,7 @@ class UseEverywhereList {
         };
         const real_node = get_real_node(node.id);
         if (!real_node) {
-            Logger.log(Logger.PROBLEM, `Node ${node.id} not found`, params);
+            Logger.log_problem(`Node ${node.id} not found`, params);
             return;
         }
         if (real_node.properties.group_restricted == 1) {
@@ -166,9 +166,9 @@ class UseEverywhereList {
         }
         if (error==="") { 
             this.ues.push(ue);
-            Logger.log(Logger.DETAIL, `Added ${ue.description}`)
+            Logger.log_detail(`Added ${ue.description}`)
         } else {
-            Logger.log(Logger.PROBLEM, `Rejected ${ue?.description} because ${error}`, params);
+            Logger.log_problem(`Rejected ${ue?.description} because ${error}`, params);
         }
     }
 
@@ -178,7 +178,7 @@ class UseEverywhereList {
             candidate.matches(node, input)
         ));
         if (matches.length==0) {
-            Logger.log(Logger.DETAIL, `'${display_name(node)}' optional input '${input.name}' unmatched`)
+            Logger.log_detail(`'${display_name(node)}' optional input '${input.name}' unmatched`)
             return undefined; 
         }
         if (matches.length>1) {
@@ -196,7 +196,7 @@ class UseEverywhereList {
             }
         }
         matches[0].note_sending_to(node, input);
-        Logger.log(Logger.DETAIL,`'${display_name(node)}' input '${input.name}' matched to ${matches[0].description}`);
+        Logger.log_detail(`'${display_name(node)}' input '${input.name}' matched to ${matches[0].description}`);
         return matches[0];        
     }
 

@@ -9,43 +9,40 @@ class Logger {
     static INFORMATION = 2; // record of good things
     static DETAIL      = 3; // details
 
-    static TRACE = false;   // most of the method calls
-
-    static CAT_AMBIGUITY = 1;
+    static LIMITED_LOG_BLOCKED;
     static last_reported_category = {};
     static category_cooloff = { 1 : 5000 }
 
-    static log(level, message, array, category) {
-        if (category && Logger.last_reported_category[category]) {
-            const elapsed = (new Date()) - Logger.last_reported_category[category];
-            if (elapsed < Logger.category_cooloff[category]) return;
-        }
-        if (level <= settingsCache.getSettingValue('Use Everywhere.Options.logging')) {
-            console.log(message);
-            if (array) for (var i=0; i<array.length; i++) { console.log(array[i]) }
-            if (category) Logger.last_reported_category[category] = new Date();
-        }
+    static _log(message, array) {    
+        console.log(message);
+        if (array) for (var i=0; i<array.length; i++) { console.log(array[i]) }
     }
 
-    static log_call(level, method) {
-        if (level <= settingsCache.getSettingValue('Use Everywhere.Options.logging')) {
-            method();
-        }
+    static limited_log(level, message, array) {
+        if (Logger.LIMITED_LOG_BLOCKED) return;
+        if (level > settingsCache.getSettingValue('Use Everywhere.Options.logging')) return;
+        Logger.LIMITED_LOG_BLOCKED = true
+        setTimeout( ()=>{Logger.LIMITED_LOG_BLOCKED = false}, 5000 )
+        Logger._log(level, message, array)
     }
 
-    static log_error(level, message) {
-        if (level <= settingsCache.getSettingValue('Use Everywhere.Options.logging')) {
-            console.error(message);
-        }
+    static _log_detail(message, array) { 
+        if (Logger.DETAIL > settingsCache.getSettingValue('Use Everywhere.Options.logging')) return;
+        Logger._log(message, array)
     }
-
-    static trace(message, array, node) {
-        if (Logger.TRACE) {
-            if (node) { console.log(`TRACE (${node.id}) : ${message}`) } else { console.log(`TRACE : ${message}`) }
-            if (array && settingsCache.getSettingValue('Use Everywhere.Options.logging')>=Logger.INFORMATION) for (var i=0; i<array.length; i++) { console.log(`  ${i} = ${array[i]}`) }
-        }
+    static log_info(message, array) { 
+        if (Logger.INFORMATION > settingsCache.getSettingValue('Use Everywhere.Options.logging')) return;
+        Logger._log(message, array)
     }
+    static log_problem(message, array) { 
+        if (Logger.PROBLEM > settingsCache.getSettingValue('Use Everywhere.Options.logging')) return;
+        Logger._log(message, array)
+    
+    }
+    static log_error(message) { console.error(message) }
 }
+
+Logger.log_detail = Logger._log_detail
 
 class GraphConverter {
     static _instance;
@@ -69,7 +66,7 @@ class GraphConverter {
     store_node_input_map(data) { 
         this.node_input_map = {};
         data?.nodes.forEach((node) => { this.node_input_map[node.id] = node.inputs.map((input) => input.name); })
-        Logger.log(Logger.DETAIL, "stored node_input_map", this.node_input_map);
+        Logger.log_detail("stored node_input_map", this.node_input_map);
     }
 
     on_node_created(node) {
@@ -131,7 +128,7 @@ class GraphConverter {
             return type
         })
 
-        Logger.log(Logger.DETAIL, `clean_ue_node ${node.id} (${node.type})`, node.inputs, node.input_type);
+        Logger.log_detail(`clean_ue_node ${node.id} (${node.type})`, node.inputs, node.input_type);
     }
 
     convert_if_pre_116(node) {
@@ -143,7 +140,7 @@ class GraphConverter {
         if (node.properties.widget_ue_connectable) return
 
         if (!this.given_message) {
-            Logger.log(Logger.INFORMATION, `Graph was saved with a version of ComfyUI before 1.16, so Anything Everywhere will try to work out which widgets are connectable`);
+            Logger.log_info(`Graph was saved with a version of ComfyUI before 1.16, so Anything Everywhere will try to work out which widgets are connectable`);
             this.given_message = true;
         }
 
@@ -151,12 +148,12 @@ class GraphConverter {
         const widget_names = node.widgets?.map(w => w.name) || [];
 
         if (!(this.node_input_map[node.id])) {
-            Logger.log(Logger.DETAIL, `node ${node.id} (${node.type} has no node_input_map`);
+            Logger.log_detail(`node ${node.id} (${node.type} has no node_input_map`);
         } else {
             this.node_input_map[node.id].filter((input_name)=>widget_names.includes(input_name)).forEach((input_name) => {
                 node.properties['widget_ue_connectable'][input_name] = true;
                 this.did_conversion = true;
-                Logger.log(Logger.INFORMATION, `node ${node.id} widget ${input_name} marked as accepting UE because it was an input when saved`);
+                Logger.log_info(`node ${node.id} widget ${input_name} marked as accepting UE because it was an input when saved`);
             });
         }
 
@@ -269,7 +266,7 @@ function node_is_live(node, treat_bypassed_as_live){
     if (!node) return false;
     if (node.mode===0) return true;
     if (node.mode===2 || node.mode===4) return !!treat_bypassed_as_live;
-    Logger.log(Logger.ERROR, `node ${node.id} has mode ${node.mode} - I only understand modes 0, 2 and 4`);
+    Logger.log_error(`node ${node.id} has mode ${node.mode} - I only understand modes 0, 2 and 4`);
     return true;
 }
 
@@ -311,12 +308,12 @@ function is_in_group(node_id, group_node) {
 Return the group node if this node_id is part of a group, else return the node itself.
 Returns a full node object
 */
-function get_group_node(node_id, level=Logger.ERROR) {
+function get_group_node(node_id) {
     const nid = node_id.toString();
     var gn = app.graph._nodes_by_id[nid];
     if (!gn && nid.includes(':')) gn = app.graph._nodes_by_id[nid.split(':')[0]];
     if (!gn) gn = all_group_nodes().find((group_node) => is_in_group(nid, group_node));
-    if (!gn) Logger.log(level, `get_group node couldn't find ${nid}`)
+    if (!gn) Logger.log_error(`get_group node couldn't find ${nid}`)
     return gn;
 }
 
@@ -326,7 +323,7 @@ Return the node object for this node_id.
 - if it is of the form x:y find it in group node x
 - if it is the real node number of something in a group, get it from the group
 */
-function get_real_node(node_id, level=Logger.INFORMATION) {
+function get_real_node(node_id) {
     const nid = node_id.toString();
     var rn = app.graph._nodes_by_id[nid];
     if (!rn && nid.includes(':')) rn = app.graph._nodes_by_id[nid.split(':')[0]]?.getInnerNodes()[nid.split(':')[1]]
@@ -335,7 +332,7 @@ function get_real_node(node_id, level=Logger.INFORMATION) {
             if (!rn) rn = node.getInnerNodes().find((inner_node) => (inner_node.id==nid));
         })
     }
-    if (!rn) Logger.log(level, `get_real_node couldn't find ${node_id} - ok during loading, shortly after node deletion etc.`)
+    if (!rn) Logger.log_info(`get_real_node couldn't find ${node_id} - ok during loading, shortly after node deletion etc.`)
     return rn;
 }
 
@@ -384,7 +381,6 @@ injectionthis and injectionarguments are passed into the apply call (as the this
 function inject(object, methodname, tracetext, injection, injectionthis, injectionarguments) {
     const original = object[methodname];
     object[methodname] = function() {
-        Logger.trace(`${tracetext} hijack`, arguments);
         original?.apply(this, arguments);
         injection.apply(injectionthis, injectionarguments);
     }
@@ -428,16 +424,16 @@ export class Pausable {
     pause(note, ms) {
         this.pause_depth += 1;
         if (this.pause_depth>10) {
-            Logger.log(Logger.ERROR, `${this.name} Over pausing`)
+            Logger.log_error(`${this.name} Over pausing`)
         }
-        Logger.log(Logger.DETAIL, `${this.name} pause ${note} with ${ms}`)
+        Logger.log_detail(`${this.name} pause ${note} with ${ms}`)
         if (ms) setTimeout( this.unpause.bind(this), ms );
     }
     unpause() { 
         this.pause_depth -= 1
-        Logger.log(Logger.DETAIL, `${this.name} unpause`)
+        Logger.log_detail(`${this.name} unpause`)
         if (this.pause_depth<0) {
-            Logger.log(Logger.ERROR, `${this.name} Over unpausing`)
+            Logger.log_error(`${this.name} Over unpausing`)
             this.pause_depth = 0
         }
     this.on_unpause()

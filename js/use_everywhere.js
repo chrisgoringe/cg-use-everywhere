@@ -19,7 +19,6 @@ var graphAnalyser;
 Inject a call to linkRenderController.mark_list_link_outdated into a method with name methodname on all objects in the array
 If object is undefined, do nothing.
 The injection is added at the end of the existing method (if the method didn't exist, it is created).
-A Logger.trace call is added at the start with 'tracetext'
 */
 function inject_outdating_into_objects(array, methodname, tracetext) {
     if (array) {
@@ -41,7 +40,6 @@ app.registerExtension({
         */
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {        
-            Logger.trace("onConnectionsChange", arguments, this);
             if (this.IS_UE && side==1) { // side 1 is input
                 if (this.type=="Anything Everywhere?" && slot!=0) {
                     // don't do anything for the regexs
@@ -62,7 +60,6 @@ app.registerExtension({
         */
         const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
         nodeType.prototype.getExtraMenuOptions = function(_, options) {
-            Logger.trace("getExtraMenuOptions", arguments, this);
             getExtraMenuOptions?.apply(this, arguments);
             if (is_UEnode(this)) {
                 node_menu_settings(options, this);
@@ -171,7 +168,7 @@ app.registerExtension({
             app.loadGraphData = function (data) {
                 try {
                     graphConverter.store_node_input_map(data);
-                } catch (e) { Logger.log_error(Logger.ERROR, `in loadGraphData ${e}`); }
+                } catch (e) { Logger.log_error(e); }
                 const cvw_was = settingsCache.getSettingValue("Comfy.Validation.Workflows")
                 if (settingsCache.getSettingValue("Use Everywhere.Options.block_graph_validation")) {
                     app.ui.settings.setSettingValue("Comfy.Validation.Workflows", false);
@@ -195,7 +192,7 @@ app.registerExtension({
                 node._last_seen_bg = node.bgcolor
                 return v
             } catch (e) {
-                Logger.log_error(Logger.ERROR, e)
+                Logger.log_error(e)
             } finally {          
                 linkRenderController.unpause()
             }
@@ -207,12 +204,12 @@ app.registerExtension({
                 linkRenderController.disable_all_connected_widgets(true)
                 return original_drawFrontCanvas.apply(this, arguments);
             }  catch (e) {
-                Logger.log_error(Logger.ERROR, e)
+                Logger.log_error(e)
             } finally {
                 try {
                     linkRenderController.disable_all_connected_widgets(false)
                 } catch (e) {
-                    Logger.log_error(Logger.ERROR, e)
+                    Logger.log_error(e)
                 } 
             }
         }
@@ -226,7 +223,7 @@ app.registerExtension({
             try {
                 linkRenderController.render_all_ue_links(ctx);
             } catch (e) {
-                Logger.log_error(Logger.ERROR, e)
+                Logger.log_error(e)
             }
         }
         
@@ -302,7 +299,6 @@ app.registerExtension({
         const export_api_label = Array.from(document.getElementsByClassName('p-menubar-item-label')).find((e)=>e.innerText=='Export (API)')
         if (export_api_label) {
             export_api_label.addEventListener('click', (e)=>{
-                //const ues = GraphAnalyser.instance().analyse_graph(true);
                 const ue_links = app.graph.extra['ue_links'];
                 if (ue_links.length>0) {
                     if (!confirm("This model contains links added by Use Everywhere which won't work with the API. " + 

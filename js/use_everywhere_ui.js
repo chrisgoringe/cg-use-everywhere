@@ -157,7 +157,7 @@ class LinkRenderController extends Pausable {
             if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
             return true
         } catch (e) {
-            Logger.log_error(Logger.ERROR, `request_link_list_update ${e}`);
+            Logger.log_error(e);
             return false
         } 
     }
@@ -178,7 +178,7 @@ class LinkRenderController extends Pausable {
                         w.disabled = true;
                     })
                 } else {
-                    Logger.log(Logger.INFORMATION,`Couldn't find node ${uel.downstream}`)
+                    Logger.log_info(`Couldn't find node ${uel.downstream}`)
                 }
             })   
         } else {
@@ -248,7 +248,7 @@ class LinkRenderController extends Pausable {
                 ctx.restore();
             })
         } catch (e) {
-            Logger.log_error(Logger.ERROR, e);
+            Logger.log_error(e);
         } finally {
             this.unpause()
         }
@@ -371,14 +371,14 @@ class LinkRenderController extends Pausable {
                 }
                 app.canvas.renderLink(ctx, pos1, pos2, undefined, skip_border, animate%2, modify(color), sta_direction, end_direction, undefined);
             } catch(e) { 
-                Logger.log(Logger.PROBLEM, `Issue with UE link ${ue_connection}.`);
+                Logger.log_problem(`Issue with UE link ${ue_connection}.`);
             } finally { 
                 ctx.restore() 
                 app.canvas.render_connections_border = rcb;
             }
 
         } catch (e) {
-            Logger.log(Logger.PROBLEM, `Couldn't render UE link ${ue_connection}. That's ok if something just got deleted.`);
+            Logger.log_problem(`Couldn't render UE link ${ue_connection}. That's ok if something just got deleted.`);
         }
     }
 
