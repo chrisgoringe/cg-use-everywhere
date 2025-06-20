@@ -17,7 +17,7 @@ export const SETTINGS = [
         type: "combo",
         options: [ {value:0, text:"All off"}, {value:1, text:"Selected nodes"}, {value:2, text:"Mouseover node"}, {value:3, text:"Selected and mouseover nodes"}, {value:4, text:"All on"}],
         defaultValue: 3,
-        onChange: settingsCache.onSettingChangeChange,
+        onChange: settingsCache.onSettingChange,
     },      
     {
         id: "Use Everywhere.Graphics.fuzzlinks",
@@ -25,7 +25,7 @@ export const SETTINGS = [
         type: "boolean",
         tooltip: "Render UE links, when shown, differently from normal links. Much lower performance cost than animation.",
         defaultValue: true,
-        onChange: settingsCache.onSettingChangeChange,
+        onChange: settingsCache.onSettingChange,
     },  
     {
         id: "Use Everywhere.Graphics.animate",
@@ -33,7 +33,7 @@ export const SETTINGS = [
         type: "combo",
         options: [ {value:0, text:"Off"}, {value:1, text:"Dots"}, {value:2, text:"Pulse"}, {value:3, text:"Both"}, ],
         defaultValue: 0,
-        onChange: settingsCache.onSettingChangeChange,
+        onChange: settingsCache.onSettingChange,
         tooltip: "Animating links may have a negative impact on UI performance. Consider using Statically distinguish UE links instead."
     },
     {
@@ -41,14 +41,14 @@ export const SETTINGS = [
         name: "Turn animation off when workflow is running",
         type: "boolean",
         defaultValue: true,
-        onChange: settingsCache.onSettingChangeChange,
+        onChange: settingsCache.onSettingChange,
     },    
     {
         id: "Use Everywhere.Graphics.highlight",
         name: "Highlight connected and connectable inputs",
         type: "boolean",
         defaultValue: true,
-        onChange: settingsCache.onSettingChangeChange,
+        onChange: settingsCache.onSettingChange,
     },
     {
         id: "Use Everywhere.Options.connect_to_bypassed",
@@ -84,7 +84,16 @@ export const SETTINGS = [
     },
 ]
 
-
+const ui_update_settings = [
+    "Use Everywhere.Graphics.showlinks",
+    "Use Everywhere.Graphics.fuzzlinks",
+    "Use Everywhere.Graphics.animate",
+    "Use Everywhere.Graphics.stop_animation_when_running",
+    "Use Everywhere.Graphics.highlight",
+]
+ui_update_settings.forEach((id) => {
+    settingsCache.addCallback(id, ()=>{app.graph?.change.bind(app.graph)})
+})
 
 function submenu(properties, property, options, e, menu, node) {
     const current = properties[property] ? (properties[property]==2 ? 3 : 2 ) : 1; 
