@@ -122,7 +122,7 @@ class GraphAnalyser extends Pausable {
 
         app.graph.extra['ue_links'] = Array.from(links_added)
     
-        if (this.ambiguity_messages.length) Logger.limited_log(Logger.PROBLEM, "Ambiguous connections", this.ambiguity_messages);
+        if (this.ambiguity_messages.length) Logger.log_problem("Ambiguous connections", this.ambiguity_messages, true);
     
         // if there are loops report them and raise an exception
         if (about_to_submit && settingsCache.getSettingValue('Use Everywhere.Options.checkloops')) {

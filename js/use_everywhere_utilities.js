@@ -2,47 +2,42 @@ import { app } from "../../scripts/app.js";
 import { GroupNodeHandler } from "../core/groupNode.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 
-
 class Logger {
-    static ERROR       = 0; // actual errors
-    static PROBLEM     = 1; // things that stop the workflow working
-    static INFORMATION = 2; // record of good things
-    static DETAIL      = 3; // details
+    static LIMITED_LOG_BLOCKED = false;
+    static LIMITED_LOG_MS      = 5000;
+    static level;  // 0 for errors only, 1 activates 'log_problem', 2 activates 'log_info', 3 activates 'log_detail'
 
-    static LIMITED_LOG_BLOCKED;
-    static last_reported_category = {};
-    static category_cooloff = { 1 : 5000 }
+    static log_error(message) { console.error(message) }
 
-    static _log(message, array) {    
+    static log(message, array, limited) {    
+        if (limited && Logger.check_limited()) return
         console.log(message);
         if (array) for (var i=0; i<array.length; i++) { console.log(array[i]) }
     }
 
-    static limited_log(level, message, array) {
-        if (Logger.LIMITED_LOG_BLOCKED) return;
-        if (level > settingsCache.getSettingValue('Use Everywhere.Options.logging')) return;
+    static check_limited() {
+        if (Logger.LIMITED_LOG_BLOCKED) return true
         Logger.LIMITED_LOG_BLOCKED = true
-        setTimeout( ()=>{Logger.LIMITED_LOG_BLOCKED = false}, 5000 )
-        Logger._log(level, message, array)
+        setTimeout( ()=>{Logger.LIMITED_LOG_BLOCKED = false}, Logger.LIMITED_LOG_MS )
+        return false
     }
 
-    static _log_detail(message, array) { 
-        if (Logger.DETAIL > settingsCache.getSettingValue('Use Everywhere.Options.logging')) return;
-        Logger._log(message, array)
+    static null() {}
+
+    static level_changed(new_level) {
+        Logger.level = new_level    
+        Logger.log_detail  = (Logger.level>=3) ? Logger.log : Logger.null
+        Logger.log_info    = (Logger.level>=2) ? Logger.log : Logger.null
+        Logger.log_problem = (Logger.level>=1) ? Logger.log : Logger.null
     }
-    static log_info(message, array) { 
-        if (Logger.INFORMATION > settingsCache.getSettingValue('Use Everywhere.Options.logging')) return;
-        Logger._log(message, array)
-    }
-    static log_problem(message, array) { 
-        if (Logger.PROBLEM > settingsCache.getSettingValue('Use Everywhere.Options.logging')) return;
-        Logger._log(message, array)
-    
-    }
-    static log_error(message) { console.error(message) }
+
+    static log_detail(){}
+    static log_info(){}
+    static log_problem(){}
 }
 
-Logger.log_detail = Logger._log_detail
+Logger.level_changed(settingsCache.getSettingValue('Use Everywhere.Options.logging'))
+settingsCache.addCallback('Use Everywhere.Options.logging', Logger.level_changed)
 
 class GraphConverter {
     static _instance;
