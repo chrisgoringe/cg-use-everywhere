@@ -2,6 +2,7 @@ import { Logger, get_real_node, get_group_node, Pausable } from "./use_everywher
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
+import { in_visible_graph } from "./use_everywhere_subgraph_utils.js";
 
 function nodes_in_my_group(node_id) {
     const nodes_in = new Set();
@@ -202,6 +203,9 @@ class LinkRenderController extends Pausable {
                         this.mark_link_list_outdated();
                         return; 
                     }
+                    if (!node.inputs[ue_connection.input_index]) {
+                        return
+                    }
                     const name_sent_to = node.inputs[ue_connection.input_index].name;
                     unconnected_connectables.delete(name_sent_to); // remove the name from the list of connectables
                     var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
@@ -273,6 +277,7 @@ class LinkRenderController extends Pausable {
     }
 
     render_all_ue_links(ctx) {
+
         if (this.paused()) return;
         try {
             this.pause('render_all_ue_links')
@@ -303,17 +308,17 @@ class LinkRenderController extends Pausable {
         this.ue_list.all_ue_connections().forEach((ue_connection) => {
             any_links = true;
             var show = false;
-            if (mode==4) show = true;
+            if ( mode==4 ) show = true;
             if ( (mode==2 || mode==3) && app.canvas.node_over && this.node_in_ueconnection(ue_connection, app.canvas.node_over.id) ) show = true;
             if ( (mode==1 || mode==3) && this.any_node_in_ueconnection(ue_connection, app.canvas.selected_nodes)) show = true;
 
+            show = show && in_visible_graph(ue_connection.control_node) && in_visible_graph(ue_connection.sending_to);
             if ( show ) {
-                    this._render_ue_link(ue_connection, ctx, animate);
-                    any_links_shown = true;
-                }
+                this._render_ue_link(ue_connection, ctx, animate);
+                any_links_shown = true;
+            }
         });
 
-        
         if (animate>0) {
             /*
             If animating, we want to mark the visuals as changed so the animation updates - but not often!
@@ -335,6 +340,7 @@ class LinkRenderController extends Pausable {
 
     _render_ue_link(ue_connection, ctx, animate) {
         try {
+            
             const node = get_real_node(ue_connection.sending_to.id);
 
             /* this is the end node; get the position of the input */

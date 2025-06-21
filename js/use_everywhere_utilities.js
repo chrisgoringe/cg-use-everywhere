@@ -60,7 +60,7 @@ class GraphConverter {
 
     store_node_input_map(data) { 
         this.node_input_map = {};
-        data?.nodes.forEach((node) => { this.node_input_map[node.id] = node.inputs.map((input) => input.name); })
+        data?.nodes.filter((node)=>(node.inputs)).forEach((node) => { this.node_input_map[node.id] = node.inputs.map((input) => input.name); })
         Logger.log_detail("stored node_input_map", this.node_input_map);
     }
 
