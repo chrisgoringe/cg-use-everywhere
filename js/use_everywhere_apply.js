@@ -29,18 +29,39 @@ function _convert_to_links(ue, added_links, removed_links) {
     });
 }
 
+function find_link_to_subgraph_node(id) {
+    const last_node = app.graph._nodes_by_id[app.graph.last_node_id];
+    const the_input = last_node.inputs.find(input => input.linkIds.includes(id));
+    if (!the_input) throw new Error(`Link ID ${id} not found in inputs of most recently added node`);
+    return the_input.link
+}
+
 function convert_to_links(ues, control_node_id) {
     const added_links = []
     const removed_links = []
     ues.ues.forEach((ue)=> {
         if (control_node_id==-1 || ue.controller.id == control_node_id) _convert_to_links(ue, added_links, removed_links);
     });
+
     const restorer = function() {
-        added_links.forEach(id => { app.graph.removeLink(id); });
+        added_links.forEach(id => { 
+            try {
+                if (app.graph.links[id]) {
+                    app.graph.removeLink(id);   // the link still exists, so remove it
+                } else {
+                    id = find_link_to_subgraph_node(id)
+                    app.graph.removeLink(id)
+                }
+            } catch (e) {
+                Logger.log_error(e);
+            }
+        });
+
         removed_links.forEach(llink => {
             app.graph._nodes_by_id[llink.origin_id].connect(llink.origin_slot, app.graph._nodes_by_id[llink.target_id], llink.target_slot)
         })
     };
+
     return {restorer:restorer, added_links:added_links}
 }
 
