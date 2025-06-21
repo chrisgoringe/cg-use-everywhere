@@ -8,6 +8,7 @@ import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { node_menu_settings, canvas_menu_settings, non_ue_menu_settings, SETTINGS } from "./use_everywhere_settings.js";
 import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
+import { convert_to_links } from "./use_everywhere_apply.js";
 
 /*
 The ui component that looks after the link rendering
@@ -311,6 +312,15 @@ app.registerExtension({
                     }
                 }
             })
+        }
+
+        const original_subgraph = app.graph.convertToSubgraph
+        app.graph.convertToSubgraph = function () {
+            const cur_list = graphAnalyser.analyse_graph(true, true)
+            const mods = convert_to_links(cur_list, -1);
+            const r = original_subgraph.apply(this, arguments);
+            mods.restorer()
+            return r
         }
     },
 
