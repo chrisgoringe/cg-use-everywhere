@@ -9,7 +9,7 @@ import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 export const SETTINGS = [
     {
         id: "Use Everywhere.About",
-        name: "Version 6.2",
+        name: "Version 6.3",
         type: () => {return document.createElement('span')},
     },  
     {
