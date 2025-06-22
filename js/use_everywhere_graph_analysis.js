@@ -32,7 +32,7 @@ class GraphAnalyser extends Pausable {
             mods.restorer()
             //addedLinks.forEach(id => { app.graph.removeLink(id); });
         } catch (e) { 
-            Logger.log_error(Logger.ERROR,e)
+            Logger.log_error(e)
         } finally { 
             this.unpause()
         }
@@ -43,7 +43,7 @@ class GraphAnalyser extends Pausable {
     analyse_graph(wait_if_blocked, about_to_submit) {
         if (this.paused()) { 
             if (wait_if_blocked) {
-                Logger.log_error(Logger.ERROR, "Don't know how to wait")
+                Logger.log_problem("Don't know how to wait")
             } 
             return null
         }
@@ -56,7 +56,7 @@ class GraphAnalyser extends Pausable {
         const ues = new UseEverywhereList();
         live_nodes.filter((node) => is_UEnode(node)).forEach(node => { add_ue_from_node(ues, node); })
         // and nodes in group nodes
-        live_nodes.filter((node) => (get_real_node(node.id, Logger.DETAIL) && GroupNodeHandler.isGroupNode(get_real_node(node.id)))).forEach( groupNode => {
+        live_nodes.filter((node) => (get_real_node(node.id) && GroupNodeHandler.isGroupNode(get_real_node(node.id)))).forEach( groupNode => {
             const group_data = GroupNodeHandler.getGroupData(get_real_node(groupNode.id));
             group_data.nodeData.nodes.filter((node) => is_UEnode(node)).forEach(node => { 
                 add_ue_from_node_in_group(ues, node, groupNode.id, group_data); 
@@ -67,7 +67,7 @@ class GraphAnalyser extends Pausable {
         // List all unconnected inputs on non-UE nodes which are connectable
         const connectable = []
         live_nodes.filter((node) => !is_UEnode(node)).forEach(node => {
-            const real_node = get_real_node(node.id, Logger.DETAIL);
+            const real_node = get_real_node(node.id);
 
             if (real_node && !real_node.properties.rejects_ue_links) {
                 var gpData = GroupNodeHandler.getGroupData(real_node);
@@ -122,7 +122,7 @@ class GraphAnalyser extends Pausable {
 
         app.graph.extra['ue_links'] = Array.from(links_added)
     
-        if (this.ambiguity_messages.length) Logger.log(Logger.PROBLEM, "Ambiguous connections", this.ambiguity_messages, Logger.CAT_AMBIGUITY);
+        if (this.ambiguity_messages.length) Logger.log_problem("Ambiguous connections", this.ambiguity_messages, true);
     
         // if there are loops report them and raise an exception
         if (about_to_submit && settingsCache.getSettingValue('Use Everywhere.Options.checkloops')) {

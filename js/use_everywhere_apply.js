@@ -7,7 +7,7 @@ function _convert_to_links(ue, added_links, removed_links) {
     const output_node_id = ue.output[0];
     const output_index = ue.output[1];
     const output_node = get_real_node(output_node_id);
-    Logger.log(Logger.INFORMATION, "Adding links for " + ue.description);
+    Logger.log_info("Adding links for " + ue.description);
     ue.sending_to.forEach((st) => {
         const input_node_id = st.node.id;
         const input_node = get_real_node(input_node_id);
@@ -23,10 +23,17 @@ function _convert_to_links(ue, added_links, removed_links) {
                           `${input_node_id}[${input_index}].`);
         else { // Memorize the links we are adding to remove them later
             if (added_links) added_links.push(new_link.id);
-            Logger.log(Logger.INFORMATION, `  -> ${display_name(st.node)}, ${st.input.name} ` +
+            Logger.log_info(`  -> ${display_name(st.node)}, ${st.input.name} ` +
                                            `(${st.node.id}.${st.input_index}) (ID: ${new_link.id})`);
         }
     });
+}
+
+function find_link_to_subgraph_node(id) {
+    const last_node = app.graph._nodes_by_id[app.graph.last_node_id];
+    const the_input = last_node.inputs.find(input => input.linkIds.includes(id));
+    if (!the_input) throw new Error(`Link ID ${id} not found in inputs of most recently added node`);
+    return the_input.link
 }
 
 function convert_to_links(ues, control_node_id) {
@@ -35,12 +42,26 @@ function convert_to_links(ues, control_node_id) {
     ues.ues.forEach((ue)=> {
         if (control_node_id==-1 || ue.controller.id == control_node_id) _convert_to_links(ue, added_links, removed_links);
     });
+
     const restorer = function() {
-        added_links.forEach(id => { app.graph.removeLink(id); });
+        added_links.forEach(id => { 
+            try {
+                if (app.graph.links[id]) {
+                    app.graph.removeLink(id);   // the link still exists, so remove it
+                } else {
+                    id = find_link_to_subgraph_node(id)
+                    app.graph.removeLink(id)
+                }
+            } catch (e) {
+                Logger.log_error(e);
+            }
+        });
+
         removed_links.forEach(llink => {
             app.graph._nodes_by_id[llink.origin_id].connect(llink.origin_slot, app.graph._nodes_by_id[llink.target_id], llink.target_slot)
         })
     };
+
     return {restorer:restorer, added_links:added_links}
 }
 

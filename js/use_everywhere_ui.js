@@ -2,6 +2,7 @@ import { Logger, get_real_node, get_group_node, Pausable } from "./use_everywher
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
+import { in_visible_graph } from "./use_everywhere_subgraph_utils.js";
 
 function nodes_in_my_group(node_id) {
     const nodes_in = new Set();
@@ -157,7 +158,7 @@ class LinkRenderController extends Pausable {
             if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
             return true
         } catch (e) {
-            Logger.log_error(Logger.ERROR, `request_link_list_update ${e}`);
+            Logger.log_error(e);
             return false
         } 
     }
@@ -178,7 +179,7 @@ class LinkRenderController extends Pausable {
                         w.disabled = true;
                     })
                 } else {
-                    Logger.log(Logger.INFORMATION,`Couldn't find node ${uel.downstream}`)
+                    Logger.log_info(`Couldn't find node ${uel.downstream}`)
                 }
             })   
         } else {
@@ -201,6 +202,9 @@ class LinkRenderController extends Pausable {
                     if (!ue_connection.control_node) { // control node deleted...
                         this.mark_link_list_outdated();
                         return; 
+                    }
+                    if (!node.inputs[ue_connection.input_index]) {
+                        return
                     }
                     const name_sent_to = node.inputs[ue_connection.input_index].name;
                     unconnected_connectables.delete(name_sent_to); // remove the name from the list of connectables
@@ -248,7 +252,7 @@ class LinkRenderController extends Pausable {
                 ctx.restore();
             })
         } catch (e) {
-            Logger.log_error(Logger.ERROR, e);
+            Logger.log_error(e);
         } finally {
             this.unpause()
         }
@@ -273,6 +277,7 @@ class LinkRenderController extends Pausable {
     }
 
     render_all_ue_links(ctx) {
+
         if (this.paused()) return;
         try {
             this.pause('render_all_ue_links')
@@ -303,17 +308,17 @@ class LinkRenderController extends Pausable {
         this.ue_list.all_ue_connections().forEach((ue_connection) => {
             any_links = true;
             var show = false;
-            if (mode==4) show = true;
+            if ( mode==4 ) show = true;
             if ( (mode==2 || mode==3) && app.canvas.node_over && this.node_in_ueconnection(ue_connection, app.canvas.node_over.id) ) show = true;
             if ( (mode==1 || mode==3) && this.any_node_in_ueconnection(ue_connection, app.canvas.selected_nodes)) show = true;
 
+            show = show && in_visible_graph(ue_connection.control_node) && in_visible_graph(ue_connection.sending_to);
             if ( show ) {
-                    this._render_ue_link(ue_connection, ctx, animate);
-                    any_links_shown = true;
-                }
+                this._render_ue_link(ue_connection, ctx, animate);
+                any_links_shown = true;
+            }
         });
 
-        
         if (animate>0) {
             /*
             If animating, we want to mark the visuals as changed so the animation updates - but not often!
@@ -335,6 +340,7 @@ class LinkRenderController extends Pausable {
 
     _render_ue_link(ue_connection, ctx, animate) {
         try {
+            
             const node = get_real_node(ue_connection.sending_to.id);
 
             /* this is the end node; get the position of the input */
@@ -371,14 +377,14 @@ class LinkRenderController extends Pausable {
                 }
                 app.canvas.renderLink(ctx, pos1, pos2, undefined, skip_border, animate%2, modify(color), sta_direction, end_direction, undefined);
             } catch(e) { 
-                Logger.log(Logger.PROBLEM, `Issue with UE link ${ue_connection}.`);
+                Logger.log_problem(`Issue with UE link ${ue_connection}.`);
             } finally { 
                 ctx.restore() 
                 app.canvas.render_connections_border = rcb;
             }
 
         } catch (e) {
-            Logger.log(Logger.PROBLEM, `Couldn't render UE link ${ue_connection}. That's ok if something just got deleted.`);
+            Logger.log_problem(`Couldn't render UE link ${ue_connection}. That's ok if something just got deleted.`);
         }
     }
 
