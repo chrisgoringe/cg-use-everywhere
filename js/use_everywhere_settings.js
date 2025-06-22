@@ -4,6 +4,7 @@ import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
 import { has_priority_boost } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
+import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 
 export const SETTINGS = [
     {
@@ -223,9 +224,9 @@ export function node_menu_settings(options, node) {
         {
             content: "Convert to real links",
             callback: async () => {
-                const ues = GraphAnalyser.instance().analyse_graph(true);
-                convert_to_links(ues, node.id);
-                app.graph.remove(node);
+                const ues = GraphAnalyser.instance().wait_to_analyse_visible_graph();
+                convert_to_links(ues, node);
+                visible_graph().remove(node);
             }
         }
     )
@@ -246,10 +247,10 @@ export function canvas_menu_settings(options) {
         content: "Convert all UEs to real links",
         callback: async () => {
             if (window.confirm("This will convert all links created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
-                const ues = GraphAnalyser.instance().analyse_graph(true);
+                const ues = GraphAnalyser.instance().wait_to_analyse_visible_graph();
                 LinkRenderController.instance().pause("convert");
                 try {
-                    convert_to_links(ues, -1);
+                    convert_to_links(ues, visible_graph());
                     remove_all_ues(true);
                 } finally {
                     app.graph.change();

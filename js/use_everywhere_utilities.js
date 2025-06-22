@@ -1,6 +1,16 @@
 import { app } from "../../scripts/app.js";
 import { GroupNodeHandler } from "../core/groupNode.js";
 import { settingsCache } from "./use_everywhere_cache.js";
+import { node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
+
+/*
+Return the node object for this node_id. 
+*/
+function get_real_node(node_id, graph) {
+    if (!graph) graph = visible_graph()
+    const nid = node_id.toString();
+    return graph._nodes_by_id[nid];
+}
 
 class Logger {
     static LIMITED_LOG_BLOCKED = false;
@@ -83,7 +93,6 @@ class GraphConverter {
     }
 
     clean_ue_node(node) {
-
         const gpData = GroupNodeHandler.getGroupData(node)
         const isGrp  = !!gpData;
         if (isGrp) {
@@ -114,16 +123,26 @@ class GraphConverter {
         })
 
         // set types to match
-        node.input_type = node.inputs.map((i)=>{
-            var type = i.type;
-            if (type=='*') {
-                if (i.link) type = app.graph.links[i.link].type;
-                else type = (i.label && i.label!='anything') ? i.label : i.name;      
+        node.inputs.forEach((input) => {
+            if (input.type=='*') {
+                if (input.link) {
+                    input.type = node_graph(node).links[input.link].type;
+                } else {
+                    input.type = (input.label && input.label!='anything') ? input.label : input.name
+                }
             }
-            return type
-        })
+        });
 
-        Logger.log_detail(`clean_ue_node ${node.id} (${node.type})`, node.inputs, node.input_type);
+        //node.input_type = node.inputs.map((i)=>{
+        //    var type = i.type;
+        //    if (type=='*') {
+        //        if (i.link) type = node_graph(node).links[i.link].type;
+        //        else type = (i.label && i.label!='anything') ? i.label : i.name;      
+        //    }
+        //    return type
+        //})
+
+        Logger.log_detail(`clean_ue_node ${node.id} (${node.type})`, node.inputs);
     }
 
     convert_if_pre_116(node) {
@@ -151,10 +170,6 @@ class GraphConverter {
                 Logger.log_info(`node ${node.id} widget ${input_name} marked as accepting UE because it was an input when saved`);
             });
         }
-
-
-        
-        //node.properties.ue116converted = true;
     }
 
     remove_saved_ue_links() {
@@ -175,9 +190,8 @@ class LoopError extends Error {
     }
 }
 
-function find_all_upstream(node_id, links_added) {
+function find_all_upstream(node, links_added) {
     const all_upstream = [];
-    const node = get_real_node(node_id);
     node?.inputs?.forEach((input) => { // normal links
         const link_id = input.link;
         if (link_id) {
@@ -186,48 +200,23 @@ function find_all_upstream(node_id, links_added) {
         }
     });
     links_added.forEach((la)=>{ // UE links
-        if (get_real_node(la.downstream).id==node.id) {
+        if (la.downstream==node.id) {
             all_upstream.push({id:la.upstream, slot:la.upstream_slot, ue:la.controller.toString()})
         }
     });
-    if (node.id != get_group_node(node.id).id) { // node is in group
-        const grp_nd = get_group_node(node.id).id;
-        const group_data = GroupNodeHandler.getGroupData(get_group_node(node.id));
-        const indx = group_data.nodeData.nodes.findIndex((n)=>n.pos[0]==node.pos[0] && n.pos[1]==node.pos[1]);
-        if (indx>=0) {
-            if (GroupNodeHandler.getGroupData(app.graph._nodes_by_id[grp_nd])?.linksTo?.[indx] ) { // links within group
-                Object.values(GroupNodeHandler.getGroupData(app.graph._nodes_by_id[grp_nd]).linksTo[indx]).forEach((internal_link) => {
-                    all_upstream.push({id:`${grp_nd}:${internal_link[0]}`, slot:internal_link[1]});
-                });
-            }
-            if (GroupNodeHandler.getGroupData(app.graph._nodes_by_id[grp_nd]).oldToNewInputMap?.[indx]) { // links out of group
-                Object.values(GroupNodeHandler.getGroupData(app.graph._nodes_by_id[grp_nd]).oldToNewInputMap?.[indx]).forEach((groupInput) => {
-                    const link_id = get_group_node(node.id).inputs?.[groupInput]?.link;
-                    if (link_id) {
-                        const link = app.graph.links[link_id];
-                        if (link) all_upstream.push({id:link.origin_id, slot:link.origin_slot});
-                    }
-                })
-            }
-        }
-    }
+
     return all_upstream;
 }
 
-function recursive_follow(node_id, start_node_id, links_added, stack, nodes_cleared, ues, count, slot) {
-    const node = get_real_node(node_id);
-    if (slot>=0 && GroupNodeHandler.isGroupNode(node)) { // link into group
-        const mapped = GroupNodeHandler.getGroupData(node).newToOldOutputMap[slot];
-        return recursive_follow(`${node.id}:${mapped.node.index}`, start_node_id, links_added, stack, nodes_cleared, ues, count, mapped.slot);
-    }
+function recursive_follow(node, links_added, stack, nodes_cleared, ues, count, slot) {
     count += 1;
     if (stack.includes(node.id.toString())) throw new LoopError(node.id, new Set(stack), new Set(ues));
     if (nodes_cleared.has(node.id.toString())) return;
     stack.push(node.id.toString());
 
-    find_all_upstream(node.id, links_added).forEach((upstream) => {
+    find_all_upstream(node, links_added).forEach((upstream) => {
         if (upstream.ue) ues.push(upstream.ue);
-        count = recursive_follow(upstream.id, start_node_id, links_added, stack, nodes_cleared, ues, count, upstream.slot);
+        count = recursive_follow(upstream, links_added, stack, nodes_cleared, ues, count, upstream.slot);
         if (upstream.ue) ues.pop();
     })
 
@@ -244,11 +233,11 @@ links_added is a list of the UE virtuals links
 function node_in_loop(live_nodes, links_added) {
     var nodes_to_check = [];
     const nodes_cleared = new Set();
-    live_nodes.forEach((n)=>nodes_to_check.push(get_real_node(n.id).id));
+    live_nodes.forEach((n)=>nodes_to_check.push(n));
     var count = 0;
     while (nodes_to_check.length>0) {
-        const node_id = nodes_to_check.pop();
-        count += recursive_follow(node_id, node_id, links_added, [], nodes_cleared, [], 0, -1);
+        const node = nodes_to_check.pop();
+        count += recursive_follow(node, links_added, [], nodes_cleared, [], 0, -1);
         nodes_to_check = nodes_to_check.filter((nid)=>!nodes_cleared.has(nid.toString()));
     }
     console.log(`node_in_loop made ${count} checks`)
@@ -274,10 +263,10 @@ Given a link object, and the type of the link,
 go upstream, following links with the same type, until you find a parent node which isn't bypassed.
 If either type or original link is null, or if the upstream thread ends, return null
 */
-function handle_bypass(original_link, type) {
+function handle_bypass(original_link, type, graph) {
     if (!type || !original_link) return null;
     var link = original_link;
-    var parent = get_real_node(link.origin_id);
+    var parent = get_real_node(link.origin_id, graph);
     if (!parent) return null;
     while (node_is_bypassed(parent)) {
         if (!parent.inputs) return null;
@@ -285,69 +274,25 @@ function handle_bypass(original_link, type) {
         if (parent?.inputs[link.origin_slot]?.type == type) link_id = parent.inputs[link.origin_slot].link; // try matching number first
         else link_id = parent.inputs.find((input)=>input.type==type)?.link;
         if (!link_id) { return null; }
-        link = app.graph.links[link_id];
-        parent = get_real_node(link.origin_id);
+        link = graph.links[link_id];
+        parent = get_real_node(link.origin_id, graph);
     }
     return link;
 }
 
-function all_group_nodes() {
-    return app.graph._nodes.filter((node) => GroupNodeHandler.isGroupNode(node));
-}
 
-function is_in_group(node_id, group_node) {
-    return group_node.getInnerNodes().find((inner_node) => (inner_node.id==node_id));
-}
-
-/*
-Return the group node if this node_id is part of a group, else return the node itself.
-Returns a full node object
-*/
-function get_group_node(node_id) {
-    const nid = node_id.toString();
-    var gn = app.graph._nodes_by_id[nid];
-    if (!gn && nid.includes(':')) gn = app.graph._nodes_by_id[nid.split(':')[0]];
-    if (!gn) gn = all_group_nodes().find((group_node) => is_in_group(nid, group_node));
-    if (!gn) Logger.log_error(`get_group node couldn't find ${nid}`)
-    return gn;
-}
-
-/*
-Return the node object for this node_id. 
-- if it's in _nodes_by_id return it
-- if it is of the form x:y find it in group node x
-- if it is the real node number of something in a group, get it from the group
-*/
-function get_real_node(node_id) {
-    const nid = node_id.toString();
-    var rn = app.graph._nodes_by_id[nid];
-    if (!rn && nid.includes(':')) rn = app.graph._nodes_by_id[nid.split(':')[0]]?.getInnerNodes()[nid.split(':')[1]]
-    if (!rn) {
-        all_group_nodes().forEach((node) => {
-            if (!rn) rn = node.getInnerNodes().find((inner_node) => (inner_node.id==nid));
-        })
-    }
-    if (!rn) Logger.log_info(`get_real_node couldn't find ${node_id} - ok during loading, shortly after node deletion etc.`)
-    return rn;
-}
-
-function get_all_nodes_within(node_id) {
-    const node = get_group_node(node_id);
-    if (GroupNodeHandler.isGroupNode(node)) return node.getInnerNodes();
-    return [];
-}
 
 
 /*
 Does this input connect upstream to a live node?
 */
-function is_connected(input, treat_bypassed_as_live) {
+function is_connected(input, treat_bypassed_as_live, graph) {
     const link_id = input.link;
     if (link_id === null) return false;                                    // no connection
-    var the_link = app.graph.links[link_id];
+    var the_link = graph.links[link_id];
     if (!the_link) return false; 
     if (treat_bypassed_as_live) return true;
-    the_link = handle_bypass(the_link, the_link.type);                       // find the link upstream of bypasses
+    the_link = handle_bypass(the_link, the_link.type, graph);              // find the link upstream of bypasses
     if (!the_link) return false;                                           // no source for data.
     return true;
 }
@@ -382,7 +327,7 @@ function inject(object, methodname, tracetext, injection, injectionthis, injecti
 }
 
 
-export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node, get_group_node, get_all_nodes_within, has_priority_boost}
+export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node, has_priority_boost}
 
 export function defineProperty(instance, property, desc) {
     const existingDesc = Object.getOwnPropertyDescriptor(instance, property);
@@ -437,4 +382,39 @@ export class Pausable {
         return (this.pause_depth>0)
     }
     on_unpause(){}
+}
+
+const CONVERTED_TYPE = "converted-widget";
+// import {CONVERTED_TYPE} from "../../extensions/core/widgetInputs.js"
+
+/*
+If a widget hasn't been converted, just get its value
+If it has, *try* to go upstream
+*/
+export function get_widget_or_input_values(node_obj, widget_id) {
+    if (node_obj.widgets[widget_id]?.type.startsWith(CONVERTED_TYPE)) {
+        try {
+            const name = node_obj.widgets[widget_id].name;
+            const input_id = node_obj.inputs.findIndex((input) => input.name==name);
+            const connection = get_connection(node_obj, input_id, "STRING");
+            const upstream_node_obj = get_real_node(connection.link.origin_id.toString());
+            const widget = upstream_node_obj.widgets.find((w) => w.name.toLowerCase() == upstream_node_obj.outputs[connection.link.origin_slot].name.toLowerCase());
+            return widget.value;
+        } catch (error) {
+            return "NOT CONNECTED DONT MATCH";
+        }
+    }
+    return node_obj.widgets[widget_id].value;
+}
+
+export function get_connection(node, i, override_type) {
+    const graph = node_graph(node)
+    const in_link = node?.inputs[i]?.link;
+    var type = override_type;
+    var link = undefined;
+    if (in_link) {
+        if (!override_type) type = node.inputs[i].type;
+        link = handle_bypass(graph.links[in_link], type, graph);
+    } 
+    return { link:link, type:type }
 }

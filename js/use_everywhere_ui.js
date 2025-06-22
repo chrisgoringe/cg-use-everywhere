@@ -1,25 +1,25 @@
-import { Logger, get_real_node, get_group_node, Pausable } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
 import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { in_visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { in_visible_graph, node_graph } from "./use_everywhere_subgraph_utils.js";
 
-function nodes_in_my_group(node_id) {
+function nodes_in_my_group(node) {
     const nodes_in = new Set();
-    app.graph._groups.forEach((group) => {
+    node_graph(node)._groups.forEach((group) => {
         if (!app.canvas.selected_group_moving) group.recomputeInsideNodes();
-        if (group._nodes?.find((node) => { return (node.id===node_id) } )) {
-            group._nodes.forEach((node) => { nodes_in.add(node.id) } )
+        if (group._nodes?.find((nd) => { return (nd.id===node_id) } )) {
+            group._nodes.forEach((nd) => { nodes_in.add(nd.id) } )
         }
     });
     return [...nodes_in];
 }
 
-function nodes_not_in_my_group(node_id) {
-    const nid = nodes_in_my_group(node_id);
+function nodes_not_in_my_group(node) {
+    const nid = nodes_in_my_group(node);
     const nodes_not_in = [];
-    app.graph._nodes.forEach((node) => {
-        if (!nid.includes(node.id)) nodes_not_in.push(node.id);
+    node_graph(node)._nodes.forEach((nd) => {
+        if (!nid.includes(nd.id)) nodes_not_in.push(nd.id);
     });
     return nodes_not_in;
 }
@@ -44,31 +44,31 @@ function nodes_in_groups_matching(regex, already_limited_to) {
 }
 
 
-function nodes_my_color(node_id, already_limited_to) {
+function nodes_my_color(node, already_limited_to) {
     const nodes_in = new Set();
-    const color = get_real_node(node_id).color;
+    const color = node.color;
     if (already_limited_to) {
         already_limited_to.forEach((nid) => {
-            if (get_real_node(nid).color==color) nodes_in.add(nid)
+            if (get_real_node(nid, node_graph(node)).color==color) nodes_in.add(nid)
         })
     } else {
-        app.graph._nodes.forEach((node) => {
-            if (node.color==color) nodes_in.add(node.id)
+        node_graph(node)._nodes.forEach((nd) => {
+            if (nd.color==color) nodes_in.add(nd.id)
         })
     }
     return [...nodes_in];
 }
 
-function nodes_not_my_color(node_id, already_limited_to) {
+function nodes_not_my_color(node, already_limited_to) {
     const nodes_in = new Set();
     const color = get_real_node(node_id).color;
     if (already_limited_to) {
         already_limited_to.forEach((nid) => {
-            if (get_real_node(nid).color!=color) nodes_in.add(nid)
+            if (get_real_node(nid, node_graph(node)).color!=color) nodes_in.add(nid)
         })
     } else {
-        app.graph._nodes.forEach((node) => {
-            if (node.color!=color) nodes_in.add(node.id)
+        node_graph(node)._nodes.forEach((nd) => {
+            if (nd.color!=color) nodes_in.add(nd.id)
         })
     }
     return [...nodes_in];
@@ -85,9 +85,10 @@ function indicate_restriction(ctx, title_height) {
 }
 
 function update_input_label(node, slot, app) {
-    if (node.input_type[slot]) {
-        node.inputs[slot].label = node.input_type[slot];
-        node.inputs[slot].color_on = app.canvas.default_connection_color_byType[node.input_type[slot]];
+    const type = node.inputs[slot].type
+    if (type) {
+        node.inputs[slot].label = type;
+        node.inputs[slot].color_on = app.canvas.default_connection_color_byType[type];
     } else {
         node.inputs[slot].label = "anything";
         node.inputs[slot].color_on = undefined;
@@ -152,7 +153,7 @@ class LinkRenderController extends Pausable {
 
     _request_link_list_update() {
         try {
-            const ues = this.the_graph_analyser.analyse_graph(false)
+            const ues = this.the_graph_analyser.analyse_visible_graph()
             if (ues==null) return false // graph analyser was paused
             this.ue_list = ues;
             if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
@@ -268,8 +269,8 @@ class LinkRenderController extends Pausable {
     }
 
     node_in_ueconnection(ue_connection, id) {
-        if (ue_connection.control_node && get_group_node(ue_connection.control_node.id)?.id == id) return true
-        if (ue_connection.sending_to   && get_group_node(ue_connection.sending_to.id)?.id   == id) return true
+        if (ue_connection.control_node?.id == id) return true
+        if (ue_connection.sending_to?.id   == id) return true
     }
 
     any_node_in_ueconnection(ue_connection, list_of_nodes) {
@@ -340,8 +341,8 @@ class LinkRenderController extends Pausable {
 
     _render_ue_link(ue_connection, ctx, animate) {
         try {
-            
-            const node = get_real_node(ue_connection.sending_to.id);
+            const graph = ue_connection.graph
+            const node = get_real_node(ue_connection.sending_to.id, graph);
 
             /* this is the end node; get the position of the input */
             var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
@@ -350,7 +351,12 @@ class LinkRenderController extends Pausable {
             which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
             const input_source = (ue_connection.control_node_input_index >= 0); 
             const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
-            const pos1 = get_group_node(ue_connection.control_node.id).getConnectionPos(input_source, source_index, this.slot_pos2);    
+            const pos1 = graph._nodes_by_id[ue_connection.control_node.id]?.getConnectionPos(input_source, source_index, this.slot_pos2);    
+
+            if (!pos1) {
+                Logger.problem(`Couldn't find position for UE link ${ue_connection}.`,null,true)
+                return;
+            }
 
             /* get the direction that we start and end */
             const delta_x = pos2[0] - pos1[0];

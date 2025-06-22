@@ -1,5 +1,7 @@
+import { node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
-import { Logger, node_is_live, get_real_node } from "./use_everywhere_utilities.js";
+import { Logger, node_is_live, get_real_node, get_widget_or_input_values, get_connection } from "./use_everywhere_utilities.js";
+
 
 function display_name(node) { 
     if (node?.title) return node.title;
@@ -16,14 +18,16 @@ The UseEverywhere object represents a single 'broadcast'. It generally contains
     output                      - the output that is being rebroadcast as a list (node_id, output_index)
     title_regex, input_regex    - the UE? matching rules
     priority                    - priorty :)
+    graph                       - the graph or subgraph
 */
 class UseEverywhere {
     constructor() {
         this.sending_to = [];
         Object.assign(this, arguments[0]);
         if (this.priority === undefined) this.priority = 0;
-        const from_node = get_real_node(this?.output[0]);
-        const to_node = get_real_node(this?.controller.id);
+        if (this.graph === undefined) this.graph = visible_graph();
+        const from_node = get_real_node(this?.output[0], this.graph);
+        const to_node = get_real_node(this?.controller.id, this.graph)
         try {
             if (this.control_node_input_index>=0) {
                 this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]].name} (${this?.output[0]}.${this?.output[1]}) ` +
@@ -37,7 +41,6 @@ class UseEverywhere {
             // for breakpointing
             throw e;
         }
-        // this.description = `source ${this?.output[0]}.${this?.output[1]} -> control ${this?.controller.id}.${this?.control_node_input_index} "${this.type}" <-  (priority ${this.priority})`;
         if (this.title_regex) this.description += ` - node title regex '${this.title_regex.source}'`;
         if (this.input_regex) this.description += ` - input name regex '${this.input_regex.source}'`;
     }
@@ -103,7 +106,7 @@ class UseEverywhere {
 
 function validity_errors(params) {
     if (!node_is_live(params.controller)) return `UE node ${params.output[0]} is not alive`;
-    if (!node_is_live(get_real_node(params.output[0]))) return `upstream node ${params.output[0]} is not alive`;
+    if (!node_is_live(get_real_node(params.output[0], params.graph))) return `upstream node ${params.output[0]} is not alive`;
     return "";
 }
 
@@ -128,31 +131,32 @@ class UseEverywhereList {
             title_regex: title_regex,
             input_regex: input_regex,
             group_regex: group_regex,
-            priority: priority
+            priority: priority, 
+            graph: node_graph(node),
         };
-        const real_node = get_real_node(node.id);
+        const real_node = get_real_node(node.id, graph);
         if (!real_node) {
             Logger.log_problem(`Node ${node.id} not found`, params);
             return;
         }
         if (real_node.properties.group_restricted == 1) {
-            params.restrict_to = nodes_in_my_group(node.id);
+            params.restrict_to = nodes_in_my_group(node);
             params.priority += 0.1;
         }
         if (real_node.properties.group_restricted == 2) {
-            params.restrict_to = nodes_not_in_my_group(node.id);
+            params.restrict_to = nodes_not_in_my_group(node);
             params.priority += 0.1;
         }
         if (real_node.properties.color_restricted == 1) {
-            params.restrict_to = nodes_my_color(node.id, params.restrict_to);
+            params.restrict_to = nodes_my_color(node, params.restrict_to);
             params.priority += 0.3;
         }
         if (real_node.properties.color_restricted == 2) {
-            params.restrict_to = nodes_not_my_color(node.id, params.restrict_to);
+            params.restrict_to = nodes_not_my_color(node, params.restrict_to);
             params.priority += 0.3;
         }
         if (group_regex) {
-            params.restrict_to = nodes_in_groups_matching(group_regex, params.restrict_to);
+            params.restrict_to = nodes_in_groups_matching(group_regex, params.restrict_to, graph);
         }
         if (real_node.properties["priority_boost"]) params.priority += real_node.properties["priority_boost"];
         
@@ -200,38 +204,6 @@ class UseEverywhereList {
         return matches[0];        
     }
 
-    print_all() {
-        this.ues.forEach((ue) => { console.log(ue.describe()); });
-    }
-
-    all_unmatched_inputs(type) {
-        return this.unmatched_inputs.filter((ui)=>ui.input.type==type);
-    }
-
-    all_nodes_with_unmatched_input(type) {
-        const result = new Set();
-        this.all_unmatched_inputs(type).forEach((ui) => {
-            result.add(display_name(ui.node));
-        })
-        return result;
-    }
-
-    all_unmatched_input_names(type) {
-        const result = new Set();
-        this.all_unmatched_inputs(type).forEach((ui) => {
-            result.add(ui.input.label ? ui.input.label : ui.input.name);
-        })
-        return result;
-    }
-
-    all_group_names() {
-        const result = new Set();
-        app.graph._groups.forEach((group) => {
-            result.add(group.title);
-        })
-        return result;
-    }
-
     all_connected_inputs(for_node) {
         const ue_connections = [];
         this.ues.forEach((ue) => { 
@@ -240,7 +212,7 @@ class UseEverywhereList {
                     ue_connections.push({
                         type : ue.type, 
                         input_index : st.input_index,
-                        control_node : get_real_node(ue.controller.id),
+                        control_node : get_real_node(ue.controller.id, ue.graph),
                         control_node_input_index : ue.control_node_input_index,
                         sending_to : st.node,
                     });
@@ -257,24 +229,25 @@ class UseEverywhereList {
                 ue_connections.push({
                     type : ue.type, 
                     input_index : st.input_index,
-                    control_node : get_real_node(ue.controller.id),
+                    control_node : get_real_node(ue.controller.id, ue.graph),
                     control_node_input_index : ue.control_node_input_index,
-                    sending_to : st.node,
+                    sending_to : st.node, 
+                    graph: ue.graph,
                 });
             });
         });
         return ue_connections;        
     }
-
+/*
     all_ue_connections_for(node_id) {
         const ue_connections = [];
         this.ues.forEach((ue) => { 
             ue.sending_to.forEach((st) => {
-                if (get_real_node(st.node.id).id==node_id || get_real_node(ue.controller.id).id==node_id) {
+                if (get_real_node(st.node.id, ue.graph).id==node_id || get_real_node(ue.controller.id, ue.graph).id==node_id) {
                     ue_connections.push({
                         type : ue.type, 
                         input_index : st.input_index,
-                        control_node : get_real_node(ue.controller.id),
+                        control_node : get_real_node(ue.controller.id, ue.graph),
                         control_node_input_index : ue.control_node_input_index,
                         sending_to : st.node,
                     });
@@ -282,6 +255,41 @@ class UseEverywhereList {
             });
         });
         return ue_connections;   
+    }*/
+
+    add_ue_from_node(node) {
+        if (node.type === "Seed Everywhere") this.add_ue(node, -1, "INT", [node.id.toString(),0], 
+                                                        undefined, new RegExp("seed|随机种"), undefined, 5);
+    
+        if (node.type === "Anything Everywhere?") {
+            const connection = get_connection(node, 0);
+            if (connection.link) {
+                const w0 = get_widget_or_input_values(node,0);
+                const r0 = new RegExp(w0);
+                const w1 = get_widget_or_input_values(node,1);
+                const r1 = (w1.startsWith('+')) ? w1 : new RegExp(w1);
+                const w2 = get_widget_or_input_values(node,2);
+                const r2 = (w2 && w2!=".*") ? new RegExp(w2) : null;
+                this.add_ue(node, 0, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], r0, r1, r2, 10);
+            }
+        }
+        if (node.type === "Prompts Everywhere") {
+            for (var i=0; i<2; i++) {
+                const connection = get_connection(node, i);
+                if (connection.link) this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], 
+                    undefined, new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]), undefined, 5);
+            }
+        }
+        if (node.type === "Anything Everywhere") {
+            const connection = get_connection(node, 0);
+            if (connection.link) this.add_ue(node, 0, connection.type, [connection.link.origin_id.toString(),connection. link.origin_slot], undefined, undefined, undefined, 2);
+        }
+        if (node.type === "Anything Everywhere3") {
+            for (var i=0; i<3; i++) {
+                const connection = get_connection(node, i);
+                if (connection.link) this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot]);
+            }
+        }
     }
 }
 

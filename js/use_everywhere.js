@@ -9,6 +9,7 @@ import { node_menu_settings, canvas_menu_settings, non_ue_menu_settings, SETTING
 import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
+import { node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 
 /*
 The ui component that looks after the link rendering
@@ -45,9 +46,13 @@ app.registerExtension({
                 if (this.type=="Anything Everywhere?" && slot!=0) {
                     // don't do anything for the regexs
                 } else {
-                    const type = (connect && link_info) ? get_real_node(link_info?.origin_id)?.outputs[link_info?.origin_slot]?.type : undefined;
-                    this.input_type[slot] = type;
-                    if (link_info) link_info.type = type ? type : "*";
+                    var type = '*'
+                    if (connect && link_info) {
+                        const connected_type = get_real_node(link_info.origin_id, node_graph(this))?.outputs[link_info.origin_slot]?.type
+                        if (connected_type) type = connected_type;
+                    };
+                    this.inputs[slot].type = type;
+                    if (link_info) link_info.type = type
                     update_input_label(this, slot, app);
                 }
             }
@@ -125,7 +130,7 @@ app.registerExtension({
 
         node.IS_UE = is_UEnode(node);
         if (node.IS_UE) {
-            node.input_type = [undefined, undefined, undefined]; // for dynamic input types       
+            //node.input_type = [undefined, undefined, undefined]; // for dynamic input types       
 
             // If a widget on a UE node is edited, link list is dirty
             inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${node.id}`);
@@ -273,7 +278,7 @@ app.registerExtension({
         const original_graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
             if (prompt_being_queued) {
-                return await graphAnalyser.graph_to_prompt( graphAnalyser.analyse_graph(true, true) );
+                return await graphAnalyser.graph_to_prompt(  );
             } else {
                 return await original_graphToPrompt.apply(app, arguments);
             }
@@ -316,8 +321,8 @@ app.registerExtension({
 
         const original_subgraph = app.graph.convertToSubgraph
         app.graph.convertToSubgraph = function () {
-            const cur_list = graphAnalyser.analyse_graph(true, true)
-            const mods = convert_to_links(cur_list, -1);
+            const cur_list = graphAnalyser.wait_to_analyse_visible_graph()
+            const mods = convert_to_links(cur_list, visible_graph());
             const r = original_subgraph.apply(this, arguments);
             mods.restorer()
             return r
