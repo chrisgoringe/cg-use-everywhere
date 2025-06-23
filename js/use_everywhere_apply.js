@@ -13,7 +13,7 @@ function _convert_to_links(ue, added_links, removed_links) {
         const input_node_id = st.node.id;
         const input_node = get_real_node(input_node_id, ue.graph);
         const input_index = st.input_index;
-        if (input_node.inputs[input_index].link) {
+        if (input_node.inputs[input_index].link) { // why would this be happening?
             const llink = ue.graph.links[input_node.inputs[input_index].link]
             removed_links.push( {...llink} )
         }
@@ -23,18 +23,11 @@ function _convert_to_links(ue, added_links, removed_links) {
                           `${output_node_id}[${output_index}] -> ` +
                           `${input_node_id}[${input_index}].`);
         else { // Memorize the links we are adding to remove them later
-            if (added_links) added_links.push(new_link.id);
+            if (added_links) added_links.push(new_link);
             Logger.log_info(`  -> ${display_name(st.node)}, ${st.input.name} ` +
                                            `(${st.node.id}.${st.input_index}) (ID: ${new_link.id})`);
         }
     });
-}
-
-function find_link_to_subgraph_node(id) {
-    const last_node = app.graph._nodes_by_id[app.graph.last_node_id];
-    const the_input = last_node.inputs.find(input => input.linkIds.includes(id));
-    if (!the_input) throw new Error(`Link ID ${id} not found in inputs of most recently added node`);
-    return the_input.link
 }
 
 function convert_to_links(ues, control_node, graph) {
@@ -55,13 +48,24 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
     });
 
     const restorer = function() {
-        added_links.forEach(id => { 
+        added_links.forEach(added_link => { 
+            var id = added_link.id
             try {
-                if (graph.links[id]) {
-                    graph.removeLink(id);   // the link still exists, so remove it
-                } else {
-                    id = find_link_to_subgraph_node(id)
-                    graph.removeLink(id)
+                if (graph.links[id]) { // link still in this graph unchanged
+                    graph.removeLink(id);  
+                } else { 
+                    const new_subgraph_node = graph._nodes_by_id[graph.last_node_id];
+                    const link_to_new_node = new_subgraph_node?.inputs.find(input => input.linkIds.includes(id))?.link
+                    if (link_to_new_node) { // link to newly created subgraph node
+                        graph.removeLink(link_to_new_node)
+                    } else {
+                        const new_subgraph = new_subgraph_node.subgraph;
+                        if (new_subgraph.links[id]) {
+                            new_subgraph.removeLink(id)
+                        } else {
+                            Logger.log_problem(`Failed to remove ${added_link}`)
+                        }
+                    }
                 }
             } catch (e) {
                 Logger.log_error(e);
