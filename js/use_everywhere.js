@@ -312,6 +312,11 @@ app.registerExtension({
             set: (v)=>{app.canvas.__node_over = v; linkRenderController.node_over_changed(v)}   
         } )
 
+        app.canvas.canvas.addEventListener('litegraph:set-graph', ()=>{
+            linkRenderController.mark_link_list_outdated()
+            setTimeout(()=>{app.canvas.setDirty(true,true)},200)
+        })
+
         if (false) add_debug();
 
         const export_api_label = Array.from(document.getElementsByClassName('p-menubar-item-label')).find((e)=>e.innerText=='Export (API)')
