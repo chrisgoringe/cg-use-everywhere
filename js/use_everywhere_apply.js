@@ -48,6 +48,7 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
     });
 
     const restorer = function() {
+        const links_to_subgraph = new Set()
         added_links.forEach(added_link => { 
             var id = added_link.id
             try {
@@ -57,7 +58,9 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
                     const new_subgraph_node = graph._nodes_by_id[graph.last_node_id];
                     const link_to_new_node = new_subgraph_node?.inputs.find(input => input.linkIds.includes(id))?.link
                     if (link_to_new_node) { // link to newly created subgraph node
-                        graph.removeLink(link_to_new_node)
+                        links_to_subgraph.add(link_to_new_node)
+                        // remove below - but need to avoid trying twice 
+                        // graph.removeLink(link_to_new_node)
                     } else {
                         const new_subgraph = new_subgraph_node.subgraph;
                         if (new_subgraph.links[id]) {
@@ -71,6 +74,8 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
                 Logger.log_error(e);
             }
         });
+
+        links_to_subgraph.forEach((link_to_new_node)=>{graph.removeLink(link_to_new_node)})
 
         removed_links.forEach(llink => {
             graph._nodes_by_id[llink.origin_id].connect(llink.origin_slot, graph._nodes_by_id[llink.target_id], llink.target_slot)
