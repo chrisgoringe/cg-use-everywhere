@@ -9,7 +9,7 @@ import { node_menu_settings, canvas_menu_settings, non_ue_menu_settings, SETTING
 import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
-import { node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { get_subgraph_input_type, link_is_from_subgraph_input, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 
 /*
 The ui component that looks after the link rendering
@@ -48,7 +48,12 @@ app.registerExtension({
                 } else {
                     var type = '*'
                     if (connect && link_info) {
-                        const connected_type = get_real_node(link_info.origin_id, node_graph(this))?.outputs[link_info.origin_slot]?.type
+                        var connected_type
+                        if (link_is_from_subgraph_input(link_info)) { // input slot of subgraph
+                            connected_type = get_subgraph_input_type(node_graph(this), link_info.origin_slot)
+                        } else {
+                            connected_type = get_real_node(link_info.origin_id, node_graph(this))?.outputs[link_info.origin_slot]?.type
+                        }
                         if (connected_type) type = connected_type;
                     };
                     this.inputs[slot].type = type;
@@ -159,7 +164,14 @@ app.registerExtension({
 
     // When a graph node is loaded convert it if needed
     loadedGraphNode(node) { 
-        if (graphConverter.running_116_plus()) { graphConverter.convert_if_pre_116(node); }
+        if (graphConverter.running_116_plus()) { 
+            graphConverter.convert_if_pre_116(node);
+            if (node.isSubgraphNode()) {
+                node.subgraph.nodes.forEach((n) => {
+                    graphConverter.convert_if_pre_116(n);
+                })
+            }
+         }
     },
 
 	async setup() {

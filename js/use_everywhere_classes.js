@@ -26,10 +26,16 @@ class UseEverywhere {
         Object.assign(this, arguments[0]);
         if (this.priority === undefined) this.priority = 0;
         if (this.graph === undefined) this.graph = visible_graph();
+
         const from_node = get_real_node(this?.output[0], this.graph);
         const to_node = get_real_node(this?.controller.id, this.graph)
         try {
-            if (this.control_node_input_index>=0) {
+            if (this.output[0]==-10) {
+                this.description = `source subgraph input slot ${this?.output[1]} ` +
+                                `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index].name} (${this?.controller.id}.${this?.control_node_input_index}) ` +
+                                `"${this.type}" <-  (priority ${this.priority})`;
+            }
+            else if (this.control_node_input_index>=0) {
                 this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]].name} (${this?.output[0]}.${this?.output[1]}) ` +
                                 `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index].name} (${this?.controller.id}.${this?.control_node_input_index}) ` +
                                 `"${this.type}" <-  (priority ${this.priority})`;
@@ -106,7 +112,7 @@ class UseEverywhere {
 
 function validity_errors(params) {
     if (!node_is_live(params.controller)) return `UE node ${params.output[0]} is not alive`;
-    if (!node_is_live(get_real_node(params.output[0], params.graph))) return `upstream node ${params.output[0]} is not alive`;
+    if (params.output[0]!=-10 && !node_is_live(get_real_node(params.output[0], params.graph))) return `upstream node ${params.output[0]} is not alive`;
     return "";
 }
 
@@ -134,31 +140,27 @@ class UseEverywhereList {
             priority: priority, 
             graph: node_graph(node),
         };
-        const real_node = get_real_node(node.id, graph);
-        if (!real_node) {
-            Logger.log_problem(`Node ${node.id} not found`, params);
-            return;
-        }
-        if (real_node.properties.group_restricted == 1) {
+
+        if (node.properties.group_restricted == 1) {
             params.restrict_to = nodes_in_my_group(node);
             params.priority += 0.1;
         }
-        if (real_node.properties.group_restricted == 2) {
+        if (node.properties.group_restricted == 2) {
             params.restrict_to = nodes_not_in_my_group(node);
             params.priority += 0.1;
         }
-        if (real_node.properties.color_restricted == 1) {
+        if (node.properties.color_restricted == 1) {
             params.restrict_to = nodes_my_color(node, params.restrict_to);
             params.priority += 0.3;
         }
-        if (real_node.properties.color_restricted == 2) {
+        if (node.properties.color_restricted == 2) {
             params.restrict_to = nodes_not_my_color(node, params.restrict_to);
             params.priority += 0.3;
         }
         if (group_regex) {
             params.restrict_to = nodes_in_groups_matching(group_regex, params.restrict_to, graph);
         }
-        if (real_node.properties["priority_boost"]) params.priority += real_node.properties["priority_boost"];
+        if (node.properties["priority_boost"]) params.priority += node.properties["priority_boost"];
         
         var error = ""
         var ue = null;

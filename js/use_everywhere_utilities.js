@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { GroupNodeHandler } from "../core/groupNode.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { link_is_from_subgraph_input, node_graph, visible_graph, wrap_input } from "./use_everywhere_subgraph_utils.js";
 
 /*
 Return the node object for this node_id. 
@@ -9,6 +9,7 @@ Return the node object for this node_id.
 function get_real_node(node_id, graph) {
     if (!graph) graph = visible_graph()
     const nid = node_id.toString();
+    if (nid==-10) return wrap_input(graph.inputNode); // special case for subgraph input
     return graph._nodes_by_id[nid];
 }
 
@@ -125,8 +126,14 @@ class GraphConverter {
         // set types to match
         node.inputs.forEach((input) => {
             if (input.type=='*') {
+                const graph = node_graph(node);
                 if (input.link) {
-                    input.type = node_graph(node).links[input.link].type;
+                    const llink = graph.links[input.link];
+                    if (link_is_from_subgraph_input(llink)) {
+                        input.type = get_subgraph_input_type(graph, llink.origin_slot);
+                    } else {
+                        input.type = llink.type;
+                    }
                 } else {
                     input.type = (input.label && input.label!='anything') ? input.label : input.name
                 }
@@ -266,6 +273,7 @@ If either type or original link is null, or if the upstream thread ends, return 
 function handle_bypass(original_link, type, graph) {
     if (!type || !original_link) return null;
     var link = original_link;
+    if (link_is_from_subgraph_input(link)) return link
     var parent = get_real_node(link.origin_id, graph);
     if (!parent) return null;
     while (node_is_bypassed(parent)) {

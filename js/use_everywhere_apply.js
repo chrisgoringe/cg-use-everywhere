@@ -14,7 +14,7 @@ function _convert_to_links(ue, added_links, removed_links) {
         const input_node = get_real_node(input_node_id, ue.graph);
         const input_index = st.input_index;
         if (input_node.inputs[input_index].link) {
-            const llink = app.graph.links[input_node.inputs[input_index].link]
+            const llink = ue.graph.links[input_node.inputs[input_index].link]
             removed_links.push( {...llink} )
         }
         const new_link = output_node.connect(output_index, input_node, input_index);
