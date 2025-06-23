@@ -9,7 +9,13 @@ export function visible_graph_id() { return visible_graph().id }
 export function node_graph(node)    { return node.graph }
 export function node_graph_id(node) { return node_graph(node).id }
 
-export function in_visible_graph(node) { return node_graph_id(node) == visible_graph_id() }
+export function in_visible_graph(node) { 
+    try {
+        return node_graph_id(node) == visible_graph_id() 
+    } catch {
+        return false
+    }
+}
 
 export function get_subgraph_input_type(graph, slot) { return graph.inputNode.slots[slot].type }
 export function link_is_from_subgraph_input(link) { return link.origin_id==-10 }
