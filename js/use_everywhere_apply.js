@@ -23,7 +23,10 @@ function _convert_to_links(ue, added_links, removed_links) {
                           `${output_node_id}[${output_index}] -> ` +
                           `${input_node_id}[${input_index}].`);
         else { // Memorize the links we are adding to remove them later
-            if (added_links) added_links.push(new_link);
+            if (added_links) {
+                new_link.control_node = ue.controller;
+                added_links.push(new_link);
+            }
             Logger.log_info(`  -> ${display_name(st.node)}, ${st.input.name} ` +
                                            `(${st.node.id}.${st.input_index}) (ID: ${new_link.id})`);
         }
@@ -51,7 +54,7 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
         const links_within_graph_ids = new Set()
         const links_within_subgraph_ids = new Set()
         const links_into_subgraph_ids = new Set()
-        const links_out_of_subgraph_ids = new Set()
+        const links_out_of_subgraph = new Set()
         const problem_links = new Set()
 
         const new_subgraph_node = graph._nodes_by_id[graph.last_node_id];
@@ -69,7 +72,7 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
                     } else {
                         if (new_subgraph.links[id]) {
                             if (new_subgraph.links[id].target_id==-20) {
-                                links_out_of_subgraph_ids.add(id)
+                                links_out_of_subgraph.add(added_link)
                             } else {
                                 links_within_subgraph_ids.add(id)
                             }
@@ -82,13 +85,27 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
             }
         });
 
+        links_out_of_subgraph.forEach((llink)=>{
+            const control_node_id = llink.control_node?.id
+            const control_node_in_graph = graph._nodes_by_id[control_node_id]
+            if (control_node_in_graph) {
+                // the control node is outside, so we should disconnect anything else that is connected to the same output of the subgraph node
+                new_subgraph_node.outputs[new_subgraph.links[llink.id].target_slot].links.forEach((link_id)=>{
+                    if (graph.links[link_id].target_id==control_node_id) {
+                        // leave the link to the UE node
+                    } else {
+                        // remove others
+                        links_within_graph_ids.add(link_id)
+                    }
+                })
+            } else {
+                // control node is inside, leave the link, since we can't UE connect to the output panel
+            }
+        })
+
         links_within_graph_ids.forEach((lid)=>{graph.removeLink(lid)})
         links_into_subgraph_ids.forEach((lid)=>{graph.removeLink(lid)})
         links_within_subgraph_ids.forEach((lid)=>{new_subgraph.removeLink(lid)})
-
-        // links_out_of_subgraph we leave; they connect to the output panel
-        // and that will have been connected to all nodes we used to broadcast to
-        // so those UE links have been made 'real' externally
 
         if (problem_links.size>0) {
             Logger.log_problem("Failed to work out how to remove some temporary links:", problem_links)
