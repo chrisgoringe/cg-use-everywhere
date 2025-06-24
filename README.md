@@ -12,42 +12,46 @@ Shameless plug for my other nodes -> Check out [Image Picker](https://github.com
 
 ---
 
-# Update for ComfyUI front end 1.16 and above
+# Update for ComfyUI front end (version TBC) - subgraphs
 
-ComfyUI front end 1.16 made a major change to the way that inputs and widgets work, which had a significant impact on the UE nodes.
+With the addition of subgraphs, group nodes are no longer supported in UE from 6.3 onwards.
 
-A widget is no longer converted to an input in order to connect to it; instead, you just connect an output to it, and it converts.
+Instead, UE 6.3 has the following support for subgraphs:
 
-This is quite cool - except that it meant that there was no way for UE to tell if a widget was supposed to be an empty input for UE to feed.
+- UE nodes can be used in the main graph and in subgraphs. 
+- UE nodes only broadcast within the graph or subgraph they are in. 
+- Subgraph nodes are just nodes. You can connect UE nodes to their outputs, and UE links will connect to their inputs.
+- Within a subgraph you can connect from the input panel to a UE node.
+- UE nodes within the subgraph will *not* broadcast to the output panel.
+- When you convert a set of nodes to a subgraph, UE links will work as long as:
+  - the UE node (Control) and the node feeding it (Source) are both in the subgraph, or
+  - neither the Source nor Control are in the subgraph, or
+  - the Source is in the subgraph, and the Control is not, and no Target nodes are in the subgraph
 
-So there is a new mechanism for this. Here's a picture of a node that I have right-clicked:
 
-![116](docs/116.png)
+## Subgraph creation
 
-Things to notice:
+There are three nodes involved in every UE link: 
+- Source (the link sending the data), 
+- Control (the UE node connected to the source), 
+- Target (the node that is receiving the data as an input)
 
-- There is a new menu `UE Connectable Widgets` which lists all the widgets. Those marked as connectable have a green bar to the left of the name.
-  - Select a widget to toggle its value
-- Next to the widget, where an input would be, the connectable widgets have a graphical indication of their state.
-  - The smaller dark circle (next to steps) indicate a connectable node which is not connected (widget value will be used)
-  - The light circle (next to cfg) and greying out the widget indicates that a UE node will provide the value
-  - No icon (all the other widgets) indicates that they are not UE connectable
-- Other inputs still have the indications of normal connection or UE connection (here model is a UE connection)
+This is how those cases are treated:
 
-You'll probably find that turning the `showlinks` option on helps, and the `highlight` option is required for those widget indicators which help a lot.
+|Support|Source|Control|Target||
+|-|-|-|-|-|
+|Yes|Graph|Graph|Graph|Nothing changes|
+|Yes|Graph|Graph|Subgraph|The subgraph will have inputs for the data; in the subgraph the input panel is connected to the Target with a real link|
+|No|Graph|Subgraph|Graph|Not supported|
+|No*|Graph|Subgraph|Subgraph|Not supported|
+|Yes|Subgraph|Graph|Graph|The subgraph will be connected to the Control|
+|No|Subgraph|Graph|Subgraph|Not supported|
+|Yes|Subgraph|Subgraph|Graph|The Source will be connected to the Control *and* the output panel in the subgraph, the output will be connected to the Target with a real link|
+|Yes|Subgraph|Subgraph|Subgraph|All nodes will be connected in the subgraph as they were in the graph|
 
-![options116](docs/options116.png)
+No* indicates a case that does not work, but might get implemented.
 
-Hopefully old workflows will be automatically converted when you load them. Hopefully.
-
-## Naming widgets
-
-The `Prompts Everywhere`, `Seed Everywhere`, and `Anything Everywhere?` all make use of the name of an input. On some occasions this might mean you want to rename an input.
-
-For an input that can't be a widget, that's trivial - right click on the input dot and select `Rename Slot`. The name will be updated, and the new name displayed next to the dot.
-
-If an input *can* be a widget, you can rename it in the same way, but the new name *does not get displayed*. The name has changed, and the UE nodes will use the new name, but the old name is still shown. I consider this to be a bug in the Comfy front-end, and have raised an issue [here](https://github.com/Comfy-Org/ComfyUI_frontend/issues/3654). Unfortunately it appears that Comfy UI is going to remove the ability to rename a widget entirely, so best to avoid using widget input names if at all possible.
-
+No indicates a case I'm unlikely ever to support
 
 ---
 
@@ -74,6 +78,9 @@ UE nodes mostly work with group nodes. But there are a couple of important thing
 - when you create a group node the input names and node names can change. This might break UE? regex connections.
 
 ## Latest updates
+
+6.3 June/July 2025
+- support for ComfyUI subgraphs
 
 6.1 (May 2025)
 - Mostly some bug-fixes (#216, #217, #300)
@@ -255,3 +262,43 @@ Bypassing and disabling nodes works, but with one catch. If you have a UE nodes 
 |![1](docs/bypass_catch1.png)|![2](docs/bypass_catch2.png)|
 
 This is unlikely to be fixed, but should be fairly easy to avoid!
+
+
+---
+# Some older information
+
+# Update for ComfyUI front end 1.16 and above
+
+ComfyUI front end 1.16 made a major change to the way that inputs and widgets work, which had a significant impact on the UE nodes.
+
+A widget is no longer converted to an input in order to connect to it; instead, you just connect an output to it, and it converts.
+
+This is quite cool - except that it meant that there was no way for UE to tell if a widget was supposed to be an empty input for UE to feed.
+
+So there is a new mechanism for this. Here's a picture of a node that I have right-clicked:
+
+![116](docs/116.png)
+
+Things to notice:
+
+- There is a new menu `UE Connectable Widgets` which lists all the widgets. Those marked as connectable have a green bar to the left of the name.
+  - Select a widget to toggle its value
+- Next to the widget, where an input would be, the connectable widgets have a graphical indication of their state.
+  - The smaller dark circle (next to steps) indicate a connectable node which is not connected (widget value will be used)
+  - The light circle (next to cfg) and greying out the widget indicates that a UE node will provide the value
+  - No icon (all the other widgets) indicates that they are not UE connectable
+- Other inputs still have the indications of normal connection or UE connection (here model is a UE connection)
+
+You'll probably find that turning the `showlinks` option on helps, and the `highlight` option is required for those widget indicators which help a lot.
+
+![options116](docs/options116.png)
+
+Hopefully old workflows will be automatically converted when you load them. Hopefully.
+
+## Naming widgets
+
+The `Prompts Everywhere`, `Seed Everywhere`, and `Anything Everywhere?` all make use of the name of an input. On some occasions this might mean you want to rename an input.
+
+For an input that can't be a widget, that's trivial - right click on the input dot and select `Rename Slot`. The name will be updated, and the new name displayed next to the dot.
+
+If an input *can* be a widget, you can rename it in the same way, but the new name *does not get displayed*. The name has changed, and the UE nodes will use the new name, but the old name is still shown. I consider this to be a bug in the Comfy front-end, and have raised an issue [here](https://github.com/Comfy-Org/ComfyUI_frontend/issues/3654). Unfortunately it appears that Comfy UI is going to remove the ability to rename a widget entirely, so best to avoid using widget input names if at all possible.
