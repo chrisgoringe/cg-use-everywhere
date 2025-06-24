@@ -20,10 +20,10 @@ class Logger {
 
     static log_error(message) { console.error(message) }
 
-    static log(message, array, limited) {    
+    static log(message, foreachable, limited) {    
         if (limited && Logger.check_limited()) return
         console.log(message);
-        if (array) for (var i=0; i<array.length; i++) { console.log(array[i]) }
+        foreachable?.forEach((x)=>{console.log(x)})
     }
 
     static check_limited() {

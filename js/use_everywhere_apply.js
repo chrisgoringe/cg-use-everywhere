@@ -48,34 +48,51 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
     });
 
     const restorer = function() {
-        const links_to_subgraph = new Set()
+        const links_within_graph_ids = new Set()
+        const links_within_subgraph_ids = new Set()
+        const links_into_subgraph_ids = new Set()
+        const links_out_of_subgraph_ids = new Set()
+        const problem_links = new Set()
+
+        const new_subgraph_node = graph._nodes_by_id[graph.last_node_id];
+        const new_subgraph = new_subgraph_node?.subgraph;
+
         added_links.forEach(added_link => { 
             var id = added_link.id
             try {
-                if (graph.links[id]) { // link still in this graph unchanged
-                    graph.removeLink(id);  
+                if (graph.links[id]) {
+                    links_within_graph_ids.add(id);  
                 } else { 
-                    const new_subgraph_node = graph._nodes_by_id[graph.last_node_id];
-                    const link_to_new_node = new_subgraph_node?.inputs.find(input => input.linkIds.includes(id))?.link
-                    if (link_to_new_node) { // link to newly created subgraph node
-                        links_to_subgraph.add(link_to_new_node)
-                        // remove below - but need to avoid trying twice 
-                        // graph.removeLink(link_to_new_node)
+                    const link_to_subgraph_node = new_subgraph_node?.inputs.find(input => input.linkIds.includes(id))?.link
+                    if (link_to_subgraph_node) {
+                        links_into_subgraph_ids.add(link_to_subgraph_node)
                     } else {
-                        const new_subgraph = new_subgraph_node.subgraph;
                         if (new_subgraph.links[id]) {
-                            new_subgraph.removeLink(id)
-                        } else {
-                            Logger.log_problem(`Failed to remove ${added_link}`)
-                        }
+                            if (new_subgraph.links[id].target_id==-20) {
+                                links_out_of_subgraph_ids.add(id)
+                            } else {
+                                links_within_subgraph_ids.add(id)
+                            }
+                        } else problem_links.add(added_link)
                     }
                 }
             } catch (e) {
+                problem_links.add(added_link)
                 Logger.log_error(e);
             }
         });
 
-        links_to_subgraph.forEach((link_to_new_node)=>{graph.removeLink(link_to_new_node)})
+        links_within_graph_ids.forEach((lid)=>{graph.removeLink(lid)})
+        links_into_subgraph_ids.forEach((lid)=>{graph.removeLink(lid)})
+        links_within_subgraph_ids.forEach((lid)=>{new_subgraph.removeLink(lid)})
+
+        // links_out_of_subgraph we leave; they connect to the output panel
+        // and that will have been connected to all nodes we used to broadcast to
+        // so those UE links have been made 'real' externally
+
+        if (problem_links.size>0) {
+            Logger.log_problem("Failed to work out how to remove some temporary links:", problem_links)
+        }
 
         removed_links.forEach(llink => {
             graph._nodes_by_id[llink.origin_id].connect(llink.origin_slot, graph._nodes_by_id[llink.target_id], llink.target_slot)
