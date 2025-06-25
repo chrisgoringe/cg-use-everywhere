@@ -20,7 +20,7 @@ class GraphAnalyser extends Pausable {
     }
 
     async graph_to_prompt(cur_list) {
-        var p;
+        var p = await this.original_graphToPrompt.apply(app);;
         // Convert the virtual links into real connections
         this.pause('graph_to_prompt')
         try { // For each UseEverywhere object add its connections
