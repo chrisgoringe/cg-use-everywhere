@@ -37,6 +37,7 @@ function find_link_to_subgraph_node(id) {
 }
 
 function convert_to_links(ues, control_node_id) {
+    if (!ues?.ues) return {restorer:function(){}, added_links:[]}
     const added_links = []
     const removed_links = []
     ues.ues.forEach((ue)=> {
