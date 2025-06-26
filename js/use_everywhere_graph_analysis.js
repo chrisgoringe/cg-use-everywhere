@@ -43,6 +43,11 @@ class GraphAnalyser extends Pausable {
             this.unpause()
         }
 
+        if (!p) {
+            Logger.log_problem("graph_to_prompt_fallback")
+            p = await this.original_graphToPrompt.apply(app);
+        }
+        
         return p;
     }
 
