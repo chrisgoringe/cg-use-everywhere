@@ -23,7 +23,11 @@ class Logger {
     static log(message, foreachable, limited) {    
         if (limited && Logger.check_limited()) return
         console.log(message);
-        foreachable?.forEach((x)=>{console.log(x)})
+        try {
+            foreachable?.forEach((x)=>{console.log(x)})
+        } catch {
+            let a;
+        }
     }
 
     static check_limited() {
@@ -94,12 +98,6 @@ class GraphConverter {
     }
 
     clean_ue_node(node) {
-        const gpData = GroupNodeHandler.getGroupData(node)
-        const isGrp  = !!gpData;
-        if (isGrp) {
-            let a;
-        }
-        
         var expected_inputs = 1
         if (node.type == "Seed Everywhere") expected_inputs = 0
         if (node.type == "Prompts Everywhere") expected_inputs = 2
@@ -107,8 +105,8 @@ class GraphConverter {
         if (node.type == "Anything Everywhere?") expected_inputs = 4
 
         // remove all the 'anything' inputs (because they may be duplicated)
-        const removed = node.inputs.filter(i=>i.label=='anything')
-        node.inputs   = node.inputs.filter(i=>i.label!='anything') 
+        const removed = node.inputs.filter(i=>(i.label=='anything' || i.label=='*'))
+        node.inputs   = node.inputs.filter(i=>(i.label!='anything' && i.label!='*')) 
         // add them back as required
         while (node.inputs.length < expected_inputs) { node.inputs.push(removed.pop()) }
         // the input comes before the regex widgets in UE?
@@ -119,7 +117,7 @@ class GraphConverter {
         }
         // fix the localized names
         node.inputs = node.inputs.map((input) => {
-            if (input.localized_name=='anything') input.localized_name = input.name
+            if (input.localized_name.startsWith('anything')) input.localized_name = input.name
             return input;
         })
 
