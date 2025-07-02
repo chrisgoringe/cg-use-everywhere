@@ -21,28 +21,28 @@ Inject a call to linkRenderController.mark_list_link_outdated into a method with
 If object is undefined, do nothing.
 The injection is added at the end of the existing method (if the method didn't exist, it is created).
 */
-function inject_outdating_into_objects(array, methodname, tracetext) {
+function inject_outdating_into_objects (array, methodname, tracetext) {
     if (array) {
         array.forEach((object) => { inject_outdating_into_object_method(object, methodname, tracetext); })
     }
 }
-function inject_outdating_into_object_method(object, methodname, tracetext) {
+function inject_outdating_into_object_method (object, methodname, tracetext) {
     if (object) inject(object, methodname, tracetext, linkRenderController.mark_link_list_outdated, linkRenderController);
 }
 
 app.registerExtension({
-	name: "cg.customnodes.use_everywhere",
-    settings: SETTINGS, 
+    name: "cg.customnodes.use_everywhere",
+    settings: SETTINGS,
 
-    async beforeRegisterNodeDef(nodeType, nodeData, app) {
+    async beforeRegisterNodeDef (nodeType, nodeData, app) {
         /*
         When a node is connected or unconnected, the link list is dirty.
         If it is a UE node, we need to update it as well
         */
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
-        nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {        
-            if (this.IS_UE && side==1) { // side 1 is input
-                if (this.type=="Anything Everywhere?" && slot!=0) {
+        nodeType.prototype.onConnectionsChange = function (side, slot, connect, link_info, output) {
+            if (this.IS_UE && side == 1) { // side 1 is input
+                if (this.type == "Anything Everywhere?" && slot != 0) {
                     // don't do anything for the regexs
                 } else {
                     const type = (connect && link_info) ? get_real_node(link_info?.origin_id)?.outputs[link_info?.origin_slot]?.type : undefined;
@@ -60,14 +60,14 @@ app.registerExtension({
         We add to this list, and also insert a link list outdate to everything.
         */
         const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
-        nodeType.prototype.getExtraMenuOptions = function(_, options) {
+        nodeType.prototype.getExtraMenuOptions = function (_, options) {
             getExtraMenuOptions?.apply(this, arguments);
             if (is_UEnode(this)) {
                 node_menu_settings(options, this);
             } else {
                 non_ue_menu_settings(options, this);
             }
-            inject_outdating_into_objects(options,'callback',`menu option on ${this.id}`);
+            inject_outdating_into_objects(options, 'callback', `menu option on ${this.id}`);
         }
 
 
@@ -95,31 +95,31 @@ app.registerExtension({
         }
     },
 
-    async nodeCreated(node) {
+    async nodeCreated (node) {
         if (!node.__mode) {
             node.__mode = node.mode
             defineProperty(node, "mode", {
-                get: ( )=>{return node.__mode},
-                set: (v)=>{node.__mode = v; node.afterChangeMade?.('mode', v);}            
+                get: () => { return node.__mode },
+                set: (v) => { node.__mode = v; node.afterChangeMade?.('mode', v); }
             })
         }
         if (!node.__bgcolor) {
             node.__bgcolor = node.bgcolor
-            defineProperty(node,"bgcolor", {
-                get: ( )=>{return node.__bgcolor},
-                set: (v)=>{node.__bgcolor = v; node.afterChangeMade?.('bgcolor', v);}                       
+            defineProperty(node, "bgcolor", {
+                get: () => { return node.__bgcolor },
+                set: (v) => { node.__bgcolor = v; node.afterChangeMade?.('bgcolor', v); }
             })
         }
         const acm = node.afterChangeMade
         node.afterChangeMade = (p, v) => {
-            acm?.(p,v)
+            acm?.(p, v)
             //if (p==='bgcolor') {
             //    if (node._being_drawn) return; // the bgcolor gets set by the built in node draw...
             //    linkRenderController.mark_link_list_outdated();
             //}
-            if (p==='mode') {
+            if (p === 'mode') {
                 linkRenderController.mark_link_list_outdated();
-                node.widgets?.forEach((widget) => {widget.onModeChange?.(v)}); // no idea why I have this?
+                node.widgets?.forEach((widget) => { widget.onModeChange?.(v) }); // no idea why I have this?
             }
         }
 
@@ -128,11 +128,11 @@ app.registerExtension({
             node.input_type = [undefined, undefined, undefined]; // for dynamic input types       
 
             // If a widget on a UE node is edited, link list is dirty
-            inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${node.id}`);
+            inject_outdating_into_objects(node.widgets, 'callback', `widget callback on ${node.id}`);
 
             // draw the indication of group restrictions
             const original_onDrawTitleBar = node.onDrawTitleBar;
-            node.onDrawTitleBar = function(ctx, title_height) {
+            node.onDrawTitleBar = function (ctx, title_height) {
                 original_onDrawTitleBar?.apply(this, arguments);
                 if (node.properties.group_restricted || node.properties.color_restricted) indicate_restriction(ctx, title_height);
             }
@@ -140,7 +140,7 @@ app.registerExtension({
 
 
         if (is_helper(node)) { // editing a helper node makes the list dirty
-            inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
+            inject_outdating_into_objects(node.widgets, 'callback', `widget callback on ${this.id}`);
         }
 
         // removing a node makes the list dirty
@@ -149,17 +149,17 @@ app.registerExtension({
         graphConverter.on_node_created(node)
 
         // creating a node makes the link list dirty - but give the system a moment to finish
-        setTimeout( ()=>{linkRenderController.mark_link_list_outdated()}, 100 );
-    }, 
+        setTimeout(() => { linkRenderController.mark_link_list_outdated() }, 100);
+    },
 
     // When a graph node is loaded convert it if needed
-    loadedGraphNode(node) { 
+    loadedGraphNode (node) {
         if (graphConverter.running_116_plus()) { graphConverter.convert_if_pre_116(node); }
     },
 
-	async setup() {
+    async setup () {
 
-        api.addEventListener("status", ({detail}) => {
+        api.addEventListener("status", ({ detail }) => {
             if (linkRenderController) linkRenderController.note_queue_size(detail ? detail.exec_info.queue_remaining : 0)
         });
 
@@ -178,13 +178,13 @@ app.registerExtension({
                 app.ui.settings.setSettingValue("Comfy.Validation.Workflows", cvw_was);
             }
         }
-        
+
         /* 
         When we draw a node, render the virtual connection points
         */
         const original_drawNode = LGraphCanvas.prototype.drawNode;
-        LGraphCanvas.prototype.drawNode = function(node, ctx) {
-            
+        LGraphCanvas.prototype.drawNode = function (node, ctx) {
+
             try {
                 linkRenderController.pause('drawNode')
                 const v = original_drawNode.apply(this, arguments);
@@ -194,24 +194,24 @@ app.registerExtension({
                 return v
             } catch (e) {
                 Logger.log_error(e)
-            } finally {          
+            } finally {
                 linkRenderController.unpause()
             }
         }
 
         const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
-        LGraphCanvas.prototype.drawFrontCanvas = function() {
+        LGraphCanvas.prototype.drawFrontCanvas = function () {
             try {
                 linkRenderController.disable_all_connected_widgets(true)
                 return original_drawFrontCanvas.apply(this, arguments);
-            }  catch (e) {
+            } catch (e) {
                 Logger.log_error(e)
             } finally {
                 try {
                     linkRenderController.disable_all_connected_widgets(false)
                 } catch (e) {
                     Logger.log_error(e)
-                } 
+                }
             }
         }
 
@@ -219,7 +219,7 @@ app.registerExtension({
         When we draw connections, do the ue ones as well (logic for on/off is in lrc)
         */
         const drawConnections = LGraphCanvas.prototype.drawConnections;
-        LGraphCanvas.prototype.drawConnections = function(ctx) {
+        LGraphCanvas.prototype.drawConnections = function (ctx) {
             drawConnections?.apply(this, arguments);
             try {
                 linkRenderController.render_all_ue_links(ctx);
@@ -227,7 +227,7 @@ app.registerExtension({
                 Logger.log_error(e)
             }
         }
-        
+
         /* 
         Canvas menu is the right click on backdrop.
         We need to add our options, and hijack the others to mark link list dirty
@@ -237,23 +237,23 @@ app.registerExtension({
             // Add our items to the canvas menu 
             const options = original_getCanvasMenuOptions.apply(this, arguments);
             canvas_menu_settings(options);
-            
+
             //  every menu item makes our list dirty
-            inject_outdating_into_objects(options,'callback',`menu option on canvas`);
+            inject_outdating_into_objects(options, 'callback', `menu option on canvas`);
 
             return options;
         }
 
-                        /*
-        Finding a widget by it's name is something done a lot of times in rendering, 
-        so add a method that caches the names that can be used deep in the rendering code.
+        /*
+Finding a widget by it's name is something done a lot of times in rendering, 
+so add a method that caches the names that can be used deep in the rendering code.
 
-        TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
-        */
-        LGraphNode.prototype._getWidgetByName = function(nm) {
+TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
+*/
+        LGraphNode.prototype._getWidgetByName = function (nm) {
             if (this._widgetNameMap === undefined || !this._widgetNameMap[nm]) {
                 this._widgetNameMap = {}
-                this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
+                this.widgets?.forEach((w) => { this._widgetNameMap[w.name] = w })
             }
             if (!this._widgetNameMap[nm]) {
                 let breakpoint_be_here; // someone is asking for a widget that doesn't exist
@@ -262,18 +262,34 @@ app.registerExtension({
         }
 
 
-	},
+    },
 
-    init() {
+    init () {
         graphAnalyser = GraphAnalyser.instance();
         linkRenderController = LinkRenderController.instance(graphAnalyser);
 
         var prompt_being_queued = false;
 
+        function setPromptBeingQueued (value) {
+            if (window) {
+                window.everywhere_prompt_being_queued = value;
+            } else {
+                prompt_being_queued = value;
+            }
+        }
+
+        function getPromptBeingQueued () {
+            if (window) {
+                return window.everywhere_prompt_being_queued;
+            } else {
+                return prompt_being_queued;
+            }
+        }
+
         const original_graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
-            if (prompt_being_queued) {
-                return await graphAnalyser.graph_to_prompt( graphAnalyser.analyse_graph(true, true) );
+            if (getPromptBeingQueued()) {
+                return await graphAnalyser.graph_to_prompt(graphAnalyser.analyse_graph(true, true));
             } else {
                 return await original_graphToPrompt.apply(app, arguments);
             }
@@ -281,31 +297,30 @@ app.registerExtension({
 
         const original_queuePrompt = app.queuePrompt;
         app.queuePrompt = async function () {
-            prompt_being_queued = true;
+            setPromptBeingQueued(true);
             try {
                 return await original_queuePrompt.apply(app, arguments);
             } finally {
-                prompt_being_queued = false;
+                setPromptBeingQueued(false)
             }
         }
-        
+
         app.canvas.__node_over = app.canvas.node_over;
         defineProperty(app.canvas, 'node_over', {
-            get: ( )=>{return app.canvas.__node_over },
-            set: (v)=>{app.canvas.__node_over = v; linkRenderController.node_over_changed(v)}   
-        } )
+            get: () => { return app.canvas.__node_over },
+            set: (v) => { app.canvas.__node_over = v; linkRenderController.node_over_changed(v) }
+        })
 
         if (false) add_debug();
 
-        const export_api_label = Array.from(document.getElementsByClassName('p-menubar-item-label')).find((e)=>e.innerText=='Export (API)')
+        const export_api_label = Array.from(document.getElementsByClassName('p-menubar-item-label')).find((e) => e.innerText == 'Export (API)')
         if (export_api_label) {
-            export_api_label.addEventListener('click', (e)=>{
+            export_api_label.addEventListener('click', (e) => {
                 const ue_links = app.graph.extra['ue_links'];
-                if (ue_links.length>0) {
-                    if (!confirm("This model contains links added by Use Everywhere which won't work with the API. " + 
-                        "You probably want to use 'Convert all UEs to real links' on the canvas right click menu before saving.\n\n" + 
-                        "Save anyway?")) 
-                    {
+                if (ue_links.length > 0) {
+                    if (!confirm("This model contains links added by Use Everywhere which won't work with the API. " +
+                        "You probably want to use 'Convert all UEs to real links' on the canvas right click menu before saving.\n\n" +
+                        "Save anyway?")) {
                         e.stopImmediatePropagation()
                         e.stopPropagation()
                         e.preventDefault()
@@ -324,13 +339,13 @@ app.registerExtension({
         }
     },
 
-    beforeConfigureGraph() {
+    beforeConfigureGraph () {
         linkRenderController.pause("before configure", 1000)
         graphAnalyser.pause("before configure", 1000)
         graphConverter.graph_being_configured = true
     },
 
-    afterConfigureGraph() {
+    afterConfigureGraph () {
         graphConverter.remove_saved_ue_links()
         graphConverter.graph_being_configured = false
     }
