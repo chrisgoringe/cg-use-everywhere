@@ -111,7 +111,7 @@ class UseEverywhere {
 }
 
 function validity_errors(params) {
-    if (!node_is_live(params.controller)) return `UE node ${params.output[0]} is not alive`;
+    if (!node_is_live(params.controller)) return `UE node ${params.controller.id} is not alive`;
     if (params.output[0]!=-10 && !node_is_live(get_real_node(params.output[0], params.graph))) return `upstream node ${params.output[0]} is not alive`;
     return "";
 }
@@ -174,7 +174,7 @@ class UseEverywhereList {
             this.ues.push(ue);
             Logger.log_detail(`Added ${ue.description}`)
         } else {
-            Logger.log_problem(`Rejected ${ue?.description} because ${error}`, params);
+            Logger.log_problem(`Rejected ${ue?.description} because ${error}`);
         }
     }
 
