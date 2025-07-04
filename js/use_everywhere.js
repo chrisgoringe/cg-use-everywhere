@@ -290,7 +290,7 @@ app.registerExtension({
         const original_graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
             if (prompt_being_queued) {
-                return await graphAnalyser.graph_to_prompt(  );
+                return await graphAnalyser.graph_to_prompt( );
             } else {
                 return await original_graphToPrompt.apply(app, arguments);
             }
@@ -353,7 +353,7 @@ app.registerExtension({
     },
 
     afterConfigureGraph() {
-        graphConverter.remove_saved_ue_links()
+        graphConverter.remove_saved_ue_links_recursively(app.graph)
         graphConverter.graph_being_configured = false
     }
 

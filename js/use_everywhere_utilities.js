@@ -177,11 +177,13 @@ class GraphConverter {
         }
     }
 
-    remove_saved_ue_links() {
-        if (app.graph.extra?.links_added_by_ue) {
-            app.graph.extra.links_added_by_ue.forEach((link) => { app.graph.links.delete(link); })
+    remove_saved_ue_links_recursively(graph) {
+        if (graph.extra?.links_added_by_ue) {
+            graph.extra.links_added_by_ue.forEach((link_id) => { app.graph.links.delete(link_id); })
         }
+        graph.nodes.filter((node)=>(node.subgraph)).forEach((node) => {this.remove_saved_ue_links_recursively(node.subgraph);});
     }
+
 }
 
 export const graphConverter = GraphConverter.instance();

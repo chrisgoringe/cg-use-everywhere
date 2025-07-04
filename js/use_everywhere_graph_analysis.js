@@ -19,9 +19,12 @@ class GraphAnalyser extends Pausable {
         this.latest_ues = null
     }
 
-    analyse_graphs_recursively(graph, mods) {
-        mods.push( convert_to_links( this.analyse_graph(graph), null, graph ) );
-        graph.nodes.filter((node)=>(node.subgraph)).forEach((node) => {this.analyse_graphs_recursively(node.subgraph, mods);});
+    modify_graphs_recursively(graph, mods) {
+        const modifications = convert_to_links( this.analyse_graph(graph), null, graph )
+        mods.push( modifications );
+        if (!graph.extra) graph.extra = {}
+        graph.extra['links_added_by_ue'] = modifications.added_links.map(x=>x.id)
+        graph.nodes.filter((node)=>(node.subgraph)).forEach((node) => {this.modify_graphs_recursively(node.subgraph, mods);});
     }
 
     async graph_to_prompt() {
@@ -29,10 +32,9 @@ class GraphAnalyser extends Pausable {
         this.pause('graph_to_prompt')
         try { 
             const mods = []
-            this.analyse_graphs_recursively(master_graph(), mods);
+            this.modify_graphs_recursively(master_graph(), mods);
 
             // Now create the prompt using the ComfyUI original functionality and the patched graph
-            app.graph.extra['links_added_by_ue'] = mods.added_links;
             p = await this.original_graphToPrompt.apply(app);
             // Remove the added virtual links
             mods.forEach((mod)=>{mod.restorer()})
