@@ -342,11 +342,18 @@ app.registerExtension({
 
         const original_subgraph = app.graph.convertToSubgraph
         app.graph.convertToSubgraph = function () {
-            const cur_list = graphAnalyser.wait_to_analyse_visible_graph()
-            const mods = convert_to_links(cur_list, null, visible_graph());
-            const r = original_subgraph.apply(this, arguments);
-            mods.restorer()
-            return r
+            const ctb_was = graphAnalyser.connect_to_bypassed
+            graphAnalyser.connect_to_bypassed = true
+            try {
+                
+                const cur_list = graphAnalyser.wait_to_analyse_visible_graph()
+                const mods = convert_to_links(cur_list, null, visible_graph());
+                const r = original_subgraph.apply(this, arguments);
+                mods.restorer()
+                return r
+            } finally {
+                graphAnalyser.connect_to_bypassed = ctb_was
+            }
         }
     },
 

@@ -86,7 +86,7 @@ class GraphAnalyser extends Pausable {
 
     analyse_graph(graph) {
         this.ambiguity_messages = [];
-        const treat_bypassed_as_live = settingsCache.getSettingValue("Use Everywhere.Options.connect_to_bypassed")
+        const treat_bypassed_as_live = settingsCache.getSettingValue("Use Everywhere.Options.connect_to_bypassed") || this.connect_to_bypassed
         const live_nodes = graph.nodes.filter((node) => node_is_live(node, treat_bypassed_as_live))
                 
         // Create a UseEverywhereList and populate it from all live (not bypassed) UE nodes
