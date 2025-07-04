@@ -295,6 +295,10 @@ app.registerExtension({
                 return await original_graphToPrompt.apply(app, arguments);
             }
         }
+        
+        app.ue_modified_prompt = async function () {
+            return await graphAnalyser.graph_to_prompt();
+        }
 
         const original_queuePrompt = app.queuePrompt;
         app.queuePrompt = async function () {
