@@ -280,7 +280,7 @@ app.registerExtension({
         }
         
         app.ue_modified_prompt = async function () {
-            return await graphAnalyser.graph_to_prompt();
+            return await graphAnalyser.graph_to_prompt( graphAnalyser.analyse_graph(true, true) );
         }
 
         const original_queuePrompt = app.queuePrompt;
