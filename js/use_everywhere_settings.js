@@ -2,14 +2,14 @@ import { app } from "../../scripts/app.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
-import { has_priority_boost } from "./use_everywhere_utilities.js";
+import { has_priority_boost, VERSION } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 
 export const SETTINGS = [
     {
         id: "Use Everywhere.About",
-        name: "Version 6.3",
+        name: `Version ${VERSION}`,
         type: () => {return document.createElement('span')},
     },  
     {

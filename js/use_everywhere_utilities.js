@@ -1,7 +1,8 @@
 import { app } from "../../scripts/app.js";
-import { GroupNodeHandler } from "../core/groupNode.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { link_is_from_subgraph_input, node_graph, visible_graph, wrap_input } from "./use_everywhere_subgraph_utils.js";
+
+export const VERSION = "7.0"
 
 /*
 Return the node object for this node_id. 
