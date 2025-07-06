@@ -7,7 +7,7 @@ function nodes_in_my_group(node) {
     const nodes_in = new Set();
     node_graph(node)._groups.forEach((group) => {
         if (!app.canvas.selected_group_moving) group.recomputeInsideNodes();
-        if (group._nodes?.find((nd) => { return (nd.id===node_id) } )) {
+        if (group._nodes?.find((nd) => { return (nd.id===node.id) } )) {
             group._nodes.forEach((nd) => { nodes_in.add(nd.id) } )
         }
     });

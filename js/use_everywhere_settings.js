@@ -114,16 +114,6 @@ function submenu(properties, property, options, e, menu, node) {
     }
 }
 
-const GROUP_RESTRICTION_OPTIONS = ["No restrictions", "Send only within group", "Send only not within group"]
-function group_restriction_submenu(value, options, e, menu, node) {
-    submenu(node.properties.ue_properties, "group_restricted", GROUP_RESTRICTION_OPTIONS, e, menu, node);
-}
-
-const COLOR_RESTRICTION_OPTIONS = ["No restrictions", "Send only to same color", "Send only to different color"]
-function color_restriction_submenu(value, options, e, menu, node) {
-    submenu(node.properties.ue_properties, "color_restricted", COLOR_RESTRICTION_OPTIONS, e, menu, node);
-}
-
 function priority_boost_submenu(value, options, e, menu, node) {
     const current = (node.properties.ue_properties["priority_boost"] ? node.properties.ue_properties["priority_boost"] : 0) + 1;
     const submenu = new LiteGraph.ContextMenu(
@@ -214,21 +204,11 @@ export function node_menu_settings(options, node) {
     )
     if (can_regex(node)) options.push(
         {
-            content: "Edit regexes",
+            content: "Edit restrictions",
             callback: edit_regexes,
         }        
     )
     options.push(
-        {
-            content: "Group Restrictions",
-            has_submenu: true,
-            callback: group_restriction_submenu,
-        }, 
-        {
-            content: "Color Restrictions",
-            has_submenu: true,
-            callback: color_restriction_submenu,
-        },
         {
             content: "Convert to real links",
             callback: async () => {
