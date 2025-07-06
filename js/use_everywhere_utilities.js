@@ -408,29 +408,6 @@ export class Pausable {
     on_unpause(){}
 }
 
-const CONVERTED_TYPE = "converted-widget";
-// import {CONVERTED_TYPE} from "../../extensions/core/widgetInputs.js"
-
-/*
-If a widget hasn't been converted, just get its value
-If it has, *try* to go upstream
-
-export function get_widget_or_input_values(node_obj, widget_id) {
-    if (node_obj.widgets[widget_id]?.type.startsWith(CONVERTED_TYPE)) {
-        try {
-            const name = node_obj.widgets[widget_id].name;
-            const input_id = node_obj.inputs.findIndex((input) => input.name==name);
-            const connection = get_connection(node_obj, input_id, "STRING");
-            const upstream_node_obj = get_real_node(connection.link.origin_id.toString());
-            const widget = upstream_node_obj.widgets.find((w) => w.name.toLowerCase() == upstream_node_obj.outputs[connection.link.origin_slot].name.toLowerCase());
-            return widget.value;
-        } catch (error) {
-            return "NOT CONNECTED DONT MATCH";
-        }
-    }
-    return node_obj.widgets[widget_id].value;
-}*/
-
 export function get_connection(node, i, override_type) {
     const graph = node_graph(node)
     const in_link = node?.inputs[i]?.link;

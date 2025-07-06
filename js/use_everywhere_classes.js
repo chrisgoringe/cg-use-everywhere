@@ -240,66 +240,28 @@ class UseEverywhereList {
         });
         return ue_connections;        
     }
-/*
-    all_ue_connections_for(node_id) {
-        const ue_connections = [];
-        this.ues.forEach((ue) => { 
-            ue.sending_to.forEach((st) => {
-                if (get_real_node(st.node.id, ue.graph).id==node_id || get_real_node(ue.controller.id, ue.graph).id==node_id) {
-                    ue_connections.push({
-                        type : ue.type, 
-                        input_index : st.input_index,
-                        control_node : get_real_node(ue.controller.id, ue.graph),
-                        control_node_input_index : ue.control_node_input_index,
-                        sending_to : st.node,
-                    });
-                }
-            });
-        });
-        return ue_connections;   
-    }*/
 
     add_ue_from_node(node) {
-        if (node.type === "Seed Everywhere") this.add_ue(node, -1, "INT", [node.id.toString(),0], 
-                                                        undefined, new RegExp("seed|随机种"), undefined, 5);
+        if (node.type === "Seed Everywhere") {
+            this.add_ue(node, -1, "INT", [node.id.toString(),0], undefined, new RegExp("seed|随机种"), undefined, 5);
     
-        /*if (node.type === "Anything Everywhere?") {
-            const connection = get_connection(node, 0);
-            if (connection.link) {
-                const w0 = get_widget_or_input_values(node,0);
-                const r0 = new RegExp(w0);
-                const w1 = get_widget_or_input_values(node,1);
-                const r1 = (w1.startsWith('+')) ? w1 : new RegExp(w1);
-                const w2 = get_widget_or_input_values(node,2);
-                const r2 = (w2 && w2!=".*") ? new RegExp(w2) : null;
-                this.add_ue(node, 0, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], r0, r1, r2, 10);
-            }
-        }*/
-        if (node.type === "Prompts Everywhere") {
+        } else if (node.type === "Prompts Everywhere") {
             for (var i=0; i<2; i++) {
                 const connection = get_connection(node, i);
                 if (connection.link) this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], 
                     undefined, new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]), undefined, 5);
             }
-        }
 
-        if (node.type === "Anything Everywhere" || node.type === "Anything Everywhere?") {
-            const connection = get_connection(node, 0);
-            if (connection.link) {
-                const w0 = node.properties.ue_properties['title_regex']
-                const r0 = w0 ? new RegExp(w0) : null;
-                const w1 = node.properties.ue_properties['input_regex']
-                const r1 = w1 ? new RegExp(w1) : null;  
-                const w2 = node.properties.ue_properties['group_regex']
-                const r2 = w2 ? new RegExp(w2) : null;
-                this.add_ue(node, 0, connection.type, [connection.link.origin_id.toString(),connection. link.origin_slot], r0,r1,r2, (r0||r1||r2)?10:2);
-            }
-        }
-
-        if (node.type === "Anything Everywhere3") {
-            for (var i=0; i<3; i++) {
+        } else {
+            const w0 = node.properties.ue_properties['title_regex']
+            const r0 = w0 ? new RegExp(w0) : null;
+            const w1 = node.properties.ue_properties['input_regex']
+            const r1 = w1 ? new RegExp(w1) : null;  
+            const w2 = node.properties.ue_properties['group_regex']
+            const r2 = w2 ? new RegExp(w2) : null;
+            for (var i=0; i<node.inputs.length; i++) {
                 const connection = get_connection(node, i);
-                if (connection.link) this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot]);
+                if (connection.link) this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], r0,r1,r2, (r0||r1||r2)?10:2);
             }
         }
     }

@@ -10,7 +10,7 @@ import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { get_subgraph_input_type, link_is_from_subgraph_input, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
-import { convert_ueq_nodes, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
+import { any_restrictions, convert_ueq_nodes, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 
 /*
 The ui component that looks after the link rendering
@@ -143,7 +143,7 @@ app.registerExtension({
             const original_onDrawTitleBar = node.onDrawTitleBar;
             node.onDrawTitleBar = function(ctx, title_height) {
                 original_onDrawTitleBar?.apply(this, arguments);
-                if (node.properties.ue_properties.group_restricted || node.properties.ue_properties.color_restricted) indicate_restriction(ctx, title_height);
+                if (any_restrictions(node)) indicate_restriction(ctx, title_height);
             }
         }
 

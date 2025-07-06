@@ -2,15 +2,16 @@ import { app } from "../../scripts/app.js";
 import { VERSION, version_at_least, is_UEnode, graphConverter } from "./use_everywhere_utilities.js"
 import { LinkRenderController } from "./use_everywhere_ui.js";
 
+const REGEXES = ['title', 'input', 'group']
+
 export function can_regex(node) {
-    return (node.type=="Anything Everywhere" || node.type=="Anything Everywhere?")
+    return (node.type=="Anything Everywhere" || node.type=="Anything Everywhere?" || node.type=="Anything Everywhere3")
 }
 
 export function edit_regexes(a,b,c,d, node) {
-    const names = ['title', 'input', 'group']
     const table = document.createElement('table')
     for (var i=0; i<=2; i++) {
-        const name = names[i]
+        const name = REGEXES[i]
         const row = document.createElement('tr')
         table.appendChild(row)
         const header = document.createElement('th')
@@ -26,6 +27,15 @@ export function edit_regexes(a,b,c,d, node) {
         row.appendChild(input)
     }
     app.ui.dialog.show(table)
+}
+
+export function any_restrictions(node) {
+    var restricted = (node.properties.ue_properties.group_restricted || node.properties.ue_properties.color_restricted)
+    for (var i=0; i<=2; i++) {
+        const reg = node.properties.ue_properties[`${REGEXES[i]}_regex`]
+        restricted = restricted || (reg && reg.length>0)
+    }
+    return restricted
 }
 
 /*
@@ -85,6 +95,9 @@ export function setup_ue_properties_onload(node) {
     }
 }
 
+/*
+Function to change Use Everywhere? nodes into Use Everywhere nodes & hide the widgets...
+*/
 export function convert_ueq_nodes(graph) {
     graph.nodes.filter((node)=>(node.type=="Anything Everywhere?")).forEach((node)=>{
         node.widgets.forEach((w)=>{w.hidden=true})
