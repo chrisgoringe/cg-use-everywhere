@@ -101,7 +101,7 @@ class GraphAnalyser extends Pausable {
                 node.inputs?.forEach((input,index) => {
                     if (is_connected(input, treat_bypassed_as_live, node_graph(node))) return;  
                     if (node.reject_ue_connection && node.reject_ue_connection(input)) return;
-                    if (node._getWidgetByName(input.name) && !(node.properties['widget_ue_connectable'] && node.properties['widget_ue_connectable'][input.name])) return;
+                    if (node._getWidgetByName(input.name) && !(node.properties?.ue_properties?.widget_ue_connectable && node.properties.ue_properties.widget_ue_connectable[input.name])) return;
                     connectable.push({node, input, index});
                 })
             }

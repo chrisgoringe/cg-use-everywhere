@@ -5,6 +5,7 @@ import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
 import { has_priority_boost, VERSION } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { can_regex, edit_regexes } from "./ue_properties.js";
 
 export const SETTINGS = [
     {
@@ -115,20 +116,20 @@ function submenu(properties, property, options, e, menu, node) {
 
 const GROUP_RESTRICTION_OPTIONS = ["No restrictions", "Send only within group", "Send only not within group"]
 function group_restriction_submenu(value, options, e, menu, node) {
-    submenu(node.properties, "group_restricted", GROUP_RESTRICTION_OPTIONS, e, menu, node);
+    submenu(node.properties.ue_properties, "group_restricted", GROUP_RESTRICTION_OPTIONS, e, menu, node);
 }
 
 const COLOR_RESTRICTION_OPTIONS = ["No restrictions", "Send only to same color", "Send only to different color"]
 function color_restriction_submenu(value, options, e, menu, node) {
-    submenu(node.properties, "color_restricted", COLOR_RESTRICTION_OPTIONS, e, menu, node);
+    submenu(node.properties.ue_properties, "color_restricted", COLOR_RESTRICTION_OPTIONS, e, menu, node);
 }
 
 function priority_boost_submenu(value, options, e, menu, node) {
-    const current = (node.properties["priority_boost"] ? node.properties["priority_boost"] : 0) + 1;
+    const current = (node.properties.ue_properties["priority_boost"] ? node.properties.ue_properties["priority_boost"] : 0) + 1;
     const submenu = new LiteGraph.ContextMenu(
         [0,1,2,3,4,5,6,7,8,9],
         { event: e, callback: function (v) { 
-            node.properties["priority_boost"] = parseInt(v);
+            node.properties.ue_properties["priority_boost"] = parseInt(v);
             LinkRenderController.instance().mark_link_list_outdated();
         }, 
         parentMenu: menu, node:node}
@@ -141,7 +142,7 @@ function highlight_selected(submenu_root, node, names) {
     names.forEach((name, i) => {
         const current_element = submenu_root?.querySelector(`:nth-child(${i+1})`);
         if (current_element) {
-            if (node.properties['widget_ue_connectable'][name]) {
+            if (node.properties.ue_properties['widget_ue_connectable'][name]) {
                 current_element.style.borderLeft = "2px solid #484";
             } else {
                 current_element.style.borderLeft = "";
@@ -153,7 +154,8 @@ function highlight_selected(submenu_root, node, names) {
 }
 
 function widget_ue_submenu(value, options, e, menu, node) {
-    if (!(node.properties['widget_ue_connectable'])) node.properties['widget_ue_connectable'] = {};
+    if (!(node.properties.ue_properties)) node.properties.ue_properties = {}
+    if (!(node.properties.ue_properties.widget_ue_connectable)) node.properties.ue_properties.widget_ue_connectable = {};
     
     const linkedWidgets = new Set()
     node.widgets
@@ -170,7 +172,7 @@ function widget_ue_submenu(value, options, e, menu, node) {
     const submenu = new LiteGraph.ContextMenu(
         names,
         { event: e, callback: function (v) { 
-            node.properties['widget_ue_connectable'][v] = !!!node.properties['widget_ue_connectable'][v]; 
+            node.properties.ue_properties.widget_ue_connectable[v] = !!!node.properties.ue_properties.widget_ue_connectable[v]; 
             LinkRenderController.instance().mark_link_list_outdated();
             highlight_selected(this.parentElement, node, names)
             return true; // keep open
@@ -209,6 +211,12 @@ export function node_menu_settings(options, node) {
             has_submenu: true,
             callback: priority_boost_submenu,
         }
+    )
+    if (can_regex(node)) options.push(
+        {
+            content: "Edit regexes",
+            callback: edit_regexes,
+        }        
     )
     options.push(
         {

@@ -1,5 +1,4 @@
 import { Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
-import { ComfyWidgets } from "../../scripts/widgets.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, node_graph } from "./use_everywhere_subgraph_utils.js";
@@ -195,7 +194,7 @@ class LinkRenderController extends Pausable {
         try {
             this.pause('highlight_ue_connections')
             if (!this._list_ready()) return;
-            const unconnected_connectables = node.properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.widget_ue_connectable).filter((name) => (node.properties.widget_ue_connectable[name]))) : new Set()
+            const unconnected_connectables = node.properties?.ue_properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.ue_properties.widget_ue_connectable).filter((name) => (node.properties.ue_properties.widget_ue_connectable[name]))) : new Set()
             node.inputs.filter((input)=>(input.link)).forEach((input) => { unconnected_connectables.delete(input.name) });
 
             if (this.ue_list.all_connected_inputs) {

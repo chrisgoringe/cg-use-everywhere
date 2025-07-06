@@ -12,7 +12,15 @@ Shameless plug for my other nodes -> Check out [Image Picker](https://github.com
 
 ---
 
-# Update for ComfyUI front end (version TBC) - subgraphs
+# 7.0 start of the new UE
+
+Over the next few releases I am aiming to reduce the UE zoo down to a single node that can do everything, but is as easy (or easier) to use than the current nodes.
+
+The first step in this process is merging the `AnythingEverywhere` and `AnythingEverywhere?` nodes by moving the regex restrictions into a separate dialog that can be used by either. In future iterations the group and color restrictions will also move to this dialog (so people find them!)
+
+---
+
+# 6.3 Update for ComfyUI front end (version TBC) - subgraphs
 
 With the addition of subgraphs, group nodes are no longer supported in UE from 6.3 onwards.
 

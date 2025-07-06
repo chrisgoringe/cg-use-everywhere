@@ -5,6 +5,33 @@ import { link_is_from_subgraph_input, node_graph, visible_graph, wrap_input } fr
 export const VERSION = "7.0"
 
 /*
+Return  1 if x is  a   later version than y (or y is not defined)
+Return -1 if x is an earlier version than y (or x is not defined)
+Return  0 if they are the same version 
+*/
+function version_compare(x,y) {
+    if (x==y) return  0
+    if (!y)   return  1
+    if (!x)   return -1
+    const xbits = x.split('.')
+    const ybits = y.split('.')
+    var result = 0
+    for (var i=0; result!=0 && i<Math.min(xbits.length, ybits.length); i++) {
+        if (parseInt(xbits[i]) < parseInt(ybits[i])) result = -1
+        if (parseInt(xbits[i]) > parseInt(ybits[i])) result = 1
+    }
+    if (result==0) {
+        if (xbits.length < ybits.length) result = -1
+        if (xbits.length > ybits.length) result = 1
+    }
+    return result
+}
+
+export function version_at_least(x,y) {
+    return (version_compare(x,y) >= 0)
+}
+
+/*
 Return the node object for this node_id. 
 */
 function get_real_node(node_id, graph) {
@@ -81,21 +108,8 @@ class GraphConverter {
     }
 
     on_node_created(node) {
-        if (this.graph_being_configured) {
-            /*
-            If the graph is being configured, we are still loading old nodes. 
-            These might need to be converted, but we can't do that yet
-            */
-            return;
-        }
-        
-        if (!(node.properties)) node.properties = {};
-        if (node.properties.widget_ue_connectable) {
-            console.log(`already has widget_ue_connectable`)
-            return 
-        }
-        node.properties['widget_ue_connectable'] = {}
-        console.log(`added widget_ue_connectable`)
+        /* now done in ue_properties */
+        return;
     }
 
     clean_ue_node(node) {
@@ -153,25 +167,25 @@ class GraphConverter {
 
     convert_if_pre_116(node) {
         if (!node) return;
-        if (!(node.properties)) node.properties = {};
 
         if (node.IS_UE) this.clean_ue_node(node)
         
-        if (node.properties.widget_ue_connectable) return
+        if (node.properties?.ue_properties?.widget_ue_connectable) return
 
         if (!this.given_message) {
             Logger.log_info(`Graph was saved with a version of ComfyUI before 1.16, so Anything Everywhere will try to work out which widgets are connectable`);
             this.given_message = true;
         }
 
-        node.properties['widget_ue_connectable'] = {}
+        if (!node.properties.ue_properties) node.properties.ue_properties = {}
+        node.properties.ue_properties['widget_ue_connectable'] = {}
         const widget_names = node.widgets?.map(w => w.name) || [];
 
         if (!(this.node_input_map[node.id])) {
             Logger.log_detail(`node ${node.id} (${node.type} has no node_input_map`);
         } else {
             this.node_input_map[node.id].filter((input_name)=>widget_names.includes(input_name)).forEach((input_name) => {
-                node.properties['widget_ue_connectable'][input_name] = true;
+                node.properties.ue_properties['widget_ue_connectable'][input_name] = true;
                 this.did_conversion = true;
                 Logger.log_info(`node ${node.id} widget ${input_name} marked as accepting UE because it was an input when saved`);
             });
@@ -313,6 +327,7 @@ function is_UEnode(node_or_nodeType) {
     const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
     return ((title) && (title.startsWith("Anything Everywhere") || title==="Seed Everywhere" || title==="Prompts Everywhere"))
 }
+
 function is_helper(node_or_nodeType) {
     const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
     return ((title) && (title.startsWith("Simple String")))
@@ -399,7 +414,7 @@ const CONVERTED_TYPE = "converted-widget";
 /*
 If a widget hasn't been converted, just get its value
 If it has, *try* to go upstream
-*/
+
 export function get_widget_or_input_values(node_obj, widget_id) {
     if (node_obj.widgets[widget_id]?.type.startsWith(CONVERTED_TYPE)) {
         try {
@@ -414,7 +429,7 @@ export function get_widget_or_input_values(node_obj, widget_id) {
         }
     }
     return node_obj.widgets[widget_id].value;
-}
+}*/
 
 export function get_connection(node, i, override_type) {
     const graph = node_graph(node)

@@ -10,6 +10,7 @@ import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { get_subgraph_input_type, link_is_from_subgraph_input, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { convert_ueq_nodes, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 
 /*
 The ui component that looks after the link rendering
@@ -83,8 +84,7 @@ app.registerExtension({
 
 
         /*
-        When a UE node is created, we set the group and color restriction properties.
-        We also create pseudo-widgets for all the inputs so that they can be searched
+        When a UE node is created, create pseudo-widgets for all the inputs so that they can be searched
         and to avoid other code throwing errors.
         */
         if (is_UEnode(nodeType)) {
@@ -92,8 +92,6 @@ app.registerExtension({
             nodeType.prototype.onNodeCreated = function () {
                 const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
                 if (!this.properties) this.properties = {}
-                this.properties.group_restricted = 0;
-                this.properties.color_restricted = 0;
                 if (this.inputs) {
                     if (!this.widgets) this.widgets = [];
                     for (const input of this.inputs) {
@@ -133,7 +131,8 @@ app.registerExtension({
             }
         }
 
-        node.IS_UE = is_UEnode(node);
+        setup_ue_properties_oncreate(node)
+
         if (node.IS_UE) {
             //node.input_type = [undefined, undefined, undefined]; // for dynamic input types       
 
@@ -144,7 +143,7 @@ app.registerExtension({
             const original_onDrawTitleBar = node.onDrawTitleBar;
             node.onDrawTitleBar = function(ctx, title_height) {
                 original_onDrawTitleBar?.apply(this, arguments);
-                if (node.properties.group_restricted || node.properties.color_restricted) indicate_restriction(ctx, title_height);
+                if (node.properties.ue_properties.group_restricted || node.properties.ue_properties.color_restricted) indicate_restriction(ctx, title_height);
             }
         }
 
@@ -164,6 +163,7 @@ app.registerExtension({
 
     // When a graph node is loaded convert it if needed
     loadedGraphNode(node) { 
+        setup_ue_properties_onload(node)
         if (graphConverter.running_116_plus()) { 
             graphConverter.convert_if_pre_116(node);
             if (node.isSubgraphNode()) {
@@ -365,6 +365,7 @@ app.registerExtension({
 
     afterConfigureGraph() {
         graphConverter.remove_saved_ue_links_recursively(app.graph)
+        convert_ueq_nodes(app.graph)
         graphConverter.graph_being_configured = false
     }
 
