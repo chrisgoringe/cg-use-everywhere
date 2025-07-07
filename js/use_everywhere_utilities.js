@@ -132,7 +132,7 @@ class GraphConverter {
         }
         // fix the localized names
         node.inputs = node.inputs.map((input) => {
-            if (input.localized_name.startsWith('anything')) input.localized_name = input.name
+            if (!input.localized_name || input.localized_name.startsWith('anything')) input.localized_name = input.name
             return input;
         })
 
@@ -152,15 +152,6 @@ class GraphConverter {
                 }
             }
         });
-
-        //node.input_type = node.inputs.map((i)=>{
-        //    var type = i.type;
-        //    if (type=='*') {
-        //        if (i.link) type = node_graph(node).links[i.link].type;
-        //        else type = (i.label && i.label!='anything') ? i.label : i.name;      
-        //    }
-        //    return type
-        //})
 
         Logger.log_detail(`clean_ue_node ${node.id} (${node.type})`, node.inputs);
     }
@@ -418,4 +409,28 @@ export function get_connection(node, i, override_type) {
         link = handle_bypass(graph.links[in_link], type, graph);
     } 
     return { link:link, type:type }
+}
+
+
+/*
+This is called in various places (node load, creation, link change) to ensure there is exactly one empty input 
+*/
+export function fix_inputs(node) {
+    const empty_inputs = node.inputs.filter((inputslot)=>(inputslot.type=='*'))
+    if (empty_inputs.length==0) {
+        // add a new input with a unique name
+        node.properties.ue_properties.next_input_index = (node.properties.ue_properties.next_input_index || 10) + 1
+        node.addInput(`anything${node.properties.ue_properties.next_input_index}`, "*", {label:"anything"})
+    } else if (empty_inputs.length==1) {
+        // all good
+    } else {
+        // remove the first one then check again
+        const idx = node.inputs.findIndex((inputslot)=>(inputslot.type=='*'))
+        if (idx>=0) {
+            node.removeInput(idx)
+            fix_inputs(node)
+        } else {
+            Logger.log_problem(`Something very odd happened in fix_inputs for ${node.id}`)
+        }
+    }
 }

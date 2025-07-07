@@ -1,5 +1,5 @@
 import { app } from "../../scripts/app.js";
-import { VERSION, version_at_least, is_UEnode, graphConverter } from "./use_everywhere_utilities.js"
+import { VERSION, version_at_least, is_UEnode, graphConverter, fix_inputs } from "./use_everywhere_utilities.js"
 import { LinkRenderController } from "./use_everywhere_ui.js";
 
 const REGEXES = ['title', 'input', 'group']
@@ -131,15 +131,23 @@ export function setup_ue_properties_onload(node) {
 }
 
 /*
-Function to change Use Everywhere? nodes into Use Everywhere nodes & hide the widgets...
+Functions to change Use Everywhere? and Use Everywhere3 nodes into Use Everywhere nodes
 */
-export function convert_ueq_nodes(graph) {
+
+export function convert_old_nodes(graph) {
     graph.nodes.filter((node)=>(node.type=="Anything Everywhere?")).forEach((node)=>{
         node.widgets.forEach((w)=>{w.hidden=true})
         if (node.title=="Anything Everywhere?") node.title = "Anything Everywhere"
         node.type = "Anything Everywhere"
     })
+    graph.nodes.filter((node)=>(node.type=="Anything Everywhere3")).forEach((node)=>{
+        if (node.title=="Anything Everywhere3") node.title = "Anything Everywhere"
+        node.type = "Anything Everywhere"
+    })
+    graph.nodes.filter((node)=>(node.type=="Anything Everywhere")).forEach((node)=>{
+        fix_inputs(node)
+    })
     graph.nodes.filter((node)=>(node.subgraph)).forEach((node)=>{
-        convert_ueq_nodes(node.subgraph)
+        convert_old_nodes(node.subgraph)
     })
 }

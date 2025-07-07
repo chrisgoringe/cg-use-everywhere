@@ -254,11 +254,11 @@ class UseEverywhereList {
 
         } else {
             const w0 = node.properties.ue_properties['title_regex']
-            const r0 = w0 ? new RegExp(w0) : null;
+            const r0 = (w0 && w0!='.*') ? new RegExp(w0) : null;
             const w1 = node.properties.ue_properties['input_regex']
-            const r1 = w1 ? new RegExp(w1) : null;  
+            const r1 = (w1 && w1!='.*') ? new RegExp(w1) : null;  
             const w2 = node.properties.ue_properties['group_regex']
-            const r2 = w2 ? new RegExp(w2) : null;
+            const r2 = (w2 && w2!='.*') ? new RegExp(w2) : null;
             for (var i=0; i<node.inputs.length; i++) {
                 const connection = get_connection(node, i);
                 if (connection.link) this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], r0,r1,r2, (r0||r1||r2)?10:2);

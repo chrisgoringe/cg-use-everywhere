@@ -46,6 +46,7 @@ class AnythingEverywherePrompts(Base):
         return ()
         
 class AnythingEverywhereTriplet(Base):
+    CATEGORY = "everywhere/deprecated"
     @classmethod
     def INPUT_TYPES(s):
         return {"required":{}, 
@@ -55,6 +56,7 @@ class AnythingEverywhereTriplet(Base):
         return ()
     
 class AnythingSomewhere(Base):
+    CATEGORY = "everywhere/deprecated"
     @classmethod
     def INPUT_TYPES(s):
         return {"required":{}, 

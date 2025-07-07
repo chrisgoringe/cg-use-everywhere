@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
-import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter } from "./use_everywhere_utilities.js";
+import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter, fix_inputs } from "./use_everywhere_utilities.js";
 import { update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
@@ -10,7 +10,7 @@ import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { get_subgraph_input_type, link_is_from_subgraph_input, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
-import { any_restrictions, convert_ueq_nodes, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
+import { any_restrictions, convert_old_nodes, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 
 /*
 The ui component that looks after the link rendering
@@ -44,23 +44,20 @@ app.registerExtension({
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {        
             if (this.IS_UE && side==1) { // side 1 is input
-                if (this.type=="Anything Everywhere?" && slot!=0) {
-                    // don't do anything for the regexs
-                } else {
-                    var type = '*'
-                    if (connect && link_info) {
-                        var connected_type
-                        if (link_is_from_subgraph_input(link_info)) { // input slot of subgraph
-                            connected_type = get_subgraph_input_type(node_graph(this), link_info.origin_slot)
-                        } else {
-                            connected_type = get_real_node(link_info.origin_id, node_graph(this))?.outputs[link_info.origin_slot]?.type
-                        }
-                        if (connected_type) type = connected_type;
-                    };
-                    this.inputs[slot].type = type;
-                    if (link_info) link_info.type = type
-                    update_input_label(this, slot, app);
-                }
+                var type = '*'
+                if (connect && link_info) {
+                    var connected_type
+                    if (link_is_from_subgraph_input(link_info)) { // input slot of subgraph
+                        connected_type = get_subgraph_input_type(node_graph(this), link_info.origin_slot)
+                    } else {
+                        connected_type = get_real_node(link_info.origin_id, node_graph(this))?.outputs[link_info.origin_slot]?.type
+                    }
+                    if (connected_type) type = connected_type;
+                };
+                this.inputs[slot].type = type;
+                if (link_info) link_info.type = type
+                update_input_label(this, slot, app);
+                if (!graphConverter.graph_being_configured) fix_inputs(this) // this makes sure there is exactly one empty input
             }
             linkRenderController.mark_link_list_outdated();
             onConnectionsChange?.apply(this, arguments);
@@ -86,6 +83,8 @@ app.registerExtension({
         /*
         When a UE node is created, create pseudo-widgets for all the inputs so that they can be searched
         and to avoid other code throwing errors.
+
+        TODO see if we still need this
         */
         if (is_UEnode(nodeType)) {
             const onNodeCreated = nodeType.prototype.onNodeCreated;
@@ -104,6 +103,7 @@ app.registerExtension({
     },
 
     async nodeCreated(node) {
+        // TODO see if we still need this
         if (!node.__mode) {
             node.__mode = node.mode
             defineProperty(node, "mode", {
@@ -111,20 +111,16 @@ app.registerExtension({
                 set: (v)=>{node.__mode = v; node.afterChangeMade?.('mode', v);}            
             })
         }
-        if (!node.__bgcolor) {
+        /*if (!node.__bgcolor) {
             node.__bgcolor = node.bgcolor
             defineProperty(node,"bgcolor", {
                 get: ( )=>{return node.__bgcolor},
                 set: (v)=>{node.__bgcolor = v; node.afterChangeMade?.('bgcolor', v);}                       
             })
-        }
+        }*/
         const acm = node.afterChangeMade
         node.afterChangeMade = (p, v) => {
             acm?.(p,v)
-            //if (p==='bgcolor') {
-            //    if (node._being_drawn) return; // the bgcolor gets set by the built in node draw...
-            //    linkRenderController.mark_link_list_outdated();
-            //}
             if (p==='mode') {
                 linkRenderController.mark_link_list_outdated();
                 node.widgets?.forEach((widget) => {widget.onModeChange?.(v)}); // no idea why I have this?
@@ -134,12 +130,10 @@ app.registerExtension({
         setup_ue_properties_oncreate(node)
 
         if (node.IS_UE) {
-            //node.input_type = [undefined, undefined, undefined]; // for dynamic input types       
-
             // If a widget on a UE node is edited, link list is dirty
-            inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${node.id}`);
+            //inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${node.id}`);
 
-            // draw the indication of group restrictions
+            // draw the indication of restrictions
             const original_onDrawTitleBar = node.onDrawTitleBar;
             node.onDrawTitleBar = function(ctx, title_height) {
                 original_onDrawTitleBar?.apply(this, arguments);
@@ -201,7 +195,6 @@ app.registerExtension({
         */
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
-            
             try {
                 linkRenderController.pause('drawNode')
                 const v = original_drawNode.apply(this, arguments);
@@ -365,7 +358,7 @@ app.registerExtension({
 
     afterConfigureGraph() {
         graphConverter.remove_saved_ue_links_recursively(app.graph)
-        convert_ueq_nodes(app.graph)
+        convert_old_nodes(app.graph)
         graphConverter.graph_being_configured = false
     }
 
