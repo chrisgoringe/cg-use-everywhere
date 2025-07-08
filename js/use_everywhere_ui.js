@@ -60,7 +60,7 @@ function nodes_my_color(node, already_limited_to) {
 
 function nodes_not_my_color(node, already_limited_to) {
     const nodes_in = new Set();
-    const color = get_real_node(node_id).color;
+    const color = get_real_node(node.id).color;
     if (already_limited_to) {
         already_limited_to.forEach((nid) => {
             if (get_real_node(nid, node_graph(node)).color!=color) nodes_in.add(nid)
