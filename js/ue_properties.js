@@ -28,12 +28,16 @@ function add_cell(row, cell) {
 
 function changed(node, property, value) {
     node.properties.ue_properties[property] = value
-    LinkRenderController.instance().mark_link_list_outdated()
-    app.canvas.setDirty(true,true)
 
     if (!node.properties.ue_properties.priority) {
-        document.getElementById('priority_value').innerHTML = `${default_priority(node)}`
+        document.getElementById('priority_value').value = `${default_priority(node)}`
+        document.getElementById('priority_value').style.opacity = "0.5"
+    } else {
+        document.getElementById('priority_value').style.opacity = "1"
     }
+
+    LinkRenderController.instance().mark_link_list_outdated()
+    app.canvas.setDirty(true,true)
 }
 
 export function edit_restrictions(a,b,c,d, node) {
@@ -72,17 +76,22 @@ export function edit_restrictions(a,b,c,d, node) {
     col_select.addEventListener('input', ()=>{ changed(node, `color_restricted`, parseInt(col_select.value))})
 
     const priority_row = add_row(table,"Priority")
-    const priority_value = document.createElement("span")
-    priority_value.id = 'priority_value'
-    priority_value.innerHTML = `${node.properties.ue_properties.priority || default_priority(node)}`
-    add_cell(priority_row,priority_value)
+    const priority_edit = document.createElement("input")
+    priority_edit.value = `${node.properties.ue_properties.priority || default_priority(node)}`
+    priority_edit.addEventListener('input', ()=>{ 
+        const p = parseInt(priority_edit.value)
+        if (p) changed(node, `priority`, p)
+        if (priority_edit.value=='') changed(node, `priority`, undefined)
+    })
+    priority_edit.id = 'priority_value'
+    if (!node.properties.ue_properties.priority) priority_edit.style.opacity = 0.5
+    add_cell(priority_row,priority_edit)
     
-
     app.ui.dialog.show(table)
 }
 
 export function any_restrictions(node) {
-    var restricted = (node.properties.ue_properties.group_restricted || node.properties.ue_properties.color_restricted)
+    var restricted = (node.properties.ue_properties.group_restricted || node.properties.ue_properties.color_restricted || node.properties.ue_properties.priority)
     for (var i=0; i<=2; i++) {
         const reg = node.properties.ue_properties[`${REGEXES[i]}_regex`]
         restricted = restricted || (reg && reg.length>0)
@@ -121,13 +130,13 @@ export function setup_ue_properties_oncreate(node) {
 }
 
 export function default_priority(node) {
-    var p = 20
-    if (node.type === "Seed Everywhere" || node.type === "Prompts Everywhere") p += 30
+    var p = 10
+    if (node.type === "Seed Everywhere" || node.type === "Prompts Everywhere") p += 10
     if ((node.properties.ue_properties.title_regex && node.properties.ue_properties.title_regex!=".*") ||
-        (node.properties.ue_properties.title_regex && node.properties.ue_properties.title_regex!=".*") ||
-        (node.properties.ue_properties.title_regex && node.properties.ue_properties.title_regex!=".*"))  p += 80
-    if (node.properties.ue_properties.group_restricted > 0) p += 1
-    if (node.properties.ue_properties.color_restricted > 0) p += 3
+        (node.properties.ue_properties.group_regex && node.properties.ue_properties.group_regex!=".*") ||
+        (node.properties.ue_properties.input_regex && node.properties.ue_properties.input_regex!=".*"))  p += 20
+    if (node.properties.ue_properties.group_restricted > 0) p += 3
+    if (node.properties.ue_properties.color_restricted > 0) p += 6
     return p
 }
 
