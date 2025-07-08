@@ -20,13 +20,23 @@ function add_row(table, header) {
     return row
 }
 
+function add_cell(row, cell) {
+    const td = document.createElement('td')
+    row.appendChild(td)
+    td.appendChild(cell)
+}
+
 function changed(node, property, value) {
     node.properties.ue_properties[property] = value
     LinkRenderController.instance().mark_link_list_outdated()
-    app.canvas.setDirty(true,true)    
+    app.canvas.setDirty(true,true)
+
+    if (!node.properties.ue_properties.priority) {
+        document.getElementById('priority_value').innerHTML = `${default_priority(node)}`
+    }
 }
 
-export function edit_regexes(a,b,c,d, node) {
+export function edit_restrictions(a,b,c,d, node) {
     const table = document.createElement('table')
     for (var i=0; i<=2; i++) {
         const name = REGEXES[i]
@@ -34,12 +44,12 @@ export function edit_regexes(a,b,c,d, node) {
         const input = document.createElement('input')
         input.value = node.properties.ue_properties[`${name}_regex`] || ''
         input.addEventListener('input', ()=>{ changed(node, `${name}_regex`, input.value)})
-        row.appendChild(input)
+        add_cell(row,input)
     }
 
     const gr_row    = add_row(table, "Group")
     const gr_select = document.createElement('select')
-    gr_row.appendChild(gr_select)
+    add_cell(gr_row,gr_select)
     GROUP_RESTRICTION_OPTIONS.forEach((gro, i)=>{
         const gr_option = document.createElement('option')
         gr_option.value = `${i}`
@@ -51,7 +61,7 @@ export function edit_regexes(a,b,c,d, node) {
 
     const col_row    = add_row(table, "Color")
     const col_select = document.createElement('select')
-    col_row.appendChild(col_select)
+    add_cell(col_row,col_select)
     COLOR_RESTRICTION_OPTIONS.forEach((cro, i)=>{
         const col_option = document.createElement('option')
         col_option.value = `${i}`
@@ -60,6 +70,13 @@ export function edit_regexes(a,b,c,d, node) {
     })
     col_select.value = `${node.properties.ue_properties.color_restricted || 0}`
     col_select.addEventListener('input', ()=>{ changed(node, `color_restricted`, parseInt(col_select.value))})
+
+    const priority_row = add_row(table,"Priority")
+    const priority_value = document.createElement("span")
+    priority_value.id = 'priority_value'
+    priority_value.innerHTML = `${node.properties.ue_properties.priority || default_priority(node)}`
+    add_cell(priority_row,priority_value)
+    
 
     app.ui.dialog.show(table)
 }
@@ -97,9 +114,21 @@ export function setup_ue_properties_oncreate(node) {
                     title_regex           : null,
                     input_regex           : null,
                     group_regex           : null,
+                    priority              : undefined,
                 }
         }
     }
+}
+
+export function default_priority(node) {
+    var p = 20
+    if (node.type === "Seed Everywhere" || node.type === "Prompts Everywhere") p += 30
+    if ((node.properties.ue_properties.title_regex && node.properties.ue_properties.title_regex!=".*") ||
+        (node.properties.ue_properties.title_regex && node.properties.ue_properties.title_regex!=".*") ||
+        (node.properties.ue_properties.title_regex && node.properties.ue_properties.title_regex!=".*"))  p += 80
+    if (node.properties.ue_properties.group_restricted > 0) p += 1
+    if (node.properties.ue_properties.color_restricted > 0) p += 3
+    return p
 }
 
 /*
@@ -121,6 +150,7 @@ export function setup_ue_properties_onload(node) {
                 title_regex           : node.widgets_values?.[0],
                 input_regex           : node.widgets_values?.[1],
                 group_regex           : node.widgets_values?.[2],
+                priority              : undefined,
             }
             delete node.properties.group_restricted
             delete node.properties.color_restricted

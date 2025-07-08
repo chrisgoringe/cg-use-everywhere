@@ -1,3 +1,4 @@
+import { default_priority } from "./ue_properties.js";
 import { node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
 import { Logger, node_is_live, get_real_node, get_connection } from "./use_everywhere_utilities.js";
@@ -8,6 +9,11 @@ function display_name(node) {
     if (node?.type) return node.type;
     if (node?.properties['Node name for S&R']) return node.properties['Node name for S&R'];
     return "un-nameable node";
+}
+
+function regex_for(node, k) {
+    const w0 = node.properties.ue_properties[`${k}_regex`]
+    return (w0 && w0!='.*') ? new RegExp(w0) : null;
 }
 
 /*
@@ -128,39 +134,26 @@ class UseEverywhereList {
         return false;
     }
 
-    add_ue(node, control_node_input_index, type, output, title_regex, input_regex, group_regex, priority) {
+    add_ue(node, control_node_input_index, type, output, input_regex_override) {
         const params = {
             controller: node,
             control_node_input_index: control_node_input_index, 
             type: type,
             output: output,
-            title_regex: title_regex,
-            input_regex: input_regex,
-            group_regex: group_regex,
-            priority: priority, 
+            title_regex: regex_for(node, 'title'),
+            input_regex: input_regex_override || regex_for(node, 'input'),
+            group_regex: regex_for(node, 'group'),
+            priority: node.properties.ue_properties.priority || default_priority(node), 
             graph: node_graph(node),
         };
 
-        if (node.properties.ue_properties.group_restricted == 1) {
-            params.restrict_to = nodes_in_my_group(node);
-            params.priority += 0.1;
-        }
-        if (node.properties.ue_properties.group_restricted == 2) {
-            params.restrict_to = nodes_not_in_my_group(node);
-            params.priority += 0.1;
-        }
-        if (node.properties.ue_properties.color_restricted == 1) {
-            params.restrict_to = nodes_my_color(node, params.restrict_to);
-            params.priority += 0.3;
-        }
-        if (node.properties.ue_properties.color_restricted == 2) {
-            params.restrict_to = nodes_not_my_color(node, params.restrict_to);
-            params.priority += 0.3;
-        }
-        if (group_regex) {
-            params.restrict_to = nodes_in_groups_matching(group_regex, params.restrict_to, graph);
-        }
-        if (node.properties.ue_properties["priority_boost"]) params.priority += node.properties.ue_properties["priority_boost"];
+        if (node.properties.ue_properties.group_restricted == 1) params.restrict_to = nodes_in_my_group(node);
+        if (node.properties.ue_properties.group_restricted == 2) params.restrict_to = nodes_not_in_my_group(node);
+
+        if (node.properties.ue_properties.color_restricted == 1) params.restrict_to = nodes_my_color(node, params.restrict_to);
+        if (node.properties.ue_properties.color_restricted == 2) params.restrict_to = nodes_not_my_color(node, params.restrict_to);
+
+        if (params.group_regex) params.restrict_to = nodes_in_groups_matching(params.group_regex, params.restrict_to, graph);
         
         var error = ""
         var ue = null;
@@ -243,25 +236,24 @@ class UseEverywhereList {
 
     add_ue_from_node(node) {
         if (node.type === "Seed Everywhere") {
-            this.add_ue(node, -1, "INT", [node.id.toString(),0], undefined, new RegExp("seed|随机种"), undefined, 5);
+            this.add_ue(node, -1, "INT", [node.id.toString(),0], new RegExp("seed|随机种"));
     
         } else if (node.type === "Prompts Everywhere") {
             for (var i=0; i<2; i++) {
                 const connection = get_connection(node, i);
                 if (connection.link) this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], 
-                    undefined, new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]), undefined, 5);
+                    new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]));
             }
 
         } else {
-            const w0 = node.properties.ue_properties['title_regex']
-            const r0 = (w0 && w0!='.*') ? new RegExp(w0) : null;
-            const w1 = node.properties.ue_properties['input_regex']
-            const r1 = (w1 && w1!='.*') ? new RegExp(w1) : null;  
-            const w2 = node.properties.ue_properties['group_regex']
-            const r2 = (w2 && w2!='.*') ? new RegExp(w2) : null;
+
+            const r0 = regex_for(node, 'title')
+            const r1 = regex_for(node, 'input')
+            const r2 = regex_for(node, 'group')
+
             for (var i=0; i<node.inputs.length; i++) {
                 const connection = get_connection(node, i);
-                if (connection.link) this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], r0,r1,r2, (r0||r1||r2)?10:2);
+                if (connection.link) this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot]);
             }
         }
     }

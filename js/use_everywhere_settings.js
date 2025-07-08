@@ -2,10 +2,10 @@ import { app } from "../../scripts/app.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
-import { has_priority_boost, VERSION } from "./use_everywhere_utilities.js";
+import { VERSION } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
-import { can_regex, edit_regexes } from "./ue_properties.js";
+import { can_regex, edit_restrictions } from "./ue_properties.js";
 
 export const SETTINGS = [
     {
@@ -114,20 +114,6 @@ function submenu(properties, property, options, e, menu, node) {
     }
 }
 
-function priority_boost_submenu(value, options, e, menu, node) {
-    const current = (node.properties.ue_properties["priority_boost"] ? node.properties.ue_properties["priority_boost"] : 0) + 1;
-    const submenu = new LiteGraph.ContextMenu(
-        [0,1,2,3,4,5,6,7,8,9],
-        { event: e, callback: function (v) { 
-            node.properties.ue_properties["priority_boost"] = parseInt(v);
-            LinkRenderController.instance().mark_link_list_outdated();
-        }, 
-        parentMenu: menu, node:node}
-    )
-    const current_element = submenu.root.querySelector(`:nth-child(${current})`);
-    if (current_element) current_element.style.borderLeft = "2px solid #484";
-}
-
 function highlight_selected(submenu_root, node, names) {
     names.forEach((name, i) => {
         const current_element = submenu_root?.querySelector(`:nth-child(${i+1})`);
@@ -195,17 +181,10 @@ export function non_ue_menu_settings(options, node) {
 
 export function node_menu_settings(options, node) {
     options.push(null);
-    if (has_priority_boost(node)) options.push(
-        {
-            content: "Priority Boost",
-            has_submenu: true,
-            callback: priority_boost_submenu,
-        }
-    )
     if (can_regex(node)) options.push(
         {
             content: "Edit restrictions",
-            callback: edit_regexes,
+            callback: edit_restrictions,
         }        
     )
     options.push(

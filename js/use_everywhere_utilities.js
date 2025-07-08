@@ -323,10 +323,6 @@ function is_helper(node_or_nodeType) {
     const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
     return ((title) && (title.startsWith("Simple String")))
 }
-function has_priority_boost(node_or_nodeType) {
-    const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
-    return ((title) && (title == "Anything Everywhere?"))   
-}
 
 /*
 Inject a call into a method on object with name methodname.
@@ -342,7 +338,7 @@ function inject(object, methodname, tracetext, injection, injectionthis, injecti
 }
 
 
-export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node, has_priority_boost}
+export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node }
 
 export function defineProperty(instance, property, desc) {
     const existingDesc = Object.getOwnPropertyDescriptor(instance, property);
