@@ -416,19 +416,28 @@ export function get_connection(node, i, override_type) {
 This is called in various places (node load, creation, link change) to ensure there is exactly one empty input 
 */
 export function fix_inputs(node) {
+    if (!node.graph) return // node has been deleted prior to the fix
     const empty_inputs = node.inputs.filter((inputslot)=>(inputslot.type=='*'))
     if (empty_inputs.length==0) {
         // add a new input with a unique name
-        node.properties.ue_properties.next_input_index = (node.properties.ue_properties.next_input_index || 10) + 1
-        node.addInput(`anything${node.properties.ue_properties.next_input_index}`, "*", {label:"anything"})
+        try {
+            node.properties.ue_properties.next_input_index = (node.properties.ue_properties.next_input_index || 10) + 1
+            node.addInput(`anything${node.properties.ue_properties.next_input_index}`, "*", {label:"anything"})
+        } catch (e) {
+            Logger.log_error(e)
+        }
     } else if (empty_inputs.length==1) {
         // all good
     } else {
         // remove the first one then check again
         const idx = node.inputs.findIndex((inputslot)=>(inputslot.type=='*'))
         if (idx>=0) {
-            node.removeInput(idx)
-            fix_inputs(node)
+            try {
+                node.removeInput(idx)
+                fix_inputs(node)
+            } catch (e) {
+                Logger.log_error(e)
+            }
         } else {
             Logger.log_problem(`Something very odd happened in fix_inputs for ${node.id}`)
         }

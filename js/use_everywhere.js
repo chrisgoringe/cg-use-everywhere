@@ -32,6 +32,12 @@ function inject_outdating_into_object_method(object, methodname, tracetext) {
     if (object) inject(object, methodname, tracetext, linkRenderController.mark_link_list_outdated, linkRenderController);
 }
 
+
+/*
+Deferred actions are executed after graph change. They are of the form: { fn:function, args:array }
+*/
+const deferred_actions = []
+
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
     settings: SETTINGS, 
@@ -57,7 +63,10 @@ app.registerExtension({
                 this.inputs[slot].type = type;
                 if (link_info) link_info.type = type
                 update_input_label(this, slot, app);
-                if (!graphConverter.graph_being_configured) fix_inputs(this) // this makes sure there is exactly one empty input
+                if (!graphConverter.graph_being_configured) {
+                    // do the fix at the end of graph change
+                    deferred_actions.push( { fn:fix_inputs, args:[this,]} )
+                }
             }
             linkRenderController.mark_link_list_outdated();
             onConnectionsChange?.apply(this, arguments);
@@ -277,6 +286,20 @@ app.registerExtension({
     init() {
         graphAnalyser = GraphAnalyser.instance();
         linkRenderController = LinkRenderController.instance(graphAnalyser);
+
+        const original_afterChange = app.graph.afterChange
+        app.graph.afterChange = function () {
+            deferred_actions.forEach((action)=>{
+                try {
+                    action.fn(...action.args)
+                } catch (e) {
+                    Logger.log_error(e)
+                }
+            })
+            deferred_actions.length = 0
+            original_afterChange?.apply(this, arguments)
+        }
+
 
         var prompt_being_queued = false;
 
