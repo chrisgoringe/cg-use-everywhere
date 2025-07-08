@@ -36,7 +36,22 @@ function inject_outdating_into_object_method(object, methodname, tracetext) {
 /*
 Deferred actions are executed after graph change. They are of the form: { fn:function, args:array }
 */
-const deferred_actions = []
+class Deferred {
+    constructor() { this.deferred_actions = [] }
+    push(x) { this.deferred_actions.push(x) }
+    execute() {
+        while (this.deferred_actions.length>0) {
+            const action = this.deferred_actions.pop()
+            try {
+                action?.fn(...action?.args)
+            } catch (e) {
+                Logger.log_error(e)
+            }
+        }
+    }
+}
+
+const deferred_actions = new Deferred()
 
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
@@ -66,6 +81,8 @@ app.registerExtension({
                 if (!graphConverter.graph_being_configured) {
                     // do the fix at the end of graph change
                     deferred_actions.push( { fn:fix_inputs, args:[this,]} )
+                    // disconnecting doesn't trigger graphChange call?
+                    setTimeout(deferred_actions.execute.bind(deferred_actions), 100)
                 }
             }
             linkRenderController.mark_link_list_outdated();
@@ -289,14 +306,7 @@ app.registerExtension({
 
         const original_afterChange = app.graph.afterChange
         app.graph.afterChange = function () {
-            deferred_actions.forEach((action)=>{
-                try {
-                    action.fn(...action.args)
-                } catch (e) {
-                    Logger.log_error(e)
-                }
-            })
-            deferred_actions.length = 0
+            deferred_actions.execute()
             original_afterChange?.apply(this, arguments)
         }
 
