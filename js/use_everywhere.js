@@ -32,21 +32,14 @@ function inject_outdating_into_object_method(object, methodname, tracetext) {
     if (object) inject(object, methodname, tracetext, linkRenderController.mark_link_list_outdated, linkRenderController);
 }
 
-
-/*
-Deferred actions are executed after graph change. They are of the form: { fn:function, args:array }
-*/
 class Deferred {
     constructor() { this.deferred_actions = [] }
-    push(x) { this.deferred_actions.push(x) }
+    push(x) { this.deferred_actions.push(x) } // add action of the form: { fn:function, args:array }
     execute() {
         while (this.deferred_actions.length>0) {
             const action = this.deferred_actions.pop()
-            try {
-                action?.fn(...action?.args)
-            } catch (e) {
-                Logger.log_error(e)
-            }
+            try { action?.fn(...action?.args) } 
+            catch (e) { Logger.log_error(e) }
         }
     }
 }
