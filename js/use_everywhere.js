@@ -10,7 +10,7 @@ import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { get_subgraph_input_type, link_is_from_subgraph_input, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
-import { any_restrictions, convert_old_nodes, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
+import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 
 /*
 The ui component that looks after the link rendering
@@ -97,25 +97,27 @@ app.registerExtension({
             inject_outdating_into_objects(options,'callback',`menu option on ${this.id}`);
         }
 
+        if (is_UEnode(nodeType)) {
+            const original_onDrawTitleBar = nodeType.prototype.onDrawTitleBar;
+            nodeType.prototype.onDrawTitleBar = function(ctx, title_height) {
+                original_onDrawTitleBar?.apply(this, arguments);
+                if (any_restrictions(this)) indicate_restriction(ctx, title_height);
+            }
+        }
 
-
-        /*
-        When a UE node is created, create pseudo-widgets for all the inputs so that they can be searched
-        and to avoid other code throwing errors.
-
-        TODO see if we still need this
-        */
         if (is_UEnode(nodeType)) {
             const onNodeCreated = nodeType.prototype.onNodeCreated;
             nodeType.prototype.onNodeCreated = function () {
                 const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
-                if (!this.properties) this.properties = {}
+                /*if (!this.properties) this.properties = {}
                 if (this.inputs) {
                     if (!this.widgets) this.widgets = [];
                     for (const input of this.inputs) {
                         if (input.widget && !this.widgets.find((w) => w.name === input.widget.name)) this.widgets.push(input.widget)
                     }
-                }
+                }*/
+                Logger.log_detail(`Node ${this.id} created`)
+                setup_ue_properties_oncreate(this)
                 return r;
             }
         }
@@ -130,36 +132,15 @@ app.registerExtension({
                 set: (v)=>{node.__mode = v; node.afterChangeMade?.('mode', v);}            
             })
         }
-        /*if (!node.__bgcolor) {
-            node.__bgcolor = node.bgcolor
-            defineProperty(node,"bgcolor", {
-                get: ( )=>{return node.__bgcolor},
-                set: (v)=>{node.__bgcolor = v; node.afterChangeMade?.('bgcolor', v);}                       
-            })
-        }*/
-        const acm = node.afterChangeMade
+
+        const original_afterChangeMade = node.afterChangeMade
         node.afterChangeMade = (p, v) => {
-            acm?.(p,v)
+            original_afterChangeMade?.(p,v)
             if (p==='mode') {
                 linkRenderController.mark_link_list_outdated();
                 node.widgets?.forEach((widget) => {widget.onModeChange?.(v)}); // no idea why I have this?
             }
         }
-
-        setup_ue_properties_oncreate(node)
-
-        if (node.IS_UE) {
-            // If a widget on a UE node is edited, link list is dirty
-            //inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${node.id}`);
-
-            // draw the indication of restrictions
-            const original_onDrawTitleBar = node.onDrawTitleBar;
-            node.onDrawTitleBar = function(ctx, title_height) {
-                original_onDrawTitleBar?.apply(this, arguments);
-                if (any_restrictions(node)) indicate_restriction(ctx, title_height);
-            }
-        }
-
 
         if (is_helper(node)) { // editing a helper node makes the list dirty
             inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
@@ -167,8 +148,6 @@ app.registerExtension({
 
         // removing a node makes the list dirty
         inject_outdating_into_object_method(node, 'onRemoved', `node ${node.id} removed`)
-
-        graphConverter.on_node_created(node)
 
         // creating a node makes the link list dirty - but give the system a moment to finish
         setTimeout( ()=>{linkRenderController.mark_link_list_outdated()}, 100 );
@@ -384,7 +363,7 @@ app.registerExtension({
 
     afterConfigureGraph() {
         graphConverter.remove_saved_ue_links_recursively(app.graph)
-        convert_old_nodes(app.graph)
+        //convert_old_nodes(app.graph)
         graphConverter.graph_being_configured = false
     }
 

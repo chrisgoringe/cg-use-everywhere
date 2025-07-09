@@ -107,10 +107,6 @@ class GraphConverter {
         Logger.log_detail("stored node_input_map", this.node_input_map);
     }
 
-    on_node_created(node) {
-        /* now done in ue_properties */
-        return;
-    }
 
     clean_ue_node(node) {
         var expected_inputs = 1
@@ -413,19 +409,20 @@ This is called in various places (node load, creation, link change) to ensure th
 */
 export function fix_inputs(node) {
     if (!node.graph) return // node has been deleted prior to the fix
+    if (node.properties.ue_properties.fixed_inputs) return
+
     const empty_inputs = node.inputs.filter((inputslot)=>(inputslot.type=='*'))
-    if (empty_inputs.length==0) {
-        // add a new input with a unique name
+    var excess_inputs = empty_inputs.length - 1
+    
+    if (excess_inputs<0) {
         try {
             node.properties.ue_properties.next_input_index = (node.properties.ue_properties.next_input_index || 10) + 1
             node.addInput(`anything${node.properties.ue_properties.next_input_index}`, "*", {label:"anything"})
+            fix_inputs(node)
         } catch (e) {
             Logger.log_error(e)
         }
-    } else if (empty_inputs.length==1) {
-        // all good
-    } else {
-        // remove the first one then check again
+    } else if (excess_inputs>0) {
         const idx = node.inputs.findIndex((inputslot)=>(inputslot.type=='*'))
         if (idx>=0) {
             try {

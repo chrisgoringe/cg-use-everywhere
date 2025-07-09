@@ -5,7 +5,7 @@ import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
 import { VERSION } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
-import { can_regex, edit_restrictions } from "./ue_properties.js";
+import { edit_restrictions } from "./ue_properties_editor.js";
 
 export const SETTINGS = [
     {
@@ -181,7 +181,7 @@ export function non_ue_menu_settings(options, node) {
 
 export function node_menu_settings(options, node) {
     options.push(null);
-    if (can_regex(node)) options.push(
+    options.push(
         {
             content: "Edit restrictions",
             callback: edit_restrictions,

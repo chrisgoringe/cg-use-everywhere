@@ -1,10 +1,11 @@
+import { i18n } from "./i18n.js";
 import { default_priority } from "./ue_properties.js";
 import { node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
 import { Logger, node_is_live, get_real_node, get_connection } from "./use_everywhere_utilities.js";
 
 
-function display_name(node) { 
+export function display_name(node) { 
     if (node?.title) return node.title;
     if (node?.type) return node.type;
     if (node?.properties['Node name for S&R']) return node.properties['Node name for S&R'];
@@ -12,8 +13,12 @@ function display_name(node) {
 }
 
 function regex_for(node, k) {
-    const w0 = node.properties.ue_properties[`${k}_regex`]
-    return (w0 && w0!='.*') ? new RegExp(w0) : null;
+    try {
+        const w0 = node.properties.ue_properties[`${k}_regex`]
+        return (w0 && w0!='.*') ? new RegExp(w0) : null;
+    } catch (e) {
+        return null
+    }
 }
 
 /*
@@ -122,7 +127,7 @@ function validity_errors(params) {
     return "";
 }
 
-class UseEverywhereList {
+export class UseEverywhereList {
     constructor() { this.ues = []; this.unmatched_inputs = []; }
 
     differs_from(another_uel) {
@@ -235,28 +240,19 @@ class UseEverywhereList {
     }
 
     add_ue_from_node(node) {
-        if (node.type === "Seed Everywhere") {
-            this.add_ue(node, -1, "INT", [node.id.toString(),0], new RegExp("seed|随机种"));
-    
-        } else if (node.type === "Prompts Everywhere") {
-            for (var i=0; i<2; i++) {
-                const connection = get_connection(node, i);
-                if (connection.link) this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], 
-                    new RegExp(["(_|\\b)pos(itive|_|\\b)|^prompt|正面","(_|\\b)neg(ative|_|\\b)|负面"][i]));
-            }
-
+        if (node.properties.ue_properties.seed_inputs) {
+            this.add_ue(node, -1, "INT", [node.id.toString(),0], regex_for(node, 'input'));
         } else {
-
-            const r0 = regex_for(node, 'title')
-            const r1 = regex_for(node, 'input')
-            const r2 = regex_for(node, 'group')
-
             for (var i=0; i<node.inputs.length; i++) {
                 const connection = get_connection(node, i);
-                if (connection.link) this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot]);
+                if (connection.link) {
+                    const input_regex = (node.properties.ue_properties.prompt_regexes) ? PROMPT_REGEXES[i] : undefined
+                    this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], input_regex);
+                }
             }
         }
     }
 }
 
-export {UseEverywhereList, display_name}
+const PROMPT_REGEXES = [new RegExp(i18n('prompt_regex')), new RegExp(i18n('neg_regex'))]
+
