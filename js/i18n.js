@@ -2,7 +2,7 @@
 const FUNCTIONAL = {
     seed_input_regex : "seed|随机种",
     prompt_regex     : "(_|\\b)pos(itive|_|\\b)|^prompt|正面",
-    neg_regex        : "(_|\\b)neg(ative|_|\\b)|负面",
+    negative_regex   : "(_|\\b)neg(ative|_|\\b)|负面",
 }
 
 const DISPLAY = {
@@ -16,5 +16,9 @@ const DISPLAY = {
 }
 
 export function i18n(v) {
-    return FUNCTIONAL[v] || DISPLAY[v] || v
+    return DISPLAY[v] || v
+}
+
+export function default_regex(v) {
+    return FUNCTIONAL[v] 
 }

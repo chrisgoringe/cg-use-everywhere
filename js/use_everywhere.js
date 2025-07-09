@@ -155,7 +155,6 @@ app.registerExtension({
 
     // When a graph node is loaded convert it if needed
     loadedGraphNode(node) { 
-        setup_ue_properties_onload(node)
         if (graphConverter.running_116_plus()) { 
             graphConverter.convert_if_pre_116(node);
             if (node.isSubgraphNode()) {
@@ -164,6 +163,7 @@ app.registerExtension({
                 })
             }
          }
+         setup_ue_properties_onload(node)
     },
 
 	async setup() {

@@ -1,4 +1,4 @@
-import { i18n } from "./i18n.js";
+import { default_regex } from "./i18n.js";
 import { default_priority } from "./ue_properties.js";
 import { node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
@@ -246,7 +246,7 @@ export class UseEverywhereList {
             for (var i=0; i<node.inputs.length; i++) {
                 const connection = get_connection(node, i);
                 if (connection.link) {
-                    const input_regex = (node.properties.ue_properties.prompt_regexes) ? PROMPT_REGEXES[i] : undefined
+                    const input_regex = (node.properties.ue_properties.prompt_regexes) ? prompt_regex(node,i) : undefined
                     this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], input_regex);
                 }
             }
@@ -254,5 +254,12 @@ export class UseEverywhereList {
     }
 }
 
-const PROMPT_REGEXES = [new RegExp(i18n('prompt_regex')), new RegExp(i18n('neg_regex'))]
+const P_REGEXES = ['prompt', 'negative']
+const PROMPT_REGEXES = [new RegExp(default_regex('prompt_regex')), new RegExp(default_regex('negative_regex'))]
+
+function prompt_regex(node, i) {
+    const reg = node.properties.ue_properties[`${P_REGEXES[i]}_regex`]
+    if (reg) return new RegExp(reg)
+    else return PROMPT_REGEXES[i]
+}
 

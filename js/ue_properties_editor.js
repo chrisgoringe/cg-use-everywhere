@@ -1,9 +1,10 @@
 import { LinkRenderController } from "./use_everywhere_ui.js";
-import { i18n } from "./i18n.js";
+import { i18n, default_regex } from "./i18n.js";
 import { app } from "../../scripts/app.js";
 import { default_priority } from "./ue_properties.js";
 
 const REGEXES = ['title', 'input', 'group']
+const P_REGEXES = ['prompt', 'negative']
 const GROUP_RESTRICTION_OPTIONS = ["No restrictions", "Send only within group", "Send only not within group"]
 const COLOR_RESTRICTION_OPTIONS = ["No restrictions", "Send only to same color", "Send only to different color"]
 
@@ -32,10 +33,18 @@ function changed(node, property, value) {
 
     if (!node.properties.ue_properties.priority) {
         document.getElementById('priority_value').value = `${default_priority(node)}`
-        document.getElementById('priority_value').style.opacity = "0.5"
-    } else {
-        document.getElementById('priority_value').style.opacity = "1"
     }
+
+    if (node.properties.ue_properties.prompt_regexes) {
+        for (var i=0; i<2; i++) {
+            if (!node.properties.ue_properties[`${P_REGEXES[i]}_regex`]) {
+                document.getElementById(`${P_REGEXES[i]}_regex_value`).value = default_regex(`${P_REGEXES[i]}_regex`)
+            }
+        }
+    }
+
+    const elem = document.getElementById(`${property}_value`)
+    if (elem) elem.style.opacity = (value) ? "1" : "0.5"
 
     LinkRenderController.instance().mark_link_list_outdated()
     app.canvas.setDirty(true,true)
@@ -45,13 +54,22 @@ export function create_editor_html(node) {
     const table = document.createElement('table')
 
     for (var i=0; i<=2; i++) {
-        const name = REGEXES[i]
-        const row = add_row(table, `${i18n(name)} regex`)
+        
         if (i==1 && node.properties.ue_properties.prompt_regexes) {
-            const input = document.createElement('span')
-            input.innerText = i18n('prompt_regexes_text')
-            add_cell(row,input)
+            for (var j=0; j<2; j++) {
+                const name = P_REGEXES[j]
+                const row = add_row(table, `${i18n(name)} regex`)
+                const input = document.createElement('input')
+                input.value = node.properties.ue_properties[`${name}_regex`] || default_regex(`${name}_regex`)
+                if (!node.properties.ue_properties[`${name}_regex`]) input.style.opacity = 0.5
+                input.id = `${name}_regex_value`
+                input.style.width = '250px'
+                input.addEventListener('input', ()=>{ changed(node, `${name}_regex`, input.value)})
+                add_cell(row,input)                
+            }
         } else {
+            const name = REGEXES[i]
+            const row = add_row(table, `${i18n(name)} regex`)
             const input = document.createElement('input')
             input.value = node.properties.ue_properties[`${name}_regex`] || ''
             input.addEventListener('input', ()=>{ changed(node, `${name}_regex`, input.value)})

@@ -158,6 +158,7 @@ class GraphConverter {
         if (node.IS_UE) this.clean_ue_node(node)
         
         if (node.properties?.ue_properties?.widget_ue_connectable) return
+        if (node.properties?.widget_ue_connectable) return  // pre 7.0 node which will be converted
 
         if (!this.given_message) {
             Logger.log_info(`Graph was saved with a version of ComfyUI before 1.16, so Anything Everywhere will try to work out which widgets are connectable`);
