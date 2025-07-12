@@ -3,14 +3,16 @@ import { i18n, default_regex } from "./i18n.js";
 import { app } from "../../scripts/app.js";
 import { default_priority } from "./ue_properties.js";
 import { GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
+import { edit_window } from "./floating_window.js";
 
 const REGEXES = ['title', 'input', 'group']
 const P_REGEXES = ['prompt', 'negative']
 
-
 export function edit_restrictions(a,b,c,d, node) {
-    const table = create_editor_html(node)
-    app.ui.dialog.show(table)
+    edit_window.set_body(create_editor_html(node))
+    edit_window.set_title(`Restrictions for node #${node.id}`)
+    edit_window.move_to(app.canvas.mouse[0]+10, app.canvas.mouse[1]+10)
+    edit_window.show()
 }
 
 function add_row(table, header) {
@@ -50,7 +52,7 @@ function changed(node, property, value) {
     app.canvas.setDirty(true,true)
 }
 
-export function create_editor_html(node) {
+function create_editor_html(node) {
     const table = document.createElement('table')
 
     for (var i=0; i<=2; i++) {

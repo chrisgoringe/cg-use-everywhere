@@ -3,6 +3,7 @@ import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, node_graph } from "./use_everywhere_subgraph_utils.js";
 import { any_restrictions, describe_restrictions } from "./ue_properties.js";
+import { edit_window } from "./floating_window.js";
 
 function nodes_in_my_group(node) {
     const nodes_in = new Set();
@@ -295,6 +296,7 @@ class LinkRenderController extends Pausable {
         if (!ue_tooltip_element) {
             ue_tooltip_element = create('span', 'ue_tooltip', document.body, {id:'ue_tooltip'})
         }
+        if (edit_window.showing) return
         const node = app.canvas?.node_over
         if (node?.IS_UE && any_restrictions(node)) {
             if (node.id == this.lasttooltip_node_id) return
