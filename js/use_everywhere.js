@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
-import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter, fix_inputs } from "./use_everywhere_utilities.js";
+import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter, fix_inputs, create } from "./use_everywhere_utilities.js";
 import { update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
@@ -167,6 +167,9 @@ app.registerExtension({
     },
 
 	async setup() {
+
+        create('link', null, document.getElementsByTagName('HEAD')[0], 
+            {'rel':'stylesheet', 'type':'text/css', 'href': new URL("./ue.css", import.meta.url).href } )
 
         api.addEventListener("status", ({detail}) => {
             if (linkRenderController) linkRenderController.note_queue_size(detail ? detail.exec_info.queue_remaining : 0)
