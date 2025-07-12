@@ -6,6 +6,7 @@ import { VERSION } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
+import { is_UEnode } from "./use_everywhere_utilities.js";
 
 export const SETTINGS = [
     {
@@ -156,6 +157,21 @@ function widget_ue_submenu(value, options, e, menu, node) {
         parentMenu: menu, node:node}
     )
     highlight_selected(submenu.root, node, names)
+}
+
+export function add_extra_menu_items(node_or_node_type, ioio) {
+    if (node_or_node_type.ue_extra_menu_items_added) return
+    const getExtraMenuOptions = node_or_node_type.getExtraMenuOptions;
+    node_or_node_type.getExtraMenuOptions = function(_, options) {
+        getExtraMenuOptions?.apply(this, arguments);
+        if (is_UEnode(this)) {
+            node_menu_settings(options, this);
+        } else {
+            non_ue_menu_settings(options, this);
+        }
+        ioio(options,'callback',`menu option on ${this.id}`);
+    }
+    node_or_node_type.ue_extra_menu_items_added = true
 }
 
 export function non_ue_menu_settings(options, node) {

@@ -5,7 +5,7 @@ import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, gr
 import { update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
-import { node_menu_settings, canvas_menu_settings, non_ue_menu_settings, SETTINGS } from "./use_everywhere_settings.js";
+import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_everywhere_settings.js";
 import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
@@ -87,16 +87,7 @@ app.registerExtension({
         Extra menu options are the node right click menu.
         We add to this list, and also insert a link list outdate to everything.
         */
-        const getExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
-        nodeType.prototype.getExtraMenuOptions = function(_, options) {
-            getExtraMenuOptions?.apply(this, arguments);
-            if (is_UEnode(this)) {
-                node_menu_settings(options, this);
-            } else {
-                non_ue_menu_settings(options, this);
-            }
-            inject_outdating_into_objects(options,'callback',`menu option on ${this.id}`);
-        }
+        add_extra_menu_items(nodeType.prototype, inject_outdating_into_object_method)
 
         if (is_UEnode(nodeType)) {
             const original_onDrawTitleBar = nodeType.prototype.onDrawTitleBar;
@@ -149,6 +140,9 @@ app.registerExtension({
 
         // removing a node makes the list dirty
         inject_outdating_into_object_method(node, 'onRemoved', `node ${node.id} removed`)
+
+        // check if the extra menu_items have been added (catch subgraph niode creation)
+        add_extra_menu_items(node, inject_outdating_into_object_method)
 
         // creating a node makes the link list dirty - but give the system a moment to finish
         setTimeout( ()=>{linkRenderController.mark_link_list_outdated()}, 100 );
