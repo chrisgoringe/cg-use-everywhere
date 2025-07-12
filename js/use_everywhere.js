@@ -11,6 +11,7 @@ import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { get_subgraph_input_type, link_is_from_subgraph_input, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
+import { edit_restrictions } from "./ue_properties_editor.js";
 
 /*
 The ui component that looks after the link rendering
@@ -320,6 +321,15 @@ app.registerExtension({
         app.canvas.canvas.addEventListener('litegraph:set-graph', ()=>{
             linkRenderController.mark_link_list_outdated()
             setTimeout(()=>{app.canvas.setDirty(true,true)},200)
+        })
+
+        app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
+            if (e?.detail?.subType=='node-double-click') {
+                const node = e.detail.node
+                if (node.IS_UE) {
+                    edit_restrictions(null, null, null, null, node)
+                }
+            }
         })
 
         if (false) add_debug();
