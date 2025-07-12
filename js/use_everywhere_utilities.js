@@ -4,6 +4,14 @@ import { link_is_from_subgraph_input, node_graph, visible_graph, wrap_input } fr
 
 export const VERSION = "7.0"
 
+export function create( tag, clss, parent, properties ) {
+    const nd = document.createElement(tag);
+    if (clss)       clss.split(" ").forEach((s) => nd.classList.add(s))
+    if (parent)     parent.appendChild(nd);
+    if (properties) Object.assign(nd, properties);
+    return nd;
+}
+
 /*
 Return  1 if x is  a   later version than y (or y is not defined)
 Return -1 if x is an earlier version than y (or x is not defined)

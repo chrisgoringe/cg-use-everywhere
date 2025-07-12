@@ -1,23 +1,47 @@
-import { VERSION, version_at_least, is_UEnode, graphConverter, fix_inputs } from "./use_everywhere_utilities.js"
-import { default_regex } from "./i18n.js";
+import { VERSION, version_at_least, is_UEnode, graphConverter, fix_inputs, create } from "./use_everywhere_utilities.js"
+import { i18n, default_regex, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
 
-const REGEXES = ['title', 'input', 'group']
+const ALL_REGEXES = ['title', 'input', 'prompt', 'negative', 'group']
+
+function any_regex_restrictions(node) {
+    var restricted = false
+    ALL_REGEXES.forEach((r)=>{
+        const reg = node.properties.ue_properties[`${r}_regex`]
+        restricted = restricted || (reg && reg.length>0)        
+    })
+    return restricted
+}
 
 export function any_restrictions(node) {
-    var restricted = (node.properties.ue_properties.group_restricted || node.properties.ue_properties.color_restricted || node.properties.ue_properties.priority)
-    for (var i=0; i<=2; i++) {
-        const reg = node.properties.ue_properties[`${REGEXES[i]}_regex`]
-        restricted = restricted || (reg && reg.length>0)
-    }
-    return restricted
+    return (
+        node.properties.ue_properties.group_restricted || 
+        node.properties.ue_properties.color_restricted || 
+        node.properties.ue_properties.priority         || 
+        any_regex_restrictions(node)
+    )
+}
+
+export function describe_restrictions(node) {
+    const statements = []
+    ALL_REGEXES.forEach((r)=>{
+        const reg = node.properties.ue_properties[`${r}_regex`]
+        if (reg && reg.length>0) statements.push([`${i18n(r)} regex`, `\\${reg}\\`])    
+    })
+    if (node.properties.ue_properties.group_restricted) statements.push(['group',i18n(GROUP_RESTRICTION_OPTIONS[node.properties.ue_properties.group_restricted])])
+    if (node.properties.ue_properties.color_restricted) statements.push(['color',i18n(COLOR_RESTRICTION_OPTIONS[node.properties.ue_properties.color_restricted])])
+    const table = create('table')
+    statements.forEach((s)=>{
+        const row = create('tr', null, table)
+        create('th', null, row, {innerText:`${i18n(s[0], {titlecase:true})}:`})
+        create('td', null, row, {innerText:s[1]})
+})
+    return table
 }
 
 export function default_priority(node) {
     var p = 10
     if (node.type === "Seed Everywhere" || node.type === "Prompts Everywhere") p += 10
-    if ((node.properties.ue_properties.title_regex && node.properties.ue_properties.title_regex!=".*") ||
-        (node.properties.ue_properties.group_regex && node.properties.ue_properties.group_regex!=".*") ||
-        (node.properties.ue_properties.input_regex && node.properties.ue_properties.input_regex!=".*"))  p += 20
+    if (any_regex_restrictions(node))  p += 20
     if (node.properties.ue_properties.group_restricted > 0) p += 3
     if (node.properties.ue_properties.color_restricted > 0) p += 6
     return p
@@ -93,6 +117,11 @@ function convert_node_types(node) {
         node.properties.ue_properties.fixed_inputs   = true
         node.properties.ue_properties.prompt_regexes = true
     }
+
+    ALL_REGEXES.forEach((r)=>{
+        const rname = `${r}_regex`
+        if (node.properties.ue_properties[rname]==".*") node.properties.ue_properties[rname] = undefined
+    })
 
     fix_inputs(node)
 }

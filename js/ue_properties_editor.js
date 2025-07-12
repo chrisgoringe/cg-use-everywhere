@@ -2,11 +2,11 @@ import { LinkRenderController } from "./use_everywhere_ui.js";
 import { i18n, default_regex } from "./i18n.js";
 import { app } from "../../scripts/app.js";
 import { default_priority } from "./ue_properties.js";
+import { GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
 
 const REGEXES = ['title', 'input', 'group']
 const P_REGEXES = ['prompt', 'negative']
-const GROUP_RESTRICTION_OPTIONS = ["No restrictions", "Send only within group", "Send only not within group"]
-const COLOR_RESTRICTION_OPTIONS = ["No restrictions", "Send only to same color", "Send only to different color"]
+
 
 export function edit_restrictions(a,b,c,d, node) {
     const table = create_editor_html(node)
