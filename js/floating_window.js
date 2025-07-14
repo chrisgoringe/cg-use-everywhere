@@ -1,4 +1,6 @@
 import { create } from "./use_everywhere_utilities.js"
+import { settingsCache } from "./use_everywhere_cache.js"
+
 
 export class FloatingWindow extends HTMLDivElement {
     constructor() {
@@ -38,6 +40,11 @@ export class FloatingWindow extends HTMLDivElement {
         this.body.appendChild(element)
     }
 
+    maybe_move_to(x,y) {
+        if (this.position && settingsCache.getSettingValue("Use Everywhere.Graphics.preserve edit window position")) return
+        this.move_to(x,y)
+    }
+
     move_to(x,y) {
         this.position = {x:x,y:y}
         this.style.left = `${this.position.x}px`
@@ -69,6 +76,7 @@ export class FloatingWindow extends HTMLDivElement {
 
 
 }
+
 
 customElements.define('ue-floating',  FloatingWindow, {extends: 'div'})
 export const edit_window = new FloatingWindow()

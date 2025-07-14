@@ -54,6 +54,21 @@ export const SETTINGS = [
         onChange: settingsCache.onSettingChange,
     },
     {
+        id: "Use Everywhere.Graphics.preserve edit window position",
+        name: "Save restrictions edit window position",
+        type: "boolean",
+        defaultValue: false,
+        onChange: settingsCache.onSettingChange,
+        tooltip: "If off, the edit window appears where the mouse is"
+    },
+    {
+        id: "Use Everywhere.Graphics.tooltips",
+        name: "Show restrictions as tooltip",
+        type: "boolean",
+        defaultValue: true,
+        onChange: settingsCache.onSettingChange,
+    },
+    {
         id: "Use Everywhere.Options.connect_to_bypassed",
         name: "Connect to bypassed nodes",
         type: "boolean",

@@ -1,9 +1,8 @@
-import { Logger, get_real_node, Pausable, create } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, node_graph } from "./use_everywhere_subgraph_utils.js";
-import { any_restrictions, describe_restrictions } from "./ue_properties.js";
-import { edit_window } from "./floating_window.js";
+import { maybe_show_tooltip } from "./tooltip_window.js";
 
 function nodes_in_my_group(node) {
     const nodes_in = new Set();
@@ -279,7 +278,7 @@ class LinkRenderController extends Pausable {
     }
 
     render_all_ue_links(ctx) {
-        this.show_tooltip()
+        maybe_show_tooltip()
         if (this.paused()) return;
         try {
             this.pause('render_all_ue_links')
@@ -288,27 +287,6 @@ class LinkRenderController extends Pausable {
             console.error(e);
         } finally {
             this.unpause()
-        }
-    }
-
-    show_tooltip() {
-        var ue_tooltip_element = document.getElementById('ue_tooltip')
-        if (!ue_tooltip_element) {
-            ue_tooltip_element = create('span', 'ue_tooltip', document.body, {id:'ue_tooltip'})
-        }
-        if (edit_window.showing) return
-        const node = app.canvas?.node_over
-        if (node?.IS_UE && any_restrictions(node)) {
-            if (node.id == this.lasttooltip_node_id) return
-            this.lasttooltip_node_id = node.id
-            ue_tooltip_element.style.display = "block"
-            ue_tooltip_element.style.left = `${app.canvas.mouse[0]+10}px`
-            ue_tooltip_element.style.top = `${app.canvas.mouse[1]+5}px`
-            ue_tooltip_element.innerHTML = ""
-            ue_tooltip_element.appendChild(describe_restrictions(node))
-        } else {
-            ue_tooltip_element.style.display = "none"
-            this.lasttooltip_node_id = null
         }
     }
 
