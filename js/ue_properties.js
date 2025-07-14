@@ -4,6 +4,7 @@ import { i18n, default_regex, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIO
 const ALL_REGEXES = ['title', 'input', 'prompt', 'negative', 'group']
 
 function any_regex_restrictions(node) {
+    if (!node.properties.ue_properties) return false
     var restricted = false
     ALL_REGEXES.forEach((r)=>{
         const reg = node.properties.ue_properties[`${r}_regex`]
@@ -23,18 +24,20 @@ export function any_restrictions(node) {
 
 export function describe_restrictions(node) {
     const statements = []
-    ALL_REGEXES.forEach((r)=>{
-        const reg = node.properties.ue_properties[`${r}_regex`]
-        if (reg && reg.length>0) statements.push([`${i18n(r)} regex`, reg])    
-    })
-    if (node.properties.ue_properties.group_restricted) statements.push(['group',i18n(GROUP_RESTRICTION_OPTIONS[node.properties.ue_properties.group_restricted])])
-    if (node.properties.ue_properties.color_restricted) statements.push(['color',i18n(COLOR_RESTRICTION_OPTIONS[node.properties.ue_properties.color_restricted])])
+    if (node.properties.ue_properties) {
+        ALL_REGEXES.forEach((r)=>{
+            const reg = node.properties.ue_properties[`${r}_regex`]
+            if (reg && reg.length>0) statements.push([`${i18n(r)} regex`, reg])    
+        })
+        if (node.properties.ue_properties.group_restricted) statements.push(['group',i18n(GROUP_RESTRICTION_OPTIONS[node.properties.ue_properties.group_restricted])])
+        if (node.properties.ue_properties.color_restricted) statements.push(['color',i18n(COLOR_RESTRICTION_OPTIONS[node.properties.ue_properties.color_restricted])])
+    }
     const table = create('table')
     statements.forEach((s)=>{
         const row = create('tr', null, table)
         create('th', null, row, {innerText:`${i18n(s[0], {titlecase:true})}:`})
         create('td', null, row, {innerText:s[1]})
-})
+    })
     return table
 }
 
