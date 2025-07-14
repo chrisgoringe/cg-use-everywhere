@@ -321,6 +321,7 @@ app.registerExtension({
             if (e?.detail?.subType=='node-double-click') {
                 const node = e.detail.node
                 if (node.IS_UE) {
+                    if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
                     edit_restrictions(null, null, null, null, node)
                 }
             }
