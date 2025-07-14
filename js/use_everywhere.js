@@ -89,7 +89,9 @@ app.registerExtension({
         if (is_UEnode(nodeType)) {
             const onConnectInput = nodeType.prototype.onConnectInput
             nodeType.prototype.onConnectInput = function (index, type) {
-                if (this.inputs.find((i)=>(i.type==type))) return false
+                if (!this.properties.ue_properties.fixed_inputs) {
+                    if (this.inputs.find((i, j)=>(i.type==type && j!=index))) return false
+                }
                 return onConnectInput?.apply(this, arguments)
             }
         }
