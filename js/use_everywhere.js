@@ -84,6 +84,18 @@ app.registerExtension({
         };
 
         /*
+        Reject duplicated inputs for now
+        */
+        if (is_UEnode(nodeType)) {
+            const onConnectInput = nodeType.prototype.onConnectInput
+            nodeType.prototype.onConnectInput = function (index, type) {
+                if (this.inputs.find((i)=>(i.type==type))) return false
+                return onConnectInput?.apply(this, arguments)
+            }
+        }
+        
+
+        /*
         Extra menu options are the node right click menu.
         We add to this list, and also insert a link list outdate to everything.
         */
