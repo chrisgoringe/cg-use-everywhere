@@ -166,7 +166,7 @@ app.registerExtension({
     loadedGraphNode(node) { 
         if (graphConverter.running_116_plus()) { 
             graphConverter.convert_if_pre_116(node);
-            if (node.isSubgraphNode()) {
+            if (node.isSubgraphNode?.()) {
                 node.subgraph.nodes.forEach((n) => {
                     graphConverter.convert_if_pre_116(n);
                 })
