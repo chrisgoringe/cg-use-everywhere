@@ -2,13 +2,16 @@ import { app } from "../../scripts/app.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
-import { has_priority_boost } from "./use_everywhere_utilities.js";
+import { VERSION } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
+import { visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { edit_restrictions } from "./ue_properties_editor.js";
+import { is_UEnode } from "./use_everywhere_utilities.js";
 
 export const SETTINGS = [
     {
         id: "Use Everywhere.About",
-        name: "Version 6.2.2",
+        name: `Version ${VERSION}`,
         type: () => {return document.createElement('span')},
     },  
     {
@@ -46,6 +49,21 @@ export const SETTINGS = [
     {
         id: "Use Everywhere.Graphics.highlight",
         name: "Highlight connected and connectable inputs",
+        type: "boolean",
+        defaultValue: true,
+        onChange: settingsCache.onSettingChange,
+    },
+    {
+        id: "Use Everywhere.Graphics.preserve edit window position",
+        name: "Save restrictions edit window position",
+        type: "boolean",
+        defaultValue: false,
+        onChange: settingsCache.onSettingChange,
+        tooltip: "If off, the edit window appears where the mouse is"
+    },
+    {
+        id: "Use Everywhere.Graphics.tooltips",
+        name: "Show restrictions as tooltip",
         type: "boolean",
         defaultValue: true,
         onChange: settingsCache.onSettingChange,
@@ -112,35 +130,11 @@ function submenu(properties, property, options, e, menu, node) {
     }
 }
 
-const GROUP_RESTRICTION_OPTIONS = ["No restrictions", "Send only within group", "Send only not within group"]
-function group_restriction_submenu(value, options, e, menu, node) {
-    submenu(node.properties, "group_restricted", GROUP_RESTRICTION_OPTIONS, e, menu, node);
-}
-
-const COLOR_RESTRICTION_OPTIONS = ["No restrictions", "Send only to same color", "Send only to different color"]
-function color_restriction_submenu(value, options, e, menu, node) {
-    submenu(node.properties, "color_restricted", COLOR_RESTRICTION_OPTIONS, e, menu, node);
-}
-
-function priority_boost_submenu(value, options, e, menu, node) {
-    const current = (node.properties["priority_boost"] ? node.properties["priority_boost"] : 0) + 1;
-    const submenu = new LiteGraph.ContextMenu(
-        [0,1,2,3,4,5,6,7,8,9],
-        { event: e, callback: function (v) { 
-            node.properties["priority_boost"] = parseInt(v);
-            LinkRenderController.instance().mark_link_list_outdated();
-        }, 
-        parentMenu: menu, node:node}
-    )
-    const current_element = submenu.root.querySelector(`:nth-child(${current})`);
-    if (current_element) current_element.style.borderLeft = "2px solid #484";
-}
-
 function highlight_selected(submenu_root, node, names) {
     names.forEach((name, i) => {
         const current_element = submenu_root?.querySelector(`:nth-child(${i+1})`);
         if (current_element) {
-            if (node.properties['widget_ue_connectable'][name]) {
+            if (node.properties.ue_properties['widget_ue_connectable'][name]) {
                 current_element.style.borderLeft = "2px solid #484";
             } else {
                 current_element.style.borderLeft = "";
@@ -152,7 +146,8 @@ function highlight_selected(submenu_root, node, names) {
 }
 
 function widget_ue_submenu(value, options, e, menu, node) {
-    if (!(node.properties['widget_ue_connectable'])) node.properties['widget_ue_connectable'] = {};
+    if (!(node.properties.ue_properties)) node.properties.ue_properties = {}
+    if (!(node.properties.ue_properties.widget_ue_connectable)) node.properties.ue_properties.widget_ue_connectable = {};
     
     const linkedWidgets = new Set()
     node.widgets
@@ -169,7 +164,7 @@ function widget_ue_submenu(value, options, e, menu, node) {
     const submenu = new LiteGraph.ContextMenu(
         names,
         { event: e, callback: function (v) { 
-            node.properties['widget_ue_connectable'][v] = !!!node.properties['widget_ue_connectable'][v]; 
+            node.properties.ue_properties.widget_ue_connectable[v] = !!!node.properties.ue_properties.widget_ue_connectable[v]; 
             LinkRenderController.instance().mark_link_list_outdated();
             highlight_selected(this.parentElement, node, names)
             return true; // keep open
@@ -177,6 +172,21 @@ function widget_ue_submenu(value, options, e, menu, node) {
         parentMenu: menu, node:node}
     )
     highlight_selected(submenu.root, node, names)
+}
+
+export function add_extra_menu_items(node_or_node_type, ioio) {
+    if (node_or_node_type.ue_extra_menu_items_added) return
+    const getExtraMenuOptions = node_or_node_type.getExtraMenuOptions;
+    node_or_node_type.getExtraMenuOptions = function(_, options) {
+        getExtraMenuOptions?.apply(this, arguments);
+        if (is_UEnode(this)) {
+            node_menu_settings(options, this);
+        } else {
+            non_ue_menu_settings(options, this);
+        }
+        ioio(options,'callback',`menu option on ${this.id}`);
+    }
+    node_or_node_type.ue_extra_menu_items_added = true
 }
 
 export function non_ue_menu_settings(options, node) {
@@ -202,30 +212,19 @@ export function non_ue_menu_settings(options, node) {
 
 export function node_menu_settings(options, node) {
     options.push(null);
-    if (has_priority_boost(node)) options.push(
+    options.push(
         {
-            content: "Priority Boost",
-            has_submenu: true,
-            callback: priority_boost_submenu,
-        }
+            content: "Edit restrictions",
+            callback: edit_restrictions,
+        }        
     )
     options.push(
         {
-            content: "Group Restrictions",
-            has_submenu: true,
-            callback: group_restriction_submenu,
-        }, 
-        {
-            content: "Color Restrictions",
-            has_submenu: true,
-            callback: color_restriction_submenu,
-        },
-        {
             content: "Convert to real links",
             callback: async () => {
-                const ues = GraphAnalyser.instance().analyse_graph(true);
-                convert_to_links(ues, node.id);
-                app.graph.remove(node);
+                const ues = GraphAnalyser.instance().wait_to_analyse_visible_graph();
+                convert_to_links(ues, node);
+                visible_graph().remove(node);
             }
         }
     )
@@ -246,10 +245,10 @@ export function canvas_menu_settings(options) {
         content: "Convert all UEs to real links",
         callback: async () => {
             if (window.confirm("This will convert all links created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
-                const ues = GraphAnalyser.instance().analyse_graph(true);
+                const ues = GraphAnalyser.instance().wait_to_analyse_visible_graph();
                 LinkRenderController.instance().pause("convert");
                 try {
-                    convert_to_links(ues, -1);
+                    convert_to_links(ues, visible_graph());
                     remove_all_ues(true);
                 } finally {
                     app.graph.change();
