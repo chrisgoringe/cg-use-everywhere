@@ -12,7 +12,13 @@ Shameless plug for my other nodes -> Check out [Image Picker](https://github.com
 
 ---
 
-# 7.0 start of the new UE
+# Important!
+
+I've merged v7 of UE to coincide with the update to ComfyUI, but the instructions below have not been updated.
+
+Please see [this discussion](https://github.com/chrisgoringe/cg-use-everywhere/discussions/334) (but ignore the bits about branches).
+
+---
 
 Over the next few releases I am aiming to reduce the UE zoo down to a single node that can do everything, but is as easy (or easier) to use than the current nodes.
 
