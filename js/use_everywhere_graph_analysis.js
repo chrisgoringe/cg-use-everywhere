@@ -30,19 +30,19 @@ class GraphAnalyser extends Pausable {
     async graph_to_prompt() {
         var p;
         this.pause('graph_to_prompt')
+        const mods = []
         try { 
-            const mods = []
             this.modify_graphs_recursively(master_graph(), mods);
-
             // Now create the prompt using the ComfyUI original functionality and the patched graph
             p = await this.original_graphToPrompt.apply(app);
-            // Remove the added virtual links
-            mods.forEach((mod)=>{mod.restorer()})
-
         } catch (e) { 
             Logger.log_error(e)
         } finally { 
-            this.unpause()
+            try {
+                mods.forEach((mod)=>{mod.restorer()})
+            } finally {
+                this.unpause()
+            }
         }
 
         if (!p) {
