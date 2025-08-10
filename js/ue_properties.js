@@ -81,9 +81,9 @@ export function setup_ue_properties_oncreate(node) {
 Convert node properties when loaded.
 */
 export function setup_ue_properties_onload(node) {
-    if (node.IS_UE) {
-        if ( !version_at_least(node.properties?.ue_properties?.version, "7.0") ) {
-            // convert a pre 7.0 UE node
+    if ( !version_at_least(node.properties?.ue_properties?.version, "7.0") ) {
+        if (node.IS_UE) {
+        // convert a pre 7.0 UE node
             node.properties.ue_properties = {
                 version               : VERSION,
                 group_restricted      : node.properties.group_restricted,
@@ -97,9 +97,16 @@ export function setup_ue_properties_onload(node) {
             delete node.properties.group_restricted
             delete node.properties.color_restricted
             delete node.properties.widget_ue_connectable
+        } else {
+            node.properties.ue_properties = {
+                version               : VERSION,
+                widget_ue_connectable : node.properties.widget_ue_connectable,
+            }
+            delete node.properties.widget_ue_connectable            
         }
-        convert_node_types(node)
     }
+    convert_node_types(node)
+
 }
 
 function convert_node_types(node) {
