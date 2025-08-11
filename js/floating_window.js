@@ -109,6 +109,12 @@ export class FloatingWindow extends HTMLDivElement {
 
         this.firstFocusable = focusableEls[0] ?? null
         this.lastFocusable  = focusableEls[focusableEls.length - 1] ?? null
+
+        if (this.firstFocusable) {
+            setTimeout(() => {
+                this.firstFocusable.focus()
+            }, 0);
+        }
     }
 }
 
