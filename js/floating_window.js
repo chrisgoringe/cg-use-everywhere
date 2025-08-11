@@ -16,6 +16,7 @@ export class FloatingWindow extends HTMLDivElement {
         document.addEventListener('mouseup',this.stop_dragging.bind(this))
         document.addEventListener('mouseleave',this.stop_dragging.bind(this))
         this.footer.addEventListener('click', this.hide.bind(this))
+        this.addEventListener("keydown", this.handle_keydown.bind(this));
 
         this.dragging = false
         this.hide()
@@ -74,6 +75,12 @@ export class FloatingWindow extends HTMLDivElement {
         if (this.dragging) this.move_to( this.position.x + e.movementX , this.position.y + e.movementY )
     }
 
+    /** @param {KeyboardEvent} e  */
+    handle_keydown(e) {
+        if (e.key === "Escape") {
+            this.hide();
+        }
+    }
 
 }
 
