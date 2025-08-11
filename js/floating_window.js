@@ -8,7 +8,7 @@ export class FloatingWindow extends HTMLDivElement {
         this.classList.add('ue_editor')
         this.header = create('div', 'ue_editor_header', this)  
         this.body   = create('div', 'ue_editor_body', this)  
-        this.footer = create('div', 'ue_editor_footer', this, {innerText:"Close"})  
+        this.footer = create('button', 'ue_editor_footer', this, { innerText: "Close" })  
 
         this.header.addEventListener('mousedown',this.start_dragging.bind(this))
         this.addEventListener('mousemove', this.mousemovedover.bind(this))
