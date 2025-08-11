@@ -10,6 +10,11 @@ export class FloatingWindow extends HTMLDivElement {
         this.body   = create('div', 'ue_editor_body', this)  
         this.footer = create('button', 'ue_editor_footer', this, { innerText: "Close" })  
 
+        /** @type {HTMLElement | null} */
+        this.firstFocusable = null
+        /** @type {HTMLElement | null} */
+        this.lastFocusable = null
+
         this.header.addEventListener('mousedown',this.start_dragging.bind(this))
         this.addEventListener('mousemove', this.mousemovedover.bind(this))
         document.addEventListener('mousemove', this.mousemoved.bind(this))
@@ -39,6 +44,7 @@ export class FloatingWindow extends HTMLDivElement {
     set_body(element) {
         this.body.innerHTML = ""
         this.body.appendChild(element)
+        this.setup_focus_trap()
     }
 
     maybe_move_to(x,y) {
@@ -78,10 +84,32 @@ export class FloatingWindow extends HTMLDivElement {
     /** @param {KeyboardEvent} e  */
     handle_keydown(e) {
         if (e.key === "Escape") {
-            this.hide();
+            this.hide()
+            return
+        }
+        if (e.key === "Tab") {
+            if (e.shiftKey && document.activeElement === this.firstFocusable) {
+                this.lastFocusable.focus()
+                e.preventDefault()
+                return
+            }
+            if (!e.shiftKey && document.activeElement === this.lastFocusable) {
+                this.firstFocusable.focus()
+                e.preventDefault()
+            }
         }
     }
 
+    setup_focus_trap() {
+        this.firstFocusable = null
+        this.lastFocusable = null
+
+        const focusableEls = this.querySelectorAll('a[href]:not([disabled]), button:not([disabled]), textarea:not([disabled]), input[type="text"]:not([disabled]), input[type="radio"]:not([disabled]), input[type="checkbox"]:not([disabled]), select:not([disabled])')
+        if (focusableEls?.length == 0) return
+
+        this.firstFocusable = focusableEls[0] ?? null
+        this.lastFocusable  = focusableEls[focusableEls.length - 1] ?? null
+    }
 }
 
 

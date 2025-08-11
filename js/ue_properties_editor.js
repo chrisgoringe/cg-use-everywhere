@@ -62,6 +62,7 @@ function create_editor_html(node) {
                 const name = P_REGEXES[j]
                 const row = add_row(table, `${i18n(name)} regex`)
                 const input = document.createElement('input')
+                input.type = "text"
                 input.value = node.properties.ue_properties[`${name}_regex`] || default_regex(`${name}_regex`)
                 if (!node.properties.ue_properties[`${name}_regex`]) input.style.opacity = 0.5
                 input.id = `${name}_regex_value`
@@ -73,6 +74,7 @@ function create_editor_html(node) {
             const name = REGEXES[i]
             const row = add_row(table, `${i18n(name)} regex`)
             const input = document.createElement('input')
+            input.type = "text"
             input.value = node.properties.ue_properties[`${name}_regex`] || ''
             input.addEventListener('input', ()=>{ changed(node, `${name}_regex`, input.value)})
             add_cell(row,input)
