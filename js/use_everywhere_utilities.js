@@ -2,7 +2,7 @@ import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { link_is_from_subgraph_input, node_graph, visible_graph, wrap_input } from "./use_everywhere_subgraph_utils.js";
 
-export const VERSION = "7.0.1"
+export const VERSION = "7.1"
 
 export function create( tag, clss, parent, properties ) {
     const nd = document.createElement(tag);

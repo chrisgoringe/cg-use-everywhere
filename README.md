@@ -68,11 +68,21 @@ You will _not_ be able to use workflows saved using v7 with older versions of Co
 The `Anything Everywhere` node takes one or more inputs (currently limited to one input of any data type) and sends the data to other nodes that need it. 
 When you connect an input, a new one automatically appears.
 
-By default the data will be sent to any `input` of the same data type which does not have a connection.
+By default the data will be sent to any input of the same data type which does not have a connection, and does not have a widget providing the value.
 
-`Anything Everywhere` does _not_ send to `widgets` by default, but if you right-click on the node that you want to receive the data you can specify which widgets should accept UE connections. 
+You can specify that an input should not accept data, or that one with a widget should, via the `UE Connectable Inputs` menu: 
+the green bar indicates an input is connectable. The `Reject UE links` option can be used to make this node completely reject UE links, regardless of other settings.
 
 ![uec](docs/connectable.png)
+
+The node also has visual indications: a black ring and a glow on the input dot indicates it is connectable. 
+In the image below, `positive` has been set to not accept UE inputs, `steps` has been set to accept them, and `model` has a UE connection.
+
+![uec](docs/connectable2.png)
+
+If a widget is getting data from a UE connection, it is grayed out, like `steps` below:
+
+![uec](docs/connectable3.png)
 
 You can also constrain where the data gets send through  _restrictions_ applied to the `Anything Everywhere` node. 
 These restrictions can be accessed by double-clicking the body of the node, or through the right-click menu.

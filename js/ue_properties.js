@@ -55,6 +55,7 @@ const DEFAULT_PROPERTIES = {
                     group_restricted      : 0,
                     color_restricted      : 0,
                     widget_ue_connectable : {},
+                    input_ue_unconnectable : {},
                     title_regex           : null,
                     input_regex           : null,
                     group_regex           : null,
@@ -90,6 +91,7 @@ export function setup_ue_properties_onload(node) {
                 group_restricted      : node.properties.group_restricted,
                 color_restricted      : node.properties.color_restricted,
                 widget_ue_connectable : node.properties.widget_ue_connectable,
+                input_ue_unconnectable: {},
                 title_regex           : node.widgets_values?.[0],
                 input_regex           : node.widgets_values?.[1],
                 group_regex           : node.widgets_values?.[2],
@@ -102,7 +104,8 @@ export function setup_ue_properties_onload(node) {
             node.properties.ue_properties.version = VERSION
             node.properties.ue_properties.widget_ue_connectable = node.properties.ue_properties.widget_ue_connectable || 
                                                                   node.properties.widget_ue_connectable ||
-                                                                  []
+                                                                  {}
+            node.properties.ue_properties.input_ue_unconnectable = {}
             if (node.properties.widget_ue_connectable) delete node.properties.widget_ue_connectable            
         }
     }

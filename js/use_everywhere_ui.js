@@ -3,6 +3,7 @@ import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, node_graph } from "./use_everywhere_subgraph_utils.js";
 import { maybe_show_tooltip } from "./tooltip_window.js";
+import { is_connectable } from "./use_everywhere_settings.js";
 
 function nodes_in_my_group(node) {
     const nodes_in = new Set();
@@ -195,24 +196,24 @@ class LinkRenderController extends Pausable {
 
     highlight_ue_connections(node, ctx) {        
         if (!settingsCache.getSettingValue('Use Everywhere.Graphics.highlight')) return;
+        if (!node.inputs) return;
         
         try {
             this.pause('highlight_ue_connections')
             if (!this._list_ready()) return;
-            const unconnected_connectables = node.properties?.ue_properties?.widget_ue_connectable ? new Set(Object.keys(node.properties.ue_properties.widget_ue_connectable).filter((name) => (node.properties.ue_properties.widget_ue_connectable[name]))) : new Set()
-            node.inputs.filter((input)=>(input.link)).forEach((input) => { unconnected_connectables.delete(input.name) });
 
+            const unconnected_connectable_names = new Set(node.inputs
+                .filter((input)=>is_connectable(node,input.name))
+                .filter((input)=>(!input.link))
+                .map((input)=>input.name) || [])
+        
             if (this.ue_list.all_connected_inputs) {
                 this.ue_list.all_connected_inputs(node).forEach((ue_connection) => {
-                    if (!ue_connection.control_node) { // control node deleted...
-                        this.mark_link_list_outdated();
-                        return; 
-                    }
-                    if (!node.inputs[ue_connection.input_index]) {
-                        return
-                    }
+                    if (!ue_connection.control_node) return; 
+                    if (!node.inputs[ue_connection.input_index]) return
+ 
                     const name_sent_to = node.inputs[ue_connection.input_index].name;
-                    unconnected_connectables.delete(name_sent_to); // remove the name from the list of connectables
+                    unconnected_connectable_names.delete(name_sent_to); // remove the name from the list of connectables
                     var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
                     pos2[0] -= node.pos[0];
                     pos2[1] -= node.pos[1];
@@ -239,7 +240,7 @@ class LinkRenderController extends Pausable {
                 });
             }
             
-            unconnected_connectables.forEach((name) => {
+            unconnected_connectable_names.forEach((name) => {
                 const index = node.inputs.findIndex((i) => i.name == name);
                 var pos2 = node.getConnectionPos(true, index, this.slot_pos1);
                 pos2[0] -= node.pos[0];
