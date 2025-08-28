@@ -154,17 +154,21 @@ function widget_ue_submenu(value, options, e, menu, node) {
         .filter(w => w.linkedWidgets)
         .forEach((widget) => { widget.linkedWidgets.forEach((lw)=>{linkedWidgets.add(lw)}) });
 
-    const names = []
+    const label_name_map = {}
     node.widgets
         .filter(w => !linkedWidgets.has(w))
         .filter(w => !w.hidden)
         .filter(w => !w.name?.includes('$$'))
-        .forEach((widget) => { names.push(widget.name) });
+        .forEach((widget) => { label_name_map[widget.label || widget.name] = widget.name });
+
+    const labels = Array.from(Object.keys(label_name_map))
+    const names = Array.from(Object.values(label_name_map))
 
     const submenu = new LiteGraph.ContextMenu(
-        names,
-        { event: e, callback: function (v) { 
-            node.properties.ue_properties.widget_ue_connectable[v] = !!!node.properties.ue_properties.widget_ue_connectable[v]; 
+        labels,
+        { event: e, callback: function (label) { 
+            const name = label_name_map[label];
+            node.properties.ue_properties.widget_ue_connectable[name] = !!!node.properties.ue_properties.widget_ue_connectable[name]; 
             LinkRenderController.instance().mark_link_list_outdated();
             highlight_selected(this.parentElement, node, names)
             return true; // keep open
