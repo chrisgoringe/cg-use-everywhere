@@ -113,23 +113,6 @@ ui_update_settings.forEach((id) => {
     settingsCache.addCallback(id, ()=>{app.graph?.change.bind(app.graph)})
 })
 
-function submenu(properties, property, options, e, menu, node) {
-    const current = properties[property] ? (properties[property]==2 ? 3 : 2 ) : 1; 
-    const submenu = new LiteGraph.ContextMenu(
-        options,
-        { event: e, callback: inner_function, parentMenu: menu, node: node }
-    );
-    const current_element = submenu.root.querySelector(`:nth-child(${current})`);
-    if (current_element) current_element.style.borderLeft = "2px solid #484";
-    function inner_function(v) {
-        if (node) {
-            const choice = Object.values(options).indexOf(v);
-            properties[property] = choice;
-            LinkRenderController.instance().mark_link_list_outdated();
-        }
-    }
-}
-
 function show_connectable(submenu_root, node) {
     node.inputs.forEach((input, i) => {
         const current_element = submenu_root?.querySelector(`:nth-child(${i+1})`);
@@ -169,9 +152,7 @@ function widget_ue_submenu(value, options, e, menu, node) {
     node.inputs
         .filter(i => !i.hidden)
         .filter(i => !i.name?.includes('$$'))
-        .forEach((input) => { 
-            label_to_name[input.label || input.name] = input.name
-        });
+        .forEach((input) => { label_to_name[input.label || input.name] = input.name });
 
     const submenu = new LiteGraph.ContextMenu(
         Object.keys(label_to_name),

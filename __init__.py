@@ -1,8 +1,9 @@
 from .use_everywhere import SeedEverywhere, AnythingEverywherePrompts
+from typing import Any
 
 UE_VERSION = "7.1"
 
-NODE_CLASS_MAPPINGS = { "Seed Everywhere": SeedEverywhere }
+NODE_CLASS_MAPPINGS:dict[str,Any] = { "Seed Everywhere": SeedEverywhere }
 
 from .use_everywhere import AnythingEverywhere, AnythingSomewhere, AnythingEverywhereTriplet, SimpleString
 NODE_CLASS_MAPPINGS["Anything Everywhere"] = AnythingEverywhere
