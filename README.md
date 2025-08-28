@@ -12,6 +12,21 @@ Shameless plug for my other nodes -> Check out [Image Picker](https://github.com
 
 ---
 
+# TL;DR
+
+Here's the standard ComfyUI template modified to use `AnythingEverywhere`
+
+|workflow|output image you can drop into Comfy|
+|-|-|
+|![simple](docs/simple-example.png)|![simple](docs/simple-example-image.png)|
+
+The `MODEL`, `CLIP`, and `VAE` are automatically broadcast to all the places they are needed.
+
+Doesn't make much difference in this simple case, but with complex workflows it really does.
+
+
+
+
 # Anything Everywhere v7
 
 Version 7 is a major update to the Anything Everywhere nodes, so the documentation below is all new. If you are looking for the old docs, you can find them [here](https://github.com/chrisgoringe/cg-use-everywhere/README-old).
@@ -67,7 +82,7 @@ These restrictions can be accessed by double-clicking the body of the node, or t
 The first three entries are [regex](https://regex101.com/) patterns. 
 The node will only send data to another node if the regex matches the receiving node title, the name of the input, or the name of a group the receiving node is in, respectively.
 
-The Group and Colour restrictions will contrain the node to only send to nodes in (or not in) the same group, and of the same (or different) colour.
+The Group and Colour restrictions will constrain the node to only send to nodes in (or not in) the same group, and of the same (or different) colour.
 
 If you select multiple restrictions, all must be satisfied for the node to send.
 
