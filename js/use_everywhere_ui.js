@@ -169,16 +169,20 @@ class LinkRenderController extends Pausable {
             app.graph.extra['ue_links']?.forEach((uel) => {
                 const node = app.graph._nodes_by_id[uel.downstream]
                 if (node) {
-                    const name = node.inputs[uel.downstream_slot].name;
-                    const widget = node._getWidgetByName(name) 
-                    if (widget && !widget.disabled) {
-                        this.widgets_disabled.push(widget)
-                        widget.disabled = true;
+                    try {
+                        const name = node.inputs[uel.downstream_slot].name;
+                        const widget = node._getWidgetByName(name) 
+                        if (widget && !widget.disabled) {
+                            this.widgets_disabled.push(widget)
+                            widget.disabled = true;
+                        }
+                        widget?.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
+                            this.widgets_disabled.push(w)
+                            w.disabled = true;
+                        })
+                    } catch(e) {
+                        Logger.log_error(e);
                     }
-                    widget?.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
-                        this.widgets_disabled.push(w)
-                        w.disabled = true;
-                    })
                 } else {
                     Logger.log_info(`Couldn't find node ${uel.downstream}`)
                 }
