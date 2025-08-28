@@ -29,6 +29,7 @@ If you used Anything Everywhere prior to v7, the major improvements are:
   - In the restrictions editor you can set title, input, and group regexes, color restrictions, group restrictions, and priority (for when two nodes both match)
   - The green circle is used to indicate that _any_ restrictions are in place; if you hover over a node with restrictions they will appear in a tooltip
 - Subgraphs are supported (in the majority of cases). Yay subgraphs! Seriously, they are _so_ much better than group nodes.
+  - There are lots of odd cases with subgraphs, so if you find a case not covered properly, please [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues)
 
 There are a couple of features that have been removed:
 
@@ -215,6 +216,20 @@ Read the list below and include anything that seems relevant. If you can't get t
 - Comfy version information (in Settings - About, it looks like this:)
 ![versions](https://github.com/user-attachments/assets/a16812a3-94c9-4eb7-8e0e-0d8b5319cd8f)
 - include what all your settings are - in the Comfy settings select `AE` in the left menu
-- check your version of the node (in the settings from version 6.0.4, before that look in the `cg-use-everywhere` folder in the file `__init__.py`
+- check your version of the node (in the settings from version 6.0.4, before that look in the `cg-use-everywhere` folder in the file `__init__.py`)
 - press f12 and see if there are any errors in the javascript console that look like they might be relevant
 - look at the server (python) console log and see if there are any errors there
+
+## Thanks to 
+
+The following people have contributed code or helpful discussions, without which these nodes would be less good!
+
+- [DrJKL](https://github.com/DrJKL)
+- [fighting-tx](https://github.com/fighting-tx)
+- [huchenlei](https://github.com/huchenlei)
+- [set-soft](https://github.com/set-soft)
+- [TinyTerra](https://github.com/TinyTerra)
+- [bananasss00](https://github.com/bananasss00)
+- [fichas](https://github.com/fichas)
+- [JorgeR81](https://github.com/JorgeR81)
+- [LukeG89](https://github.com/LukeG89)
