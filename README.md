@@ -23,8 +23,11 @@ Here's the standard ComfyUI template modified to use `AnythingEverywhere`
 The `MODEL`, `CLIP`, and `VAE` are automatically broadcast to all the places they are needed.
 
 Doesn't make much difference in this simple case, but with complex workflows it really does.
+This is what the default wan 2.2 s2v video workflow looks like:
 
-
+|before|after|
+|-|-|
+|![before](docs/before.png)|![after](docs/after.png)|
 
 
 # Anything Everywhere v7
