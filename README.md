@@ -42,7 +42,6 @@ If you used Anything Everywhere prior to v7, the major improvements are:
 
 - The `Anything Everywhere3` and `Anything Everywhere?` nodes are deprecated, as their features are now part of the standard `Anything Everywhere` node.
 - `Anything Everywhere` nodes now have dynamic inputs, so you can plug as many different things into them as you like.
-  - At present you can only connect one input of any given data type, but this restriction should go away in `7.1`
 - All the restrictions on what nodes data will be sent to are now in a restrictions editor, that can be accessed through the right click menu of the node, or by double-clicking the body of the node.
   - In the restrictions editor you can set title, input, and group regexes, color restrictions, group restrictions, and priority (for when two nodes both match)
   - The green circle is used to indicate that _any_ restrictions are in place; if you hover over a node with restrictions they will appear in a tooltip
@@ -101,9 +100,14 @@ If you select multiple restrictions, all must be satisfied for the node to send.
 
 If any restrictions are applied, the `Anything Everywhere` node gets a green circle in the top left hand corner, and a tooltip if yuo hover the mouse over it.
 
-The final line in the restrictions box is the Priority, which has an automatically calculated value which you can choose to override. 
+Priority has an automatically calculated value which you can choose to override. 
 If two more more `Anything Everywhere` nodes match the same input, the higher priority node is used. If there is a tie, _no connection is made_.
 When there is a tie, if you right-click on the canvas you will find an option to show which nodes are the problem.
+
+`Repeated Types` determines behaviour when more than one input of the same type is connected to an `Anything Everywhere` node.
+In this case an additional constraint is used to disambiguate which inputs match based on the names of the input
+slots on the `Anything Everywhere` node and the target node. 
+Note that you can rename the input slots on the `Anything Everywhere` node by right-clicking on the input dot.
 
 ## Seed Everywhere
 

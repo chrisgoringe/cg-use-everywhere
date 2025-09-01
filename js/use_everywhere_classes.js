@@ -260,7 +260,7 @@ export class UseEverywhereList {
                 if (connection.link) {
                     const input_regex = (node.properties.ue_properties.prompt_regexes) ? prompt_regex(node,i) : undefined
                     var additional_requirement = null
-                    if (duplicated_input_types.has(connection.type)) {
+                    if (duplicated_input_types.has(connection.type) && !node.properties.ue_properties.prompt_regexes) {
                         const input_name = input.label || input.name
                         if (node.properties.ue_properties?.repeated_type_rule == 0) { // 0 is exact match of input name
                             additional_requirement = (target_input) => { 

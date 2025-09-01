@@ -83,7 +83,7 @@ export class FloatingWindow extends HTMLDivElement {
 
     /** @param {KeyboardEvent} e  */
     handle_keydown(e) {
-        if (e.key === "Escape") {
+        if (e.key === "Escape" || e.key === "Enter") {
             this.hide()
             return
         }

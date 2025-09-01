@@ -103,10 +103,12 @@ function create_editor_html(node) {
     if (!node.properties.ue_properties.priority) priority_edit.style.opacity = 0.5
     add_cell(priority_row,priority_edit)
 
-    const repeated_type_row = add_row(table, i18n("Repeated Types"))
-    const repeated_type_select = document.createElement('select')
-    add_cell(repeated_type_row,repeated_type_select)
-    add_select_options(node, repeated_type_select, REPEATED_TYPE_OPTIONS, `repeated_type_rule`)
+    if (!node.properties.ue_properties.prompt_regexes) {
+        const repeated_type_row = add_row(table, i18n("Repeated Types"))
+        const repeated_type_select = document.createElement('select')
+        add_cell(repeated_type_row,repeated_type_select)
+        add_select_options(node, repeated_type_select, REPEATED_TYPE_OPTIONS, `repeated_type_rule`)
+    }
 
     return table
 }
