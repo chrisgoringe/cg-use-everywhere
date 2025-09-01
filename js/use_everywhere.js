@@ -130,14 +130,14 @@ app.registerExtension({
     },
 
     async nodeCreated(node) {
-        // TODO see if we still need this
+        /* TODO see if we still need this
         if (!node.__mode) {
             node.__mode = node.mode
             defineProperty(node, "mode", {
                 get: ( )=>{return node.__mode},
                 set: (v)=>{node.__mode = v; node.afterChangeMade?.('mode', v);}            
             })
-        }
+        }*/
 
         const original_afterChangeMade = node.afterChangeMade
         node.afterChangeMade = (p, v) => {
