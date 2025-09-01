@@ -79,6 +79,8 @@ class UseEverywhere {
             return false;
         }
 
+        if (this.additional_requirement && !this.additional_requirement(input)) return false
+
         if (this.output[0] == node.id) return false;
         if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;
         const input_label = input.label ? input.label : input.name;
@@ -139,7 +141,7 @@ export class UseEverywhereList {
         return false;
     }
 
-    add_ue(node, control_node_input_index, type, output, input_regex_override) {
+    add_ue(node, control_node_input_index, type, output, input_regex_override, additional_requirement) {
         const params = {
             controller: node,
             control_node_input_index: control_node_input_index, 
@@ -150,6 +152,7 @@ export class UseEverywhereList {
             group_regex: regex_for(node, 'group'),
             priority: node.properties.ue_properties.priority || default_priority(node), 
             graph: node_graph(node),
+            additional_requirement: additional_requirement,
         };
 
         if (node.properties.ue_properties.group_restricted == 1) params.restrict_to = nodes_in_my_group(node);
@@ -240,16 +243,49 @@ export class UseEverywhereList {
     }
 
     add_ue_from_node(node) {
+        const input_types = new Set()
+        const duplicated_input_types = new Set()
+        for (var i=0; i<node.inputs.length; i++) {
+            const connection = get_connection(node, i);
+            if (connection.link) {
+                if (input_types.has(connection.type)) duplicated_input_types.add(connection.type)
+                input_types.add(connection.type)
+            }
+        }
         if (node.properties.ue_properties.seed_inputs) {
             this.add_ue(node, -1, "INT", [node.id.toString(),0], regex_for(node, 'input'));
         } else {
-            for (var i=0; i<node.inputs.length; i++) {
+            node.inputs.forEach((input, i) => {
                 const connection = get_connection(node, i);
                 if (connection.link) {
                     const input_regex = (node.properties.ue_properties.prompt_regexes) ? prompt_regex(node,i) : undefined
-                    this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], input_regex);
+                    var additional_requirement = null
+                    if (duplicated_input_types.has(connection.type)) {
+                        const input_name = input.label || input.name
+                        if (node.properties.ue_properties?.repeated_type_rule == 0) { // 0 is exact match of input name
+                            additional_requirement = (target_input) => { 
+                                const target_name = target_input.label || target_input.name
+                                return (target_name == input_name) 
+                            }
+                        }
+                        if (node.properties.ue_properties?.repeated_type_rule == 1) { // 1 is match start of input name
+                            additional_requirement = (target_input) => { 
+                                const target_name = target_input.label || target_input.name
+                                const chars = Math.min( input_name.length, target_name.length )
+                                return (target_name.substring(0, chars) == input_name.substring(0, chars)) 
+                            }
+                        }
+                        if (node.properties.ue_properties?.repeated_type_rule == 2) { // 2 is match end of input name
+                            additional_requirement = (target_input) => { 
+                                const target_name = target_input.label || target_input.name
+                                const chars = Math.min( input_name.length, target_name.length )
+                                return (target_name.substring(target_name.length - chars) == input_name.substring(input_name.length - chars)) 
+                            }
+                        }
+                    }
+                    this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], input_regex, additional_requirement);
                 }
-            }
+            })
         }
     }
 }

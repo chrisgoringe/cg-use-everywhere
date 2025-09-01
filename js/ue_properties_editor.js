@@ -2,7 +2,7 @@ import { LinkRenderController } from "./use_everywhere_ui.js";
 import { i18n, default_regex } from "./i18n.js";
 import { app } from "../../scripts/app.js";
 import { default_priority } from "./ue_properties.js";
-import { GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
+import { GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS, REPEATED_TYPE_OPTIONS } from "./i18n.js";
 import { edit_window } from "./floating_window.js";
 
 const REGEXES = ['title', 'input', 'group']
@@ -84,26 +84,12 @@ function create_editor_html(node) {
     const gr_row    = add_row(table, i18n("Group"))
     const gr_select = document.createElement('select')
     add_cell(gr_row,gr_select)
-    GROUP_RESTRICTION_OPTIONS.forEach((gro, i)=>{
-        const gr_option = document.createElement('option')
-        gr_option.value = `${i}`
-        gr_option.innerText = gro
-        gr_select.appendChild(gr_option)
-    })
-    gr_select.value = `${node.properties.ue_properties.group_restricted || 0}`
-    gr_select.addEventListener('input', ()=>{ changed(node, `group_restricted`, parseInt(gr_select.value))})
+    add_select_options(node, gr_select, GROUP_RESTRICTION_OPTIONS, `group_restricted`)
 
     const col_row    = add_row(table, i18n("Color"))
     const col_select = document.createElement('select')
     add_cell(col_row,col_select)
-    COLOR_RESTRICTION_OPTIONS.forEach((cro, i)=>{
-        const col_option = document.createElement('option')
-        col_option.value = `${i}`
-        col_option.innerText = cro
-        col_select.appendChild(col_option)
-    })
-    col_select.value = `${node.properties.ue_properties.color_restricted || 0}`
-    col_select.addEventListener('input', ()=>{ changed(node, `color_restricted`, parseInt(col_select.value))})
+    add_select_options(node, col_select, COLOR_RESTRICTION_OPTIONS, `color_restricted` )
 
     const priority_row = add_row(table, i18n("Priority"))
     const priority_edit = document.createElement("input")
@@ -116,5 +102,22 @@ function create_editor_html(node) {
     priority_edit.id = 'priority_value'
     if (!node.properties.ue_properties.priority) priority_edit.style.opacity = 0.5
     add_cell(priority_row,priority_edit)
+
+    const repeated_type_row = add_row(table, i18n("Repeated Types"))
+    const repeated_type_select = document.createElement('select')
+    add_cell(repeated_type_row,repeated_type_select)
+    add_select_options(node, repeated_type_select, REPEATED_TYPE_OPTIONS, `repeated_type_rule`)
+
     return table
+}
+
+function add_select_options(node, select, OPTIONS, property) {
+    OPTIONS.forEach((txt, i)=>{
+        const option = document.createElement('option')
+        option.value = `${i}`
+        option.innerText = txt
+        select.appendChild(option)
+    })
+    select.value = `${node.properties.ue_properties[property] || 0}`
+    select.addEventListener('input', ()=>{ changed(node, property, parseInt(select.value))})
 }

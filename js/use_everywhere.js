@@ -85,7 +85,9 @@ app.registerExtension({
 
         /*
         Reject duplicated inputs for now
-        */
+        
+        no, allow them
+
         if (is_UEnode(nodeType)) {
             const onConnectInput = nodeType.prototype.onConnectInput
             nodeType.prototype.onConnectInput = function (index, type) {
@@ -94,7 +96,7 @@ app.registerExtension({
                 }
                 return onConnectInput?.apply(this, arguments)
             }
-        }
+        }*/
         
 
         /*
@@ -115,13 +117,6 @@ app.registerExtension({
             const onNodeCreated = nodeType.prototype.onNodeCreated;
             nodeType.prototype.onNodeCreated = function () {
                 const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
-                /*if (!this.properties) this.properties = {}
-                if (this.inputs) {
-                    if (!this.widgets) this.widgets = [];
-                    for (const input of this.inputs) {
-                        if (input.widget && !this.widgets.find((w) => w.name === input.widget.name)) this.widgets.push(input.widget)
-                    }
-                }*/
                 Logger.log_detail(`Node ${this.id} created`)
                 setup_ue_properties_oncreate(this)
                 return r;
@@ -130,14 +125,14 @@ app.registerExtension({
     },
 
     async nodeCreated(node) {
-        // TODO see if we still need this
+        /* TODO see if we still need this
         if (!node.__mode) {
             node.__mode = node.mode
             defineProperty(node, "mode", {
                 get: ( )=>{return node.__mode},
                 set: (v)=>{node.__mode = v; node.afterChangeMade?.('mode', v);}            
             })
-        }
+        }*/
 
         const original_afterChangeMade = node.afterChangeMade
         node.afterChangeMade = (p, v) => {

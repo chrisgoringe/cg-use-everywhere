@@ -18,10 +18,14 @@ const DISPLAY = {
     "Send only not within group" : "Send only not within group",
     "Send only to same color" : "Send only to same color", 
     "Send only to different color" : "Send only to different color",
+    "Exact match of input names" : "Exact match of input names",
 }
+
+export const REPEATED_TYPE_OPTIONS = [ i18n("Exact match of input names"), i18n("Match start of input names"), i18n("Match end of input names"), ]
 
 export const GROUP_RESTRICTION_OPTIONS = [i18n("No restrictions"), i18n("Send only within group"), i18n("Send only not within group")]
 export const COLOR_RESTRICTION_OPTIONS = [i18n("No restrictions"), i18n("Send only to same color"), i18n("Send only to different color")]
+
 
 const toTitleCase = (phrase) => {
   return phrase

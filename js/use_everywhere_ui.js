@@ -88,7 +88,7 @@ function indicate_restriction(ctx, title_height) {
 function update_input_label(node, slot, app) {
     const type = node.inputs[slot].type
     if (type) {
-        node.inputs[slot].label = type;
+        node.inputs[slot].label = node.inputs[slot].label || type;
         node.inputs[slot].color_on = app.canvas.default_connection_color_byType[type];
     } else {
         node.inputs[slot].label = "anything";

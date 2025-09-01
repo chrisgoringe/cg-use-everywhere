@@ -60,6 +60,7 @@ const DEFAULT_PROPERTIES = {
                     input_regex           : null,
                     group_regex           : null,
                     priority              : undefined,
+                    repeated_type_rule    : 0,
                 }
 
 /*
