@@ -1,5 +1,5 @@
 import { VERSION, version_at_least, is_UEnode, graphConverter, fix_inputs, create } from "./use_everywhere_utilities.js"
-import { i18n, default_regex, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
+import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
 
 const ALL_REGEXES = ['title', 'input', 'prompt', 'negative', 'group']
 
@@ -127,7 +127,7 @@ function convert_node_types(node) {
     } else if (node.type=="Seed Everywhere") {
         node.properties.ue_properties.fixed_inputs = true
         node.properties.ue_properties.seed_inputs  = true
-        node.properties.ue_properties.input_regex  = node.properties.ue_properties.input_regex || default_regex('seed_input_regex')        
+        node.properties.ue_properties.input_regex  = node.properties.ue_properties.input_regex || i18n_functional('seed_input_regex')        
     } else if (node.type=="Prompts Everywhere") {
         node.properties.ue_properties.fixed_inputs   = true
         node.properties.ue_properties.prompt_regexes = true

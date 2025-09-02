@@ -7,13 +7,23 @@ import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { is_UEnode } from "./use_everywhere_utilities.js";
+import { language_changed, language_options, i18ify_settings } from "./i18n.js";
 
-export const SETTINGS = [
+const _SETTINGS = [
     {
         id: "Use Everywhere.About",
         name: `Version ${VERSION}`,
         type: () => {return document.createElement('span')},
     },  
+    {   
+        id: "Use Everywhere.Language.language",
+        name: "Language",
+        type: "combo",
+        options: language_options(),
+        defaultValue: 'en',
+        onChange: language_changed,
+        tooltip: "Probably requires page refresh",
+    },
     {
         id: "Use Everywhere.Graphics.showlinks",
         name: "Show links",
@@ -72,7 +82,7 @@ export const SETTINGS = [
         id: "Use Everywhere.Options.connect_to_bypassed",
         name: "Connect to bypassed nodes",
         type: "boolean",
-        defaultValue: false,
+        defaultValue: true,
         onChange: settingsCache.onSettingChange,
         tooltip: "By default UE links are made to the node downstream of bypassed nodes."
     },
@@ -102,12 +112,15 @@ export const SETTINGS = [
     },
 ]
 
+export const SETTINGS = i18ify_settings(_SETTINGS)
+
 const ui_update_settings = [
     "Use Everywhere.Graphics.showlinks",
     "Use Everywhere.Graphics.fuzzlinks",
     "Use Everywhere.Graphics.animate",
     "Use Everywhere.Graphics.stop_animation_when_running",
     "Use Everywhere.Graphics.highlight",
+    "Use Everywhere.Language.language",
 ]
 ui_update_settings.forEach((id) => {
     settingsCache.addCallback(id, ()=>{app.graph?.change.bind(app.graph)})

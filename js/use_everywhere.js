@@ -82,23 +82,7 @@ app.registerExtension({
             linkRenderController.mark_link_list_outdated();
             onConnectionsChange?.apply(this, arguments);
         };
-
-        /*
-        Reject duplicated inputs for now
         
-        no, allow them
-
-        if (is_UEnode(nodeType)) {
-            const onConnectInput = nodeType.prototype.onConnectInput
-            nodeType.prototype.onConnectInput = function (index, type) {
-                if (!this.properties.ue_properties.fixed_inputs) {
-                    if (this.inputs.find((i, j)=>(i.type==type && j!=index))) return false
-                }
-                return onConnectInput?.apply(this, arguments)
-            }
-        }*/
-        
-
         /*
         Extra menu options are the node right click menu.
         We add to this list, and also insert a link list outdate to everything.

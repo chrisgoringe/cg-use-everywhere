@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { link_is_from_subgraph_input, node_graph, visible_graph, wrap_input } from "./use_everywhere_subgraph_utils.js";
+import { i18n } from "./i18n.js";
 
 export const VERSION = "7.1"
 
@@ -124,8 +125,8 @@ class GraphConverter {
         if (node.type == "Anything Everywhere?") expected_inputs = 4
 
         // remove all the 'anything' inputs (because they may be duplicated)
-        const removed = node.inputs.filter(i=>(i.label=='anything' || i.label=='*'))
-        node.inputs   = node.inputs.filter(i=>(i.label!='anything' && i.label!='*')) 
+        const removed = node.inputs.filter(i=>(i.label==i18n('anything') || i.label=='*'))
+        node.inputs   = node.inputs.filter(i=>(i.label!=i18n('anything') && i.label!='*')) 
         // add them back as required
         while (node.inputs.length < expected_inputs) { node.inputs.push(removed.pop()) }
         // the input comes before the regex widgets in UE?
@@ -136,7 +137,7 @@ class GraphConverter {
         }
         // fix the localized names
         node.inputs = node.inputs.map((input) => {
-            if (!input.localized_name || input.localized_name.startsWith('anything')) input.localized_name = input.name
+            if (!input.localized_name || input.localized_name.startsWith(i18n('anything'))) input.localized_name = input.name
             return input;
         })
 
@@ -152,7 +153,7 @@ class GraphConverter {
                         input.type = llink.type;
                     }
                 } else {
-                    input.type = (input.label && input.label!='anything') ? input.label : input.name
+                    input.type = (input.label && input.label!=i18n('anything')) ? input.label : input.name
                 }
             }
         });
@@ -426,7 +427,7 @@ export function fix_inputs(node) {
     if (excess_inputs<0) {
         try {
             node.properties.ue_properties.next_input_index = (node.properties.ue_properties.next_input_index || 10) + 1
-            node.addInput(`anything${node.properties.ue_properties.next_input_index}`, "*", {label:"anything"})
+            node.addInput(`anything${node.properties.ue_properties.next_input_index}`, "*", {label:i18n('anything')})
             fix_inputs(node)
         } catch (e) {
             Logger.log_error(e)

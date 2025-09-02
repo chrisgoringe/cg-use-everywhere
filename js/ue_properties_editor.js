@@ -1,8 +1,7 @@
 import { LinkRenderController } from "./use_everywhere_ui.js";
-import { i18n, default_regex } from "./i18n.js";
+import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS, REPEATED_TYPE_OPTIONS } from "./i18n.js";
 import { app } from "../../scripts/app.js";
 import { default_priority } from "./ue_properties.js";
-import { GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS, REPEATED_TYPE_OPTIONS } from "./i18n.js";
 import { edit_window } from "./floating_window.js";
 
 const REGEXES = ['title', 'input', 'group']
@@ -40,7 +39,7 @@ function changed(node, property, value) {
     if (node.properties.ue_properties.prompt_regexes) {
         for (var i=0; i<2; i++) {
             if (!node.properties.ue_properties[`${P_REGEXES[i]}_regex`]) {
-                document.getElementById(`${P_REGEXES[i]}_regex_value`).value = default_regex(`${P_REGEXES[i]}_regex`)
+                document.getElementById(`${P_REGEXES[i]}_regex_value`).value = i18n_functional(`${P_REGEXES[i]}_regex`)
             }
         }
     }
@@ -63,7 +62,7 @@ function create_editor_html(node) {
                 const row = add_row(table, `${i18n(name)} regex`)
                 const input = document.createElement('input')
                 input.type = "text"
-                input.value = node.properties.ue_properties[`${name}_regex`] || default_regex(`${name}_regex`)
+                input.value = node.properties.ue_properties[`${name}_regex`] || i18n_functional(`${name}_regex`)
                 if (!node.properties.ue_properties[`${name}_regex`]) input.style.opacity = 0.5
                 input.id = `${name}_regex_value`
                 input.style.width = '250px'
@@ -91,6 +90,13 @@ function create_editor_html(node) {
     add_cell(col_row,col_select)
     add_select_options(node, col_select, COLOR_RESTRICTION_OPTIONS, `color_restricted` )
 
+    if (!node.properties.ue_properties.prompt_regexes) {
+        const repeated_type_row = add_row(table, i18n("Repeated Types"))
+        const repeated_type_select = document.createElement('select')
+        add_cell(repeated_type_row,repeated_type_select)
+        add_select_options(node, repeated_type_select, REPEATED_TYPE_OPTIONS, `repeated_type_rule`)
+    }
+
     const priority_row = add_row(table, i18n("Priority"))
     const priority_edit = document.createElement("input")
     priority_edit.value = `${node.properties.ue_properties.priority || default_priority(node)}`
@@ -102,13 +108,6 @@ function create_editor_html(node) {
     priority_edit.id = 'priority_value'
     if (!node.properties.ue_properties.priority) priority_edit.style.opacity = 0.5
     add_cell(priority_row,priority_edit)
-
-    if (!node.properties.ue_properties.prompt_regexes) {
-        const repeated_type_row = add_row(table, i18n("Repeated Types"))
-        const repeated_type_select = document.createElement('select')
-        add_cell(repeated_type_row,repeated_type_select)
-        add_select_options(node, repeated_type_select, REPEATED_TYPE_OPTIONS, `repeated_type_rule`)
-    }
 
     return table
 }

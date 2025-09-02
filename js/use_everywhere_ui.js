@@ -4,6 +4,7 @@ import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, node_graph } from "./use_everywhere_subgraph_utils.js";
 import { maybe_show_tooltip } from "./tooltip_window.js";
 import { is_connectable } from "./use_everywhere_settings.js";
+import { i18n } from "./i18n.js";
 
 function nodes_in_my_group(node) {
     const nodes_in = new Set();
@@ -88,10 +89,10 @@ function indicate_restriction(ctx, title_height) {
 function update_input_label(node, slot, app) {
     const type = node.inputs[slot].type
     if (type) {
-        node.inputs[slot].label = node.inputs[slot].label || type;
+        if (!node.inputs[slot].label || node.inputs[slot].label==i18n('anything')) node.inputs[slot].label = type;
         node.inputs[slot].color_on = app.canvas.default_connection_color_byType[type];
     } else {
-        node.inputs[slot].label = "anything";
+        node.inputs[slot].label = i18n('anything');
         node.inputs[slot].color_on = undefined;
     }
 }
