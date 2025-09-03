@@ -7,7 +7,7 @@ import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { is_UEnode } from "./use_everywhere_utilities.js";
-import { language_changed, language_options, i18ify_settings } from "./i18n.js";
+import { i18ify_settings } from "./i18n.js";
 
 const _SETTINGS = [
     {
@@ -15,15 +15,6 @@ const _SETTINGS = [
         name: `Version ${VERSION}`,
         type: () => {return document.createElement('span')},
     },  
-    {   
-        id: "Use Everywhere.Language.language",
-        name: "Language",
-        type: "combo",
-        options: language_options(),
-        defaultValue: 'en',
-        onChange: language_changed,
-        tooltip: "Probably requires page refresh",
-    },
     {
         id: "Use Everywhere.Graphics.showlinks",
         name: "Show links",

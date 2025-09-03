@@ -12,6 +12,7 @@ import { convert_to_links } from "./use_everywhere_apply.js";
 import { get_subgraph_input_type, link_is_from_subgraph_input, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
+import { language_changed } from "./i18n.js";
 
 /*
 The ui component that looks after the link rendering
@@ -79,7 +80,7 @@ app.registerExtension({
                     setTimeout(deferred_actions.execute.bind(deferred_actions), 100)
                 }
             }
-            linkRenderController.mark_link_list_outdated();
+            linkRenderController?.mark_link_list_outdated();
             onConnectionsChange?.apply(this, arguments);
         };
         
@@ -354,6 +355,14 @@ app.registerExtension({
                 graphAnalyser.connect_to_bypassed = ctb_was
             }
         }
+
+        /* catch changes in language (and read initial value) */
+        const locale_onChange = app.ui.settings.settingsLookup['Comfy.Locale'].onChange
+        app.ui.settings.settingsLookup['Comfy.Locale'].onChange = function(is_now, was_before) {
+            language_changed(is_now, was_before)
+            return locale_onChange?.apply(this, arguments)
+        }
+        language_changed(app.ui.settings.getSettingValue('Comfy.Locale'), null)
     },
 
     beforeConfigureGraph() {

@@ -4,18 +4,8 @@ export var REPEATED_TYPE_OPTIONS;
 export var GROUP_RESTRICTION_OPTIONS;
 export var COLOR_RESTRICTION_OPTIONS;
 
-const LANGUAGES = {
-    en : "English",
-    cn : "Mandarin",
-}
-
 const _FUNCTIONAL = {
     'en':{
-            seed_input_regex : "seed|随机种",
-            prompt_regex     : "(_|\\b)pos(itive|_|\\b)|^prompt|正面",
-            negative_regex   : "(_|\\b)neg(ative|_|\\b)|负面",
-        },
-    'cn':{
             seed_input_regex : "seed|随机种",
             prompt_regex     : "(_|\\b)pos(itive|_|\\b)|^prompt|正面",
             negative_regex   : "(_|\\b)neg(ative|_|\\b)|负面",
@@ -24,34 +14,17 @@ const _FUNCTIONAL = {
 
 const _DISPLAY = {
     'en' : {
-        prompt_regexes_text : "Prompt Everywhere",
-    },
-    'cn' : {
-        anything : "anything chinese",
-        title : "title chinese",
-        input : "input chinese",
-        group : "group chinese",
-        Group : "Group chinese",
-        Color : "Colour chinese",
-        Priority : "Priority chinese",
-        prompt_regexes_text : "Prompt Everywhere chinese",
-        "No restrictions" : "No restrictions chinese",
-        "Send only within group" : "Send only within group chinese", 
-        "Send only not within group" : "Send only not within group chinese",
-        "Send only to same color" : "Send only to same color chinese", 
-        "Send only to different color" : "Send only to different color chinese",
-        "Exact match of input names" : "Exact match of input names chinese",
-        "Match start of input names" : "Match start of input names chinese",
-        "Match end of input names" : "Match end of input names chinese",
 
-        "Selected nodes" : "Selected nodes chinese",
+    },
+    'zn' : {
+
     }
 }
 
-function DISPLAY(v, lang) { return _DISPLAY[lang || current_language()]?.[v] || _DISPLAY['en'][v] }
+function DISPLAY(v, lang) { return _DISPLAY[lang || current_language()]?.[v] || _DISPLAY['en'][v] || v }
 
 function current_language() {
-    return app.ui.settings.getSettingValue("Use Everywhere.Language.language")
+    return app.ui.settings.getSettingValue('Comfy.Locale')
 }
 
 export function language_changed(is_now, was_before) {
@@ -85,15 +58,13 @@ export function language_changed(is_now, was_before) {
     ]
 }
 
-export function language_options() {
-    const options = []
-    Object.keys(LANGUAGES).forEach((k) => {options.push({value:k, text:k})})
-    return options
+export function i18n_functional(v) { 
+    return _FUNCTIONAL[current_language()]?.[v] || _FUNCTIONAL['en'][v] 
 }
 
-export function i18n_functional(v) { return _FUNCTIONAL[current_language()]?.[v] || _FUNCTIONAL['en'][v] }
-
+const all_requested_stings = new Set()
 export function i18n(v, extras) {
+    all_requested_stings.add(v)
     var r = DISPLAY(v, extras?.language) || LANGUAGES[v] || v
     if (extras?.titlecase) r = toTitleCase(r)
     return r
@@ -115,3 +86,54 @@ const toTitleCase = (phrase) => {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 };
+
+/*
+"Version 7.1"
+"Show links"
+"All off"
+"Selected nodes"
+"Mouseover node"
+"Selected and mouseover nodes"
+"All on"
+"Statically distinguish UE links"
+"Render UE links, when shown, differently from normal links. Much lower performance cost than animation."
+"Animate UE links"
+"Animating links may have a negative impact on UI performance. Consider using Statically distinguish UE links instead."
+"Off"
+"Dots"
+"Pulse"
+"Both"
+"Turn animation off when workflow is running"
+"Highlight connected and connectable inputs"
+"Save restrictions edit window position"
+"If off, the edit window appears where the mouse is"
+"Show restrictions as tooltip"
+"Connect to bypassed nodes"
+"By default UE links are made to the node downstream of bypassed nodes."
+"Check for loops before submitting"
+"Check to see if UE links have created a loop that wasn't there before"
+"Logging"
+"Errors Only"
+"Problems"
+"Information"
+"Detail"
+"Block workflow validation"
+"Turn off workflow validation (which tends to replace UE links with real ones)"
+"Exact match of input names"
+"Match start of input names"
+"Match end of input names"
+"Inputs matches target node name"
+"No restrictions"
+"Send only within group"
+"Send only not within group"
+"Send only to same color"
+"Send only to different color"
+"anything"
+"title"
+"input"
+"group"
+"Group"
+"Color"
+"Repeated Types"
+"Priority"
+*/
