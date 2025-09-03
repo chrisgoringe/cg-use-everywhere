@@ -2,7 +2,7 @@ import { create } from "./use_everywhere_utilities.js"
 import { settingsCache } from "./use_everywhere_cache.js"
 
 
-export class FloatingWindow extends HTMLDivElement {
+export class FloatingWindow extends HTMLElement {
     constructor() {
         super()
         this.classList.add('ue_editor')
@@ -119,5 +119,5 @@ export class FloatingWindow extends HTMLDivElement {
 }
 
 
-customElements.define('ue-floating',  FloatingWindow, {extends: 'div'})
+customElements.define('ue-floating',  FloatingWindow)
 export const edit_window = new FloatingWindow()
