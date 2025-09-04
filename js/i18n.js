@@ -4,13 +4,9 @@ export var REPEATED_TYPE_OPTIONS;
 export var GROUP_RESTRICTION_OPTIONS;
 export var COLOR_RESTRICTION_OPTIONS;
 
-const _FUNCTIONAL = {
-    'en':{
-            seed_input_regex : "seed|随机种",
-            prompt_regex     : "(_|\\b)pos(itive|_|\\b)|^prompt|正面",
-            negative_regex   : "(_|\\b)neg(ative|_|\\b)|负面",
-        },
-}
+
+var _FUNCTIONAL = null
+var _FUNCTIONAL_REGEX = null
 
 const _DISPLAY = {
     'en' : {
@@ -28,16 +24,8 @@ function current_language() {
 }
 
 export function language_changed(is_now, was_before) {
-    if (was_before) {
-        app.graph.nodes.filter((node)=>node.IS_UE).forEach((node)=>{
-            // translate node inputs
-            node.inputs?.forEach((input)=>{
-                if (input.label && input.label.startsWith(i18n('anything', was_before))) {
-                    input.label = input.label.replace(i18n('anything', {language:was_before}), i18n('anything', {language:is_now}))
-                }
-            })
-        })
-    }
+    _FUNCTIONAL = null
+
     REPEATED_TYPE_OPTIONS = [ 
         i18n("Exact match of input names"), 
         i18n("Match start of input names"), 
@@ -58,8 +46,33 @@ export function language_changed(is_now, was_before) {
     ]
 }
 
+function get_functional() {
+    const nd = LiteGraph.createNode('KSampler')
+    if (nd) {
+        _FUNCTIONAL = {
+            seed_input_regex : `seed|${nd.inputs.find((i)=>(i.name=='positive')).localized_name}`,
+            prompt_regex     : `(_|\\b)pos(itive|_|\\b)|${nd.inputs.find((i)=>(i.name=='positive')).localized_name}`,
+            negative_regex   : `(_|\\b)neg(ative|_|\\b)|${nd.inputs.find((i)=>(i.name=='negative')).localized_name}`,
+        }
+    }
+}
+
+function get_functional_regex() {
+    if (!_FUNCTIONAL) get_functional()
+    _FUNCTIONAL_REGEX = {
+        prompt_regex     : new RegExp(_FUNCTIONAL.prompt_regex),
+        negative_regex   : new RegExp(_FUNCTIONAL.negative_regex),
+    }
+}
+
 export function i18n_functional(v) { 
-    return _FUNCTIONAL[current_language()]?.[v] || _FUNCTIONAL['en'][v] 
+    if (!_FUNCTIONAL) get_functional()
+    return _FUNCTIONAL?.[v] || v
+}
+
+export function i18n_functional_regex(v) {
+    if (!_FUNCTIONAL_REGEX) get_functional_regex()
+    return _FUNCTIONAL_REGEX[v]
 }
 
 const all_requested_stings = new Set()
@@ -86,54 +99,3 @@ const toTitleCase = (phrase) => {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 };
-
-/*
-"Version 7.1"
-"Show links"
-"All off"
-"Selected nodes"
-"Mouseover node"
-"Selected and mouseover nodes"
-"All on"
-"Statically distinguish UE links"
-"Render UE links, when shown, differently from normal links. Much lower performance cost than animation."
-"Animate UE links"
-"Animating links may have a negative impact on UI performance. Consider using Statically distinguish UE links instead."
-"Off"
-"Dots"
-"Pulse"
-"Both"
-"Turn animation off when workflow is running"
-"Highlight connected and connectable inputs"
-"Save restrictions edit window position"
-"If off, the edit window appears where the mouse is"
-"Show restrictions as tooltip"
-"Connect to bypassed nodes"
-"By default UE links are made to the node downstream of bypassed nodes."
-"Check for loops before submitting"
-"Check to see if UE links have created a loop that wasn't there before"
-"Logging"
-"Errors Only"
-"Problems"
-"Information"
-"Detail"
-"Block workflow validation"
-"Turn off workflow validation (which tends to replace UE links with real ones)"
-"Exact match of input names"
-"Match start of input names"
-"Match end of input names"
-"Inputs matches target node name"
-"No restrictions"
-"Send only within group"
-"Send only not within group"
-"Send only to same color"
-"Send only to different color"
-"anything"
-"title"
-"input"
-"group"
-"Group"
-"Color"
-"Repeated Types"
-"Priority"
-*/

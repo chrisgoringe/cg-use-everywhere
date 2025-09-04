@@ -1,4 +1,4 @@
-import { i18n_functional } from "./i18n.js";
+import { i18n_functional, i18n_functional_regex } from "./i18n.js";
 import { default_priority } from "./ue_properties.js";
 import { node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
@@ -83,7 +83,7 @@ class UseEverywhere {
 
         if (this.output[0] == node.id) return false;
         if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;
-        const input_label = input.label ? input.label : input.name;
+        const input_label = input.label || input.localized_name || input.name;
         const node_label = node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type);
         if (this.title_regex) {
             if (!(this.title_regex.test(node_label))) return false;
@@ -303,6 +303,6 @@ const PROMPT_REGEXES = [new RegExp(i18n_functional('prompt_regex')), new RegExp(
 function prompt_regex(node, i) {
     const reg = node.properties.ue_properties[`${P_REGEXES[i]}_regex`]
     if (reg) return new RegExp(reg)
-    else return PROMPT_REGEXES[i]
+    else return i18n_functional_regex(`${P_REGEXES[i]}_regex`)
 }
 
