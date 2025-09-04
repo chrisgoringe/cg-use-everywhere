@@ -1,5 +1,5 @@
 import { VERSION, version_at_least, is_UEnode, graphConverter, fix_inputs, create } from "./use_everywhere_utilities.js"
-import { i18n, default_regex, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
+import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
 
 const ALL_REGEXES = ['title', 'input', 'prompt', 'negative', 'group']
 
@@ -55,10 +55,12 @@ const DEFAULT_PROPERTIES = {
                     group_restricted      : 0,
                     color_restricted      : 0,
                     widget_ue_connectable : {},
+                    input_ue_unconnectable : {},
                     title_regex           : null,
                     input_regex           : null,
                     group_regex           : null,
                     priority              : undefined,
+                    repeated_type_rule    : 0,
                 }
 
 /*
@@ -90,6 +92,7 @@ export function setup_ue_properties_onload(node) {
                 group_restricted      : node.properties.group_restricted,
                 color_restricted      : node.properties.color_restricted,
                 widget_ue_connectable : node.properties.widget_ue_connectable,
+                input_ue_unconnectable: {},
                 title_regex           : node.widgets_values?.[0],
                 input_regex           : node.widgets_values?.[1],
                 group_regex           : node.widgets_values?.[2],
@@ -102,7 +105,8 @@ export function setup_ue_properties_onload(node) {
             node.properties.ue_properties.version = VERSION
             node.properties.ue_properties.widget_ue_connectable = node.properties.ue_properties.widget_ue_connectable || 
                                                                   node.properties.widget_ue_connectable ||
-                                                                  []
+                                                                  {}
+            node.properties.ue_properties.input_ue_unconnectable = {}
             if (node.properties.widget_ue_connectable) delete node.properties.widget_ue_connectable            
         }
     }
@@ -123,7 +127,7 @@ function convert_node_types(node) {
     } else if (node.type=="Seed Everywhere") {
         node.properties.ue_properties.fixed_inputs = true
         node.properties.ue_properties.seed_inputs  = true
-        node.properties.ue_properties.input_regex  = node.properties.ue_properties.input_regex || default_regex('seed_input_regex')        
+        node.properties.ue_properties.input_regex  = node.properties.ue_properties.input_regex || i18n_functional('seed_input_regex')        
     } else if (node.type=="Prompts Everywhere") {
         node.properties.ue_properties.fixed_inputs   = true
         node.properties.ue_properties.prompt_regexes = true

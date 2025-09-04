@@ -12,6 +12,7 @@ import { convert_to_links } from "./use_everywhere_apply.js";
 import { get_subgraph_input_type, link_is_from_subgraph_input, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
+import { language_changed } from "./i18n.js";
 
 /*
 The ui component that looks after the link rendering
@@ -79,24 +80,10 @@ app.registerExtension({
                     setTimeout(deferred_actions.execute.bind(deferred_actions), 100)
                 }
             }
-            linkRenderController.mark_link_list_outdated();
+            linkRenderController?.mark_link_list_outdated();
             onConnectionsChange?.apply(this, arguments);
         };
-
-        /*
-        Reject duplicated inputs for now
-        */
-        if (is_UEnode(nodeType)) {
-            const onConnectInput = nodeType.prototype.onConnectInput
-            nodeType.prototype.onConnectInput = function (index, type) {
-                if (!this.properties.ue_properties.fixed_inputs) {
-                    if (this.inputs.find((i, j)=>(i.type==type && j!=index))) return false
-                }
-                return onConnectInput?.apply(this, arguments)
-            }
-        }
         
-
         /*
         Extra menu options are the node right click menu.
         We add to this list, and also insert a link list outdate to everything.
@@ -115,13 +102,6 @@ app.registerExtension({
             const onNodeCreated = nodeType.prototype.onNodeCreated;
             nodeType.prototype.onNodeCreated = function () {
                 const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
-                /*if (!this.properties) this.properties = {}
-                if (this.inputs) {
-                    if (!this.widgets) this.widgets = [];
-                    for (const input of this.inputs) {
-                        if (input.widget && !this.widgets.find((w) => w.name === input.widget.name)) this.widgets.push(input.widget)
-                    }
-                }*/
                 Logger.log_detail(`Node ${this.id} created`)
                 setup_ue_properties_oncreate(this)
                 return r;
@@ -375,6 +355,14 @@ app.registerExtension({
                 graphAnalyser.connect_to_bypassed = ctb_was
             }
         }
+
+        /* catch changes in language (and read initial value) */
+        const locale_onChange = app.ui.settings.settingsLookup['Comfy.Locale'].onChange
+        app.ui.settings.settingsLookup['Comfy.Locale'].onChange = function(is_now, was_before) {
+            language_changed(is_now, was_before)
+            return locale_onChange?.apply(this, arguments)
+        }
+        language_changed(app.ui.settings.getSettingValue('Comfy.Locale'), null)
     },
 
     beforeConfigureGraph() {

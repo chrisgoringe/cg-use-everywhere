@@ -8,7 +8,7 @@ Problems? Jump down to [logging and debugging](https://github.com/chrisgoringe/c
 
 Ideas for how to improve the nodes (or bug reports) - [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues)
 
-Shameless plug for my other nodes -> Check out [Image Picker](https://github.com/chrisgoringe/cg-image-filter) for another way to make some workflows smoother. And leave a star if you like something!
+Shameless plug for another nodes -> Check out [Image Picker](https://github.com/chrisgoringe/cg-image-filter) for another way to make some workflows smoother. And leave a star if you like something!
 
 ---
 
@@ -29,6 +29,7 @@ This is what the default wan 2.2 s2v video workflow looks like:
 |-|-|
 |![before](docs/before.png)|![after](docs/after.png)|
 
+---
 
 # Anything Everywhere v7
 
@@ -42,7 +43,6 @@ If you used Anything Everywhere prior to v7, the major improvements are:
 
 - The `Anything Everywhere3` and `Anything Everywhere?` nodes are deprecated, as their features are now part of the standard `Anything Everywhere` node.
 - `Anything Everywhere` nodes now have dynamic inputs, so you can plug as many different things into them as you like.
-  - At present you can only connect one input of any given data type, but this restriction should go away in `7.1`
 - All the restrictions on what nodes data will be sent to are now in a restrictions editor, that can be accessed through the right click menu of the node, or by double-clicking the body of the node.
   - In the restrictions editor you can set title, input, and group regexes, color restrictions, group restrictions, and priority (for when two nodes both match)
   - The green circle is used to indicate that _any_ restrictions are in place; if you hover over a node with restrictions they will appear in a tooltip
@@ -64,18 +64,32 @@ However, there may be edge cases that don't work; if you have any problems, plea
 
 You will _not_ be able to use workflows saved using v7 with older versions of ComfyUI or older versions of UE.
 
-# Anything Everywhere
+**Group Nodes are no longer supported**
 
-## Anything Everywhere 
+---
+
+# Anything Everywhere
 
 The `Anything Everywhere` node takes one or more inputs (currently limited to one input of any data type) and sends the data to other nodes that need it. 
 When you connect an input, a new one automatically appears.
 
-By default the data will be sent to any `input` of the same data type which does not have a connection.
+## Where will the data be sent?
 
-`Anything Everywhere` does _not_ send to `widgets` by default, but if you right-click on the node that you want to receive the data you can specify which widgets should accept UE connections. 
+By default the data will be sent to any input of the same data type which does not have a connection, and does not have a widget providing the value.
+
+You can specify that an input should not accept data, or that one with a widget should, via the `UE Connectable Inputs` menu: 
+the green bar indicates an input is connectable. The `Reject UE links` option can be used to make this node completely reject UE links, regardless of other settings.
 
 ![uec](docs/connectable.png)
+
+The node also has visual indications: a black ring and a glow on the input dot indicates it is connectable. 
+In the image below, `positive` has been set to not accept UE inputs, `steps` has been set to accept them, and `model` has a UE connection.
+
+![uec](docs/connectable2.png)
+
+If a widget is getting data from a UE connection, it is grayed out, like `steps` below:
+
+![uec](docs/connectable3.png)
 
 You can also constrain where the data gets send through  _restrictions_ applied to the `Anything Everywhere` node. 
 These restrictions can be accessed by double-clicking the body of the node, or through the right-click menu.
@@ -89,33 +103,47 @@ The Group and Colour restrictions will constrain the node to only send to nodes 
 
 If you select multiple restrictions, all must be satisfied for the node to send.
 
-If any restrictions are applied, the `Anything Everywhere` node gets a green circle in the top left hand corner, and a tooltip if yuo hover the mouse over it.
+If any restrictions are applied, the `Anything Everywhere` node gets a green circle in the top left hand corner, and a tooltip if you hover the mouse over it (as long as Show Links is not set to None).
 
-The final line in the restrictions box is the Priority, which has an automatically calculated value which you can choose to override. 
+`Repeated Types` determines behaviour when more than one input of the same type is connected to an `Anything Everywhere` node.
+In this case an additional constraint is used to disambiguate which inputs match 
+by comparing the name of the input slot on the `Anything Everywhere` node with 
+either the name of the input slot on the target node, or the name of the target node.
+The `match start` and `match end` options require that the input names match from the start (or end) for the full length of the shorter: 
+so you can match `seed` to `seed` or `noise_seed` by naming the `Anything Everywhere` input `seed` and selecting `Match end of input names`.
+
+You can rename input slots by right-clicking on the input dot - but you can't rename widget inputs - this is a limitation imposed by ComfyUI ([discussion](https://github.com/Comfy-Org/ComfyUI_frontend/issues/3654)). The work-around is to rename the target node (or use multiple `Anything Everywhere` nodes with other constraints, especially color matching).
+
+## Resolving clashes
+
+What if two or more `Anything Everywhere` nodes can send to the same input?
+
+Each node has an automatically calculated priority - in general the more restrictive the node, the higher the priority.
+You can see this prority in the restrictions dialog, and you can choose to replace the automatically calculated value if you wish.
+
 If two more more `Anything Everywhere` nodes match the same input, the higher priority node is used. If there is a tie, _no connection is made_.
 When there is a tie, if you right-click on the canvas you will find an option to show which nodes are the problem.
 
+## Special Case Nodes
+
+These two nodes might go away in the future; if they do, workflows using them will be automatically updated with their replacements...
+
 ## Seed Everywhere
 
-Seed Everywhere connects to any unconnected INT input with `seed` in the input name (seed, noise_seed, etc), and it has the control_after_generate feature. So if you convert the seed widgets to inputs you can use the same seed everywhere.
-
-Hopefully this node will soon be retired, but if it is, workflows using it will be automatically converted.
+Seed Everywhere connects to any unconnected INT input which matches the regex `seed|随机种` (basically all the default seed input names). 
+It has the control_after_generate feature. So if you mark the seed widgets as allowing UE Connections, you can use the same seed everywhere.
 
 ## Prompts Everywhere
 
-Prompt Everywhere has two inputs. They will be sent with regex matching rules of `(^prompt|^positive)` and `neg` respectively. These should match the various versions of names that get used for prompts and negative prompts or conditionings. The regexes can be edited, but additional inputs are not created. 
+Prompt Everywhere has two inputs. They will be sent with regex matching rules designed to match `prompt` or `positive`, and `neg`, respectively.
+
+The actual regexes used are `(_|\\b)pos(itive|_|\\b)|^prompt|正面` and `(_|\\b)neg(ative|_|\\b)|负面`
 
 |strings|conditionings|
 |-|-|
 |![pe](docs/PE.png)|![pe](docs/conditioning.png)
 
-Hopefully this node will soon be retired, but if it is, workflows using it will be automatically converted.
-
-## Primitives and COMBOs and the like
-
-UE nodes don't work with primitives and COMBOs (the data type used for dropdown lists, which are also a type of primitive within Comfy). It's unlikely they ever will. 
-
-For more on this, see [this discussion](https://github.com/chrisgoringe/cg-use-everywhere/issues/69)
+---
 
 # Options
 
@@ -129,14 +157,14 @@ The bottom set, `Options`, modify behaviour:
 
 - Block workflow validation. This prevents other nodes from complaining about the lack of connections, or creating them. If you turn this off, there may be unexpected consequences.
 - Logging. Increase the logging level if you are asked to help debug.
-- Check loops before submitting will attempt to check for loops in the workflow created by Use Everywhere links. Comfy is much better at handling this now, so I would suggest leaving it off.
-- Connect to bypassed nodes. When off, Use Everywhere will not connect to a bypassed node, and will attempt to work out whether an input is connected when upstream nodes are bypassed. 
+- Check loops before submitting will attempt to check for loops in the workflow created by Use Everywhere links. Comfy is much better at handling this now, so I would recommend leaving it off.
+- Connect to bypassed nodes. When off, Use Everywhere will not connect to a bypassed node, and will attempt to work out whether an input is connected when upstream nodes are bypassed. I recommend turning this on.
 
-*I recommend turning `Connect to bypassed nodes` on; the default is off for backward compatibility.*
+---
 
 # Other features
 
-## Third Party Integration
+## Third Party Integration - the UE API
 
 At the suggestion of [@fighting-tx](https://github.com/fighting-tx), 
 I've added a method that third party nodes can use if they want to see the prompt as generated by UE. 
@@ -152,10 +180,6 @@ if (app.ue_modified_prompt) {
 ```
 
 Other methods could be exposed if there is interest - raise an issue if you'd like to see something. 
-
-## Reject links
-
-Right click on a node and you can set it to reject UE links
 
 ## Show links - visualisation and animation.
 
@@ -173,15 +197,26 @@ This can be done for a single node by right-clicking on it and selecting `Conver
 
 ---
 
+# Primitives and COMBOs and the like
+
+![primitives](docs/primitives.png)
+
+UE nodes work with the primitives added in more recent versions of Comfy (in the `primitive` submenu), but not the old-style `Primitive`.
+They also do not work with COMBOs (the data type used for dropdown lists, which are also a type of primitive within Comfy), or reroute nodes.
+
+It is very unlikely this will ever change, as it relates to some issues deep within Comfy...
+
+For more on this, see [this discussion](https://github.com/chrisgoringe/cg-use-everywhere/issues/69)
+
+---
+
 # Roadmap
 
 In the near future I hope to do the following:
 
-- Add a mechanism to support multiple inputs of the same type
-  - Once this is done, `Prompts Everywhere` will be retired
+- Replace the `Prompt Everywhere` and `Seed Everywhere` nodes
 - Add a mechanism to retire `Seed Everywhere` (or auto convert to an integer node connected to a `Anything Everywhere` node)
-- Add a clean way to localise for non-English language use
-- Enable individual inputs to reject connections
+- Add localisation
 - Negative regexes ('must not match')
 - Possibly add a global variable system (so multiple modes can be changed with a single modification)
 
@@ -190,14 +225,6 @@ Feel free to [make suggestions](https://github.com/chrisgoringe/cg-use-everywher
 ---
 
 # More detailed notes on a few things
-
-## Naming widgets
-
-The restrictions make use of the name of an input. On some occasions this might mean you want to rename an input. 
-
-For an input that can't be a widget, that's trivial - right click on the input dot and select `Rename Slot`. The name will be updated, and the new name displayed next to the dot.
-
-If an input *can* be a widget, you cannot rename it. This is a decision taken by the Comfy team (see [here](https://github.com/Comfy-Org/ComfyUI_frontend/issues/3654)).
 
 ## Subgraph creation
 
@@ -223,7 +250,9 @@ No* indicates a case that does not work, but might get implemented.
 
 No indicates a case I'm unlikely ever to support
 
-## Reporting a bug well
+---
+
+# Reporting a bug well
 
 If you are having problems, the better information you give me, the more chance I can fix it! 
 
@@ -233,21 +262,24 @@ Read the list below and include anything that seems relevant. If you can't get t
 - if you have a simple workflow that recreates the problem, that's a huge help
 - Comfy version information (in Settings - About, it looks like this:)
 ![versions](https://github.com/user-attachments/assets/a16812a3-94c9-4eb7-8e0e-0d8b5319cd8f)
-- include what all your settings are - in the Comfy settings select `AE` in the left menu
-- check your version of the node (in the settings from version 6.0.4, before that look in the `cg-use-everywhere` folder in the file `__init__.py`)
+- check your version of the node (look in the `Use Everywhere` settings)
 - press f12 and see if there are any errors in the javascript console that look like they might be relevant
 - look at the server (python) console log and see if there are any errors there
 
-## Thanks to 
+---
+
+# Thanks to 
 
 The following people have contributed code or helpful discussions, without which these nodes would be less good!
 
 - [DrJKL](https://github.com/DrJKL)
 - [fighting-tx](https://github.com/fighting-tx)
 - [huchenlei](https://github.com/huchenlei)
+- [fichas](https://github.com/fichas)
+- [LukeG89](https://github.com/LukeG89)
 - [set-soft](https://github.com/set-soft)
 - [TinyTerra](https://github.com/TinyTerra)
 - [bananasss00](https://github.com/bananasss00)
-- [fichas](https://github.com/fichas)
 - [JorgeR81](https://github.com/JorgeR81)
-- [LukeG89](https://github.com/LukeG89)
+
+Feel free to [make suggestions, or implement features](https://github.com/chrisgoringe/cg-use-everywhere/issues) to get your name added here!

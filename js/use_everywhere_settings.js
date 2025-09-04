@@ -2,13 +2,14 @@ import { app } from "../../scripts/app.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
-import { VERSION } from "./use_everywhere_utilities.js";
+import { Logger, VERSION } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { is_UEnode } from "./use_everywhere_utilities.js";
+import { i18ify_settings } from "./i18n.js";
 
-export const SETTINGS = [
+const _SETTINGS = [
     {
         id: "Use Everywhere.About",
         name: `Version ${VERSION}`,
@@ -72,7 +73,7 @@ export const SETTINGS = [
         id: "Use Everywhere.Options.connect_to_bypassed",
         name: "Connect to bypassed nodes",
         type: "boolean",
-        defaultValue: false,
+        defaultValue: true,
         onChange: settingsCache.onSettingChange,
         tooltip: "By default UE links are made to the node downstream of bypassed nodes."
     },
@@ -102,76 +103,73 @@ export const SETTINGS = [
     },
 ]
 
+export const SETTINGS = i18ify_settings(_SETTINGS)
+
 const ui_update_settings = [
     "Use Everywhere.Graphics.showlinks",
     "Use Everywhere.Graphics.fuzzlinks",
     "Use Everywhere.Graphics.animate",
     "Use Everywhere.Graphics.stop_animation_when_running",
     "Use Everywhere.Graphics.highlight",
+    "Use Everywhere.Language.language",
 ]
 ui_update_settings.forEach((id) => {
     settingsCache.addCallback(id, ()=>{app.graph?.change.bind(app.graph)})
 })
 
-function submenu(properties, property, options, e, menu, node) {
-    const current = properties[property] ? (properties[property]==2 ? 3 : 2 ) : 1; 
-    const submenu = new LiteGraph.ContextMenu(
-        options,
-        { event: e, callback: inner_function, parentMenu: menu, node: node }
-    );
-    const current_element = submenu.root.querySelector(`:nth-child(${current})`);
-    if (current_element) current_element.style.borderLeft = "2px solid #484";
-    function inner_function(v) {
-        if (node) {
-            const choice = Object.values(options).indexOf(v);
-            properties[property] = choice;
-            LinkRenderController.instance().mark_link_list_outdated();
-        }
+function show_connectable(submenu_root, node) {
+    node.inputs.forEach((input, i) => {
+        const current_element = submenu_root?.querySelector(`:nth-child(${i+1})`);
+        if (current_element) current_element.style.borderLeft = (is_connectable(node,input.name)) ? "2px solid #484" : "";
+    })
+}
+
+export function is_connectable(node, input_name){
+    const input = node.inputs.find(i => i.name==input_name);
+    if (!input) {
+        Logger.log_error(`Can't find input ${label} on node ${node.title}`);
+        return false;
+    }
+    if (input.widget) {
+        return !!(node.properties?.ue_properties?.widget_ue_connectable?.[input_name])
+    } else {
+        return ! (node.properties?.ue_properties?.input_ue_unconnectable?.[input_name])
     }
 }
 
-function highlight_selected(submenu_root, node, names) {
-    names.forEach((name, i) => {
-        const current_element = submenu_root?.querySelector(`:nth-child(${i+1})`);
-        if (current_element) {
-            if (node.properties.ue_properties['widget_ue_connectable'][name]) {
-                current_element.style.borderLeft = "2px solid #484";
-            } else {
-                current_element.style.borderLeft = "";
-            }
-        } else {
-            let a;
-        }
-    })
+function toggle_connectable(node, input_name){
+    const input = node.inputs.find(i => i.name==input_name);
+    const p = node.properties.ue_properties
+    if (input.widget) {
+        p.widget_ue_connectable[input_name]  = !!!p.widget_ue_connectable[input_name];
+    } else {
+        p.input_ue_unconnectable[input_name] = !!!p.input_ue_unconnectable[input_name];
+    }  
 }
 
 function widget_ue_submenu(value, options, e, menu, node) {
     if (!(node.properties.ue_properties)) node.properties.ue_properties = {}
     if (!(node.properties.ue_properties.widget_ue_connectable)) node.properties.ue_properties.widget_ue_connectable = {};
-    
-    const linkedWidgets = new Set()
-    node.widgets
-        .filter(w => w.linkedWidgets)
-        .forEach((widget) => { widget.linkedWidgets.forEach((lw)=>{linkedWidgets.add(lw)}) });
+    if (!(node.properties.ue_properties.input_ue_unconnectable)) node.properties.ue_properties.input_ue_unconnectable = {};
 
-    const names = []
-    node.widgets
-        .filter(w => !linkedWidgets.has(w))
-        .filter(w => !w.hidden)
-        .filter(w => !w.name?.includes('$$'))
-        .forEach((widget) => { names.push(widget.name) });
+    const label_to_name = {}
+    node.inputs
+        .filter(i => !i.hidden)
+        .filter(i => !i.name?.includes('$$'))
+        .forEach((input) => { label_to_name[input.label || input.name] = input.name });
 
     const submenu = new LiteGraph.ContextMenu(
-        names,
-        { event: e, callback: function (v) { 
-            node.properties.ue_properties.widget_ue_connectable[v] = !!!node.properties.ue_properties.widget_ue_connectable[v]; 
+        Object.keys(label_to_name),
+        { event: e, callback: function (label) { 
+            const name = label_to_name[label];
+            toggle_connectable(node, name);
             LinkRenderController.instance().mark_link_list_outdated();
-            highlight_selected(this.parentElement, node, names)
+            show_connectable(this.parentElement, node)
             return true; // keep open
         },
         parentMenu: menu, node:node}
     )
-    highlight_selected(submenu.root, node, names)
+    show_connectable(submenu.root, node)
 }
 
 export function add_extra_menu_items(node_or_node_type, ioio) {
@@ -201,7 +199,7 @@ export function non_ue_menu_settings(options, node) {
     if (node.widgets?.length) {
         options.push(
             {
-                content: "UE Connectable Widgets",
+                content: "UE Connectable Inputs",
                 has_submenu: true,
                 callback: widget_ue_submenu,
             }            

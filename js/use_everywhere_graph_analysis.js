@@ -4,6 +4,7 @@ import { convert_to_links } from "./use_everywhere_apply.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { master_graph, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { is_connectable } from "./use_everywhere_settings.js";
 
 class GraphAnalyser extends Pausable {
     static _instance;
@@ -101,8 +102,7 @@ class GraphAnalyser extends Pausable {
                 node.inputs?.forEach((input,index) => {
                     if (is_connected(input, treat_bypassed_as_live, node_graph(node))) return;  
                     if (node.reject_ue_connection && node.reject_ue_connection(input)) return;
-                    if (node._getWidgetByName(input.name) && !(node.properties?.ue_properties?.widget_ue_connectable && node.properties.ue_properties.widget_ue_connectable[input.name])) return;
-                    connectable.push({node, input, index});
+                    if (is_connectable(node, input.name)) connectable.push({node, input, index});
                 })
             }
         })
