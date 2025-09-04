@@ -25,6 +25,7 @@ function current_language() {
 
 export function language_changed(is_now, was_before) {
     _FUNCTIONAL = null
+    _FUNCTIONAL_REGEX = null
 
     REPEATED_TYPE_OPTIONS = [ 
         i18n("Exact match of input names"), 
