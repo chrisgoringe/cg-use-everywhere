@@ -156,26 +156,35 @@ class LinkRenderController extends Pausable {
     }
 
     disable_all_connected_widgets( disable ) {
+        const graph = app.canvas.graph
         if (disable) {
-            app.graph.extra['ue_links']?.forEach((uel) => {
-                const node = app.graph._nodes_by_id[uel.downstream]
+            graph.extra['ue_links']?.forEach((uel) => {
+                const node = graph._nodes_by_id[uel.downstream]
                 if (node) {
                     try {
-                        const name = node.inputs[uel.downstream_slot].name;
-                        const widget = node._getWidgetByName(name) 
-                        if (widget && !widget.disabled) {
-                            this.widgets_disabled.push(widget)
-                            widget.disabled = true;
+                        const name = node.inputs[uel.downstream_slot]?.name;
+                        if (name) {
+                            const widget = node._getWidgetByName(name) 
+                            if (widget) {
+                                if (!widget.disabled) {
+                                    this.widgets_disabled.push(widget)
+                                    widget.disabled = true;
+                                }
+                                widget.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
+                                    this.widgets_disabled.push(w)
+                                    w.disabled = true;
+                                })
+                            } else {
+                                // it's an input not a widget, so ignore
+                            }
+                        } else {
+                            Logger.log_problem(`In disable_all_connected_widgets, for downstream node ${node.id}, slot ${uel.downstream_slot} did not return a name`)
                         }
-                        widget?.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
-                            this.widgets_disabled.push(w)
-                            w.disabled = true;
-                        })
                     } catch(e) {
                         Logger.log_error(e);
                     }
                 } else {
-                    Logger.log_info(`Couldn't find node ${uel.downstream}`)
+                    Logger.log_problem(`In disable_all_connected_widgets, couldn't find downstream node ${uel.downstream}`)
                 }
             })   
         } else {
