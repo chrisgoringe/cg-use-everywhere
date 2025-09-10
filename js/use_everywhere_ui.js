@@ -86,17 +86,6 @@ function indicate_restriction(ctx, title_height) {
     ctx.restore();
 }
 
-function update_input_label(node, slot, app) {
-    const type = node.inputs[slot].type
-    if (type) {
-        if (!node.inputs[slot].label || node.inputs[slot].label==i18n('anything')) node.inputs[slot].label = type;
-        node.inputs[slot].color_on = app.canvas.default_connection_color_byType[type];
-    } else {
-        node.inputs[slot].label = i18n('anything');
-        node.inputs[slot].color_on = undefined;
-    }
-}
-
 class LinkRenderController extends Pausable {
     static _instance;
     static instance(tga) {
@@ -417,5 +406,5 @@ function modify(c) {
 
 
 
-export {update_input_label, nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
+export {/*update_input_label,*/ nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
 export{ LinkRenderController}

@@ -69,22 +69,6 @@ class GraphAnalyser extends Pausable {
         return this.analyse_graph(graph);
     }
 
-    maybe_check_for_loops() {
-        if (settingsCache.getSettingValue('Use Everywhere.Options.checkloops')) {
-            try {
-                node_in_loop(live_nodes, links_added);
-            } catch (e) {
-                if (!e.stack) throw e;
-                if (e.ues && e.ues.length > 0){
-                    alert(`Loop (${e.stack}) with broadcast (${e.ues}) - not submitting workflow`);
-                } else {
-                    alert(`Loop (${e.stack}) - not submitting workflow`);
-                }
-                throw new Error(`Loop Detected ${e.stack}, ${e.ues}`, {"cause":e});
-            }
-        }
-    }
-
     analyse_graph(graph) {
         this.ambiguity_messages = [];
         const treat_bypassed_as_live = settingsCache.getSettingValue("Use Everywhere.Options.connect_to_bypassed") || this.connect_to_bypassed

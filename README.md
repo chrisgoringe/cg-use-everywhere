@@ -155,9 +155,9 @@ The top set, `Graphics`, modify the visual appearance only.
 
 The bottom set, `Options`, modify behaviour:
 
+- When connecting, use the output slot's name as the input name. When a new connection is made to a UE node, the default is to name the input with the type. Select this option to use the output name of the node the link is from.
 - Block workflow validation. This prevents other nodes from complaining about the lack of connections, or creating them. If you turn this off, there may be unexpected consequences.
 - Logging. Increase the logging level if you are asked to help debug.
-- Check loops before submitting will attempt to check for loops in the workflow created by Use Everywhere links. Comfy is much better at handling this now, so I would recommend leaving it off.
 - Connect to bypassed nodes. When off, Use Everywhere will not connect to a bypassed node, and will attempt to work out whether an input is connected when upstream nodes are bypassed. I recommend turning this on.
 
 ---

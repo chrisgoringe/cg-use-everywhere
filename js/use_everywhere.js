@@ -2,7 +2,7 @@ import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
 import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter, fix_inputs, create } from "./use_everywhere_utilities.js";
-import { update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
+import { indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_everywhere_settings.js";
@@ -12,7 +12,7 @@ import { convert_to_links } from "./use_everywhere_apply.js";
 import { get_subgraph_input_type, link_is_from_subgraph_input, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
-import { language_changed } from "./i18n.js";
+import { language_changed, i18n } from "./i18n.js";
 
 /*
 The ui component that looks after the link rendering
@@ -60,19 +60,36 @@ app.registerExtension({
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {        
             if (this.IS_UE && side==1) { // side 1 is input
-                var type = '*'
+                var type = null
                 if (connect && link_info) {
-                    var connected_type
                     if (link_is_from_subgraph_input(link_info)) { // input slot of subgraph
-                        connected_type = get_subgraph_input_type(node_graph(this), link_info.origin_slot)
+                        type = get_subgraph_input_type(node_graph(this), link_info.origin_slot)
                     } else {
-                        connected_type = get_real_node(link_info.origin_id, node_graph(this))?.outputs[link_info.origin_slot]?.type
+                        type = get_real_node(link_info.origin_id, node_graph(this))?.outputs[link_info.origin_slot]?.type
                     }
-                    if (connected_type) type = connected_type;
                 };
+                type = type || '*'
+
                 this.inputs[slot].type = type;
                 if (link_info) link_info.type = type
-                update_input_label(this, slot, app);
+
+                if (type=='*') {
+                    this.inputs[slot].label = i18n('anything');
+                    this.inputs[slot].color_on = undefined;
+                } else {
+                    if (app.ui.settings.getSettingValue("Use Everywhere.Options.use_output_name") && link_info) {
+                        if (!this.inputs[slot].label || this.inputs[slot].label==i18n('anything')) {
+                            const out_slot = app.graph.getNodeById(link_info.origin_id)?.outputs[link_info.origin_slot]
+                            this.inputs[slot].label = out_slot?.label || out_slot?.localized_name || out_slot?.name || type;
+                        }
+                    } else {
+                        this.inputs[slot].label = type;
+                    }
+                    this.inputs[slot].color_on = app.canvas.default_connection_color_byType[type];
+                }
+
+                //update_input_label(this, slot);
+                
                 if (!graphConverter.graph_being_configured) {
                     // do the fix at the end of graph change
                     deferred_actions.push( { fn:fix_inputs, args:[this,]} )
