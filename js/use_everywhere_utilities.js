@@ -43,14 +43,14 @@ export function version_at_least(x,y) {
 /*
 Return the node object for this node_id. 
 */
-function get_real_node(node_id, graph) {
+export function get_real_node(node_id, graph) {
     if (!graph) graph = visible_graph()
     const nid = node_id.toString();
     if (nid==-10) return wrap_input(graph.inputNode); // special case for subgraph input
     return graph._nodes_by_id[nid];
 }
 
-class Logger {
+export class Logger {
     static LIMITED_LOG_BLOCKED = false;
     static LIMITED_LOG_MS      = 5000;
     static level;  // 0 for errors only, 1 activates 'log_problem', 2 activates 'log_info', 3 activates 'log_detail'
@@ -200,72 +200,10 @@ class GraphConverter {
 
 export const graphConverter = GraphConverter.instance();
 
-class LoopError extends Error {
-    constructor(id, stack, ues) {
-        super("Loop detected");
-        this.id = id;
-        this.stack = [...stack];
-        this.ues = [...ues];
-    }
-}
-
-function find_all_upstream(node, links_added) {
-    const all_upstream = [];
-    node?.inputs?.forEach((input) => { // normal links
-        const link_id = input.link;
-        if (link_id) {
-            const link = app.graph.links[link_id];
-            if (link) all_upstream.push({id:link.origin_id, slot:link.origin_slot});
-        }
-    });
-    links_added.forEach((la)=>{ // UE links
-        if (la.downstream==node.id) {
-            all_upstream.push({id:la.upstream, slot:la.upstream_slot, ue:la.controller.toString()})
-        }
-    });
-
-    return all_upstream;
-}
-
-function recursive_follow(node, links_added, stack, nodes_cleared, ues, count, slot) {
-    count += 1;
-    if (stack.includes(node.id.toString())) throw new LoopError(node.id, new Set(stack), new Set(ues));
-    if (nodes_cleared.has(node.id.toString())) return;
-    stack.push(node.id.toString());
-
-    find_all_upstream(node, links_added).forEach((upstream) => {
-        if (upstream.ue) ues.push(upstream.ue);
-        count = recursive_follow(upstream, links_added, stack, nodes_cleared, ues, count, upstream.slot);
-        if (upstream.ue) ues.pop();
-    })
-
-    nodes_cleared.add(node.id.toString());
-    stack.pop();
-    return count;
-}
-
-/*
-Throw a LoopError if there is a loop.
-live_nodes is a list of all live (ie not bypassed) nodes in the graph
-links_added is a list of the UE virtuals links 
-*/
-function node_in_loop(live_nodes, links_added) {
-    var nodes_to_check = [];
-    const nodes_cleared = new Set();
-    live_nodes.forEach((n)=>nodes_to_check.push(n));
-    var count = 0;
-    while (nodes_to_check.length>0) {
-        const node = nodes_to_check.pop();
-        count += recursive_follow(node, links_added, [], nodes_cleared, [], 0, -1);
-        nodes_to_check = nodes_to_check.filter((nid)=>!nodes_cleared.has(nid.toString()));
-    }
-    console.log(`node_in_loop made ${count} checks`)
-}
-
 /*
 Is a node alive (ie not bypassed or set to never)
 */
-function node_is_live(node, treat_bypassed_as_live){
+export function node_is_live(node, treat_bypassed_as_live){
     if (!node) return false;
     if (node.mode===0) return true;
     if (node.mode===2 || node.mode===4) return !!treat_bypassed_as_live;
@@ -301,12 +239,10 @@ function handle_bypass(original_link, type, graph) {
 }
 
 
-
-
 /*
 Does this input connect upstream to a live node?
 */
-function is_connected(input, treat_bypassed_as_live, graph) {
+export function is_connected(input, treat_bypassed_as_live, graph) {
     const link_id = input.link;
     if (link_id === null) return false;                                    // no connection
     var the_link = graph.links[link_id];
@@ -320,14 +256,9 @@ function is_connected(input, treat_bypassed_as_live, graph) {
 /*
 Is this a UE node?
 */
-function is_UEnode(node_or_nodeType) {
+export function is_UEnode(node_or_nodeType) {
     const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
     return ((title) && (title.startsWith("Anything Everywhere") || title==="Seed Everywhere" || title==="Prompts Everywhere"))
-}
-
-function is_helper(node_or_nodeType) {
-    const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
-    return ((title) && (title.startsWith("Simple String")))
 }
 
 /*
@@ -335,16 +266,13 @@ Inject a call into a method on object with name methodname.
 The injection is added at the end of the existing method (if the method didn't exist, it is created)
 injectionthis and injectionarguments are passed into the apply call (as the this and the arguments)
 */
-function inject(object, methodname, tracetext, injection, injectionthis, injectionarguments) {
+export function inject(object, methodname, tracetext, injection, injectionthis, injectionarguments) {
     const original = object[methodname];
     object[methodname] = function() {
         original?.apply(this, arguments);
         injection.apply(injectionthis, injectionarguments);
     }
 }
-
-
-export { node_in_loop, handle_bypass, node_is_live, is_connected, is_UEnode, is_helper, inject, Logger, get_real_node }
 
 export function defineProperty(instance, property, desc) {
     const existingDesc = Object.getOwnPropertyDescriptor(instance, property);
@@ -401,16 +329,14 @@ export class Pausable {
     on_unpause(){}
 }
 
-export function get_connection(node, i, override_type) {
+export function get_connection(node, i) {
     const graph = node_graph(node)
     const in_link = node?.inputs[i]?.link;
-    var type = override_type;
-    var link = undefined;
     if (in_link) {
-        if (!override_type) type = node.inputs[i].type;
-        link = handle_bypass(graph.links[in_link], type, graph);
-    } 
-    return { link:link, type:type }
+        return { link:handle_bypass(graph.links[in_link], node.inputs[i].type, graph), type:node.inputs[i].type }
+    } else {
+        return { link:undefined, type:undefined }
+    }
 }
 
 

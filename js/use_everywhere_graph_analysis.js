@@ -1,5 +1,5 @@
 import { UseEverywhereList } from "./use_everywhere_classes.js";
-import { node_in_loop, node_is_live, is_connected, is_UEnode, Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
+import { node_is_live, is_connected, is_UEnode, Logger, Pausable } from "./use_everywhere_utilities.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";

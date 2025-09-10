@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
-import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter, fix_inputs, create } from "./use_everywhere_utilities.js";
+import { is_UEnode, inject, Logger, get_real_node, defineProperty, graphConverter, fix_inputs, create } from "./use_everywhere_utilities.js";
 import { indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
@@ -127,14 +127,6 @@ app.registerExtension({
     },
 
     async nodeCreated(node) {
-        /* TODO see if we still need this
-        if (!node.__mode) {
-            node.__mode = node.mode
-            defineProperty(node, "mode", {
-                get: ( )=>{return node.__mode},
-                set: (v)=>{node.__mode = v; node.afterChangeMade?.('mode', v);}            
-            })
-        }*/
 
         const original_afterChangeMade = node.afterChangeMade
         node.afterChangeMade = (p, v) => {
@@ -143,10 +135,6 @@ app.registerExtension({
                 linkRenderController.mark_link_list_outdated();
                 node.widgets?.forEach((widget) => {widget.onModeChange?.(v)}); // no idea why I have this?
             }
-        }
-
-        if (is_helper(node)) { // editing a helper node makes the list dirty
-            inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
         }
 
         // removing a node makes the list dirty
