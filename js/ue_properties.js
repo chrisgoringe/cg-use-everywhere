@@ -1,5 +1,6 @@
-import { VERSION, version_at_least, is_UEnode, graphConverter, fix_inputs, create } from "./use_everywhere_utilities.js"
+import { VERSION, version_at_least, fix_inputs, create } from "./use_everywhere_utilities.js"
 import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
+import { shared } from "./shared.js";
 
 const ALL_REGEXES = ['title', 'input', 'prompt', 'negative', 'group']
 
@@ -71,13 +72,11 @@ If the graph is still being configured, then that means the node is being create
 In that case the properties need to be set later, in setup_ue_properties_onload
 */
 export function setup_ue_properties_oncreate(node) {
-    node.IS_UE = is_UEnode(node)
-    if (graphConverter.graph_being_configured) return
-    if (node.IS_UE) {
-        if (!node.properties) node.properties = {}
-        node.properties.ue_properties = {...DEFAULT_PROPERTIES}
-        convert_node_types(node)
-    }
+    node.IS_UE = true
+    if (shared.graph_being_configured) return
+    if (!node.properties) node.properties = {}
+    node.properties.ue_properties = {...DEFAULT_PROPERTIES}
+    convert_node_types(node)
 }
 
 /*

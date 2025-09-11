@@ -102,7 +102,6 @@ class GraphConverter {
         this.node_input_map = {};
         this.given_message = false;
         this.did_conversion = false;
-        this.graph_being_configured = false;
      }
 
     running_116_plus() {

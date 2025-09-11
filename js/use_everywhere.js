@@ -1,6 +1,8 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
+import { shared } from "./shared.js";
+
 import { is_UEnode, inject, Logger, defineProperty, graphConverter, fix_inputs, create } from "./use_everywhere_utilities.js";
 import { indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
@@ -14,6 +16,7 @@ import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onl
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
 import { input_changed } from "./connections.js";
+import { reset_comboclone_on_load, comboclone_on_connection } from "./combo_clone.js";
 
 /*
 The ui component that looks after the link rendering
@@ -54,16 +57,20 @@ app.registerExtension({
     settings: SETTINGS, 
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
+        if (nodeData.name=="Combo Clone") {
+            nodeType.prototype.IS_COMBO_CLONE = true
+        }
         /*
         When a node is connected or unconnected, the link list is dirty.
         If it is a UE node, we need to update it as well
         */
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
-        nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {        
+        nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {     
+            if (this.IS_COMBO_CLONE && connect) comboclone_on_connection(this, link_info)
             if (this.IS_UE && side==1) { // side 1 is input
                 input_changed(this, slot, connect, link_info)
                 
-                if (!graphConverter.graph_being_configured) {
+                if (!shared.graph_being_configured) {
                     // do the fix at the end of graph change
                     deferred_actions.push( { fn:fix_inputs, args:[this,]} )
                     // disconnecting doesn't trigger graphChange call?
@@ -100,7 +107,9 @@ app.registerExtension({
     },
 
     async nodeCreated(node) {
-
+        if (!node.properties.ue_properties && !is_UEnode(node) && !shared.graph_being_configured) {
+            node.properties.ue_properties = { widget_ue_connectable : {}, input_ue_unconnectable : {} }
+        }
         const original_afterChangeMade = node.afterChangeMade
         node.afterChangeMade = (p, v) => {
             original_afterChangeMade?.(p,v)
@@ -129,8 +138,10 @@ app.registerExtension({
                     graphConverter.convert_if_pre_116(n);
                 })
             }
-         }
-         setup_ue_properties_onload(node)
+        }
+        setup_ue_properties_onload(node)
+
+        if (node.IS_COMBO_CLONE) reset_comboclone_on_load(node)
     },
 
 	async setup() {
@@ -346,13 +357,13 @@ app.registerExtension({
     beforeConfigureGraph() {
         linkRenderController.pause("before configure", 1000)
         graphAnalyser.pause("before configure", 1000)
-        graphConverter.graph_being_configured = true
+        shared.graph_being_configured = true
     },
 
     afterConfigureGraph() {
         graphConverter.remove_saved_ue_links_recursively(app.graph)
         //convert_old_nodes(app.graph)
-        graphConverter.graph_being_configured = false
+        shared.graph_being_configured = false
     }
 
 });
