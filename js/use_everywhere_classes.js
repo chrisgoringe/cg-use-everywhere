@@ -37,6 +37,7 @@ class UseEverywhere {
         Object.assign(this, arguments[0]);
         if (this.priority === undefined) this.priority = 0;
         if (this.graph === undefined) this.graph = visible_graph();
+        this.string_to_combo = (this.controller.properties.ue_properties.string_to_combo > 0)
 
         const from_node = get_real_node(this?.output[0], this.graph);
         const to_node = get_real_node(this?.controller.id, this.graph)
@@ -102,7 +103,15 @@ class UseEverywhere {
                 return false;
             }
         }
-        if (this.type != input.type) return false;
+        if (this.type != input.type) {
+            if (this.type=="STRING" && 
+                input.type=="COMBO" && 
+                this.string_to_combo) {
+                    // allow a string to be sent to a COMBO
+            } else {
+                return false
+            }
+        } 
         if (this.input_regex && typeof this.input_regex==='string') return false; // input_regex started '+', which targets Highway nodes only
         if (this.input_regex && !this.input_regex.test(input_label)) return false;
         

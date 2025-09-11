@@ -61,6 +61,7 @@ const DEFAULT_PROPERTIES = {
                     group_regex           : null,
                     priority              : undefined,
                     repeated_type_rule    : 0,
+                    string_to_combo       : 0,
                 }
 
 /*

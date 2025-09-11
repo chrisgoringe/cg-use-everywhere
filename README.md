@@ -114,6 +114,8 @@ so you can match `seed` to `seed` or `noise_seed` by naming the `Anything Everyw
 
 You can rename input slots by right-clicking on the input dot - but you can't rename widget inputs - this is a limitation imposed by ComfyUI ([discussion](https://github.com/Comfy-Org/ComfyUI_frontend/issues/3654)). The work-around is to rename the target node (or use multiple `Anything Everywhere` nodes with other constraints, especially color matching).
 
+`String to Combos` (default `no`) can be used to allow a `STRING` input to be sent to a `COMBO` widget. Since there may be a lot of combo widgets, this should be used with care - you will almost certainly want to use other restrictions (such as an `input regex`, or the `Repeated Types` constraint withj multiple strings (eg `sampler_name` and `scheduler`))
+
 ## Resolving clashes
 
 What if two or more `Anything Everywhere` nodes can send to the same input?

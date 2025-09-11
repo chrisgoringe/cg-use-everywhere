@@ -97,6 +97,13 @@ function create_editor_html(node) {
         add_select_options(node, repeated_type_select, REPEATED_TYPE_OPTIONS, `repeated_type_rule`)
     }
 
+    if (node.inputs.find((i)=>(i.type=="STRING"))) {
+        const send_to_combos_row = add_row(table, i18n("String to Combos"))
+        const send_to_combos_select = document.createElement('select')
+        add_cell(send_to_combos_row, send_to_combos_select)
+        add_select_options(node, send_to_combos_select, ["no", "yes"], `string_to_combo`)
+    }
+
     const priority_row = add_row(table, i18n("Priority"))
     const priority_edit = document.createElement("input")
     priority_edit.value = `${node.properties.ue_properties.priority || default_priority(node)}`
