@@ -2,6 +2,7 @@ import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { link_is_from_subgraph_input, node_graph, visible_graph, wrap_input } from "./use_everywhere_subgraph_utils.js";
 import { i18n } from "./i18n.js";
+import { shared } from "./shared.js";
 
 export const VERSION = "7.1"
 
@@ -163,10 +164,14 @@ class GraphConverter {
     convert_if_pre_116(node) {
         if (!node) return;
 
-        if (node.IS_UE) this.clean_ue_node(node)
-        
         if (node.properties?.ue_properties?.widget_ue_connectable) return
         if (node.properties?.widget_ue_connectable) return  // pre 7.0 node which will be converted
+
+        if (node.IS_UE) {
+            if (node.properties?.ue_properties?.version) return
+        } else {
+            this.clean_ue_node(node)
+        }
 
         if (!this.given_message) {
             Logger.log_info(`Graph was saved with a version of ComfyUI before 1.16, so Anything Everywhere will try to work out which widgets are connectable`);
@@ -345,6 +350,7 @@ This is called in various places (node load, creation, link change) to ensure th
 export function fix_inputs(node) {
     if (!node.graph) return // node has been deleted prior to the fix
     if (node.properties.ue_properties.fixed_inputs) return
+    if (shared.graph_being_configured) return
 
     const empty_inputs = node.inputs.filter((inputslot)=>(inputslot.type=='*'))
     var excess_inputs = empty_inputs.length - 1

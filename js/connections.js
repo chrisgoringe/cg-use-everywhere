@@ -16,6 +16,7 @@ export function input_changed(node, slot, connect, link_info) {
         }
     };
     type = type || '*'
+    if (type=='*' && link_info && connect) type = link_info.type
 
     node.inputs[slot].type = type;
     if (link_info) link_info.type = type
