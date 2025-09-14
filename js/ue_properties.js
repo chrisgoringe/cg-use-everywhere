@@ -1,6 +1,7 @@
-import { VERSION, version_at_least, fix_inputs, create } from "./use_everywhere_utilities.js"
+import { VERSION, version_at_least, create } from "./use_everywhere_utilities.js"
 import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
 import { shared } from "./shared.js";
+import { fix_inputs } from "./connections.js";
 
 const ALL_REGEXES = ['title', 'input', 'prompt', 'negative', 'group']
 

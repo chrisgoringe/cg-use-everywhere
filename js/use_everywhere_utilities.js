@@ -337,43 +337,10 @@ export function get_connection(node, i) {
     const graph = node_graph(node)
     const in_link = node?.inputs[i]?.link;
     if (in_link) {
-        return { link:handle_bypass(graph.links[in_link], node.inputs[i].type, graph), type:node.inputs[i].type }
+        var llink = graph.links[in_link]
+        llink = handle_bypass(llink, llink.type)
+        return { link:llink, type:llink.type }
     } else {
         return { link:undefined, type:undefined }
-    }
-}
-
-
-/*
-This is called in various places (node load, creation, link change) to ensure there is exactly one empty input 
-*/
-export function fix_inputs(node) {
-    if (!node.graph) return // node has been deleted prior to the fix
-    if (node.properties.ue_properties.fixed_inputs) return
-    if (shared.graph_being_configured) return
-
-    const empty_inputs = node.inputs.filter((inputslot)=>(inputslot.type=='*'))
-    var excess_inputs = empty_inputs.length - 1
-    
-    if (excess_inputs<0) {
-        try {
-            node.properties.ue_properties.next_input_index = (node.properties.ue_properties.next_input_index || 10) + 1
-            node.addInput(`anything${node.properties.ue_properties.next_input_index}`, "*", {label:i18n('anything')})
-            fix_inputs(node)
-        } catch (e) {
-            Logger.log_error(e)
-        }
-    } else if (excess_inputs>0) {
-        const idx = node.inputs.findIndex((inputslot)=>(inputslot.type=='*'))
-        if (idx>=0) {
-            try {
-                node.removeInput(idx)
-                fix_inputs(node)
-            } catch (e) {
-                Logger.log_error(e)
-            }
-        } else {
-            Logger.log_problem(`Something very odd happened in fix_inputs for ${node.id}`)
-        }
     }
 }

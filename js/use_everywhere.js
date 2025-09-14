@@ -3,7 +3,7 @@ import { api } from "../../scripts/api.js";
 
 import { shared } from "./shared.js";
 
-import { is_UEnode, inject, Logger, defineProperty, graphConverter, fix_inputs, create } from "./use_everywhere_utilities.js";
+import { is_UEnode, inject, Logger, defineProperty, graphConverter, create } from "./use_everywhere_utilities.js";
 import { indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
@@ -11,11 +11,11 @@ import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_ever
 import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
-import { visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { master_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
-import { input_changed } from "./connections.js";
+import { input_changed, fix_inputs, restore_input_states } from "./connections.js";
 import { reset_comboclone_on_load, comboclone_on_connection } from "./combo_clone.js";
 
 /*
@@ -66,7 +66,7 @@ app.registerExtension({
         */
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {     
-            if (this.IS_COMBO_CLONE && connect) comboclone_on_connection(this, link_info)
+            if (this.IS_COMBO_CLONE) comboclone_on_connection(this, link_info, connect)
             if (this.IS_UE && side==1) { // side 1 is input
                 input_changed(this, slot, connect, link_info)
                 
@@ -140,8 +140,6 @@ app.registerExtension({
             }
         }
         setup_ue_properties_onload(node)
-
-        if (node.IS_COMBO_CLONE) reset_comboclone_on_load(node)
     },
 
 	async setup() {
@@ -364,6 +362,7 @@ app.registerExtension({
         graphConverter.remove_saved_ue_links_recursively(app.graph)
         //convert_old_nodes(app.graph)
         shared.graph_being_configured = false
+        restore_input_states(master_graph())
     }
 
 });
