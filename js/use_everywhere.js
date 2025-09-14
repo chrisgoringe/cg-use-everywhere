@@ -15,8 +15,8 @@ import { master_graph, visible_graph } from "./use_everywhere_subgraph_utils.js"
 import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
-import { input_changed, fix_inputs, restore_input_states } from "./connections.js";
-import { reset_comboclone_on_load, comboclone_on_connection } from "./combo_clone.js";
+import { input_changed, fix_inputs, post_configure_fixes } from "./connections.js";
+import { reset_comboclone_on_load, comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
 
 /*
 The ui component that looks after the link rendering
@@ -57,29 +57,39 @@ app.registerExtension({
     settings: SETTINGS, 
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeData.name=="Combo Clone") {
-            nodeType.prototype.IS_COMBO_CLONE = true
-        }
         /*
         When a node is connected or unconnected, the link list is dirty.
         If it is a UE node, we need to update it as well
         */
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {     
-            if (this.IS_COMBO_CLONE) comboclone_on_connection(this, link_info, connect)
+            if (is_combo_clone(this)) comboclone_on_connection(this, link_info, connect)
             if (this.IS_UE && side==1) { // side 1 is input
                 input_changed(this, slot, connect, link_info)
                 
+                // I suspect this is no longer needed... in which case the whole Deferred can be dumped!
                 if (!shared.graph_being_configured) {
                     // do the fix at the end of graph change
-                    deferred_actions.push( { fn:fix_inputs, args:[this,]} )
+                    deferred_actions.push( { fn:fix_inputs, args:[this,"deferred",]} )
                     // disconnecting doesn't trigger graphChange call?
                     setTimeout(deferred_actions.execute.bind(deferred_actions), 100)
                 }
+                // ...to here
             }
             linkRenderController?.mark_link_list_outdated();
             onConnectionsChange?.apply(this, arguments);
         };
+
+        /* Combo Clone can connect to COMBO or to UE nodes */
+        if (nodeData.name=="Combo Clone") {
+            const onConnectOutput = nodeType.prototype.onConnectOutput
+            nodeType.prototype.onConnectOutput = function(outputIndex, type, input, inputNode, inputIndex) {
+                if  (!(type=="COMBO" || is_UEnode(inputNode))) return false;
+                return onConnectOutput?.apply(this,arguments)
+            }
+        }
+        
+
         
         /*
         Extra menu options are the node right click menu.
@@ -362,7 +372,7 @@ app.registerExtension({
         graphConverter.remove_saved_ue_links_recursively(app.graph)
         //convert_old_nodes(app.graph)
         shared.graph_being_configured = false
-        restore_input_states(master_graph())
+        post_configure_fixes(master_graph())
     }
 
 });

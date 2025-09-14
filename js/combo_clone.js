@@ -2,18 +2,24 @@ import { shared } from "./shared.js"
 import { Logger } from "./use_everywhere_utilities.js"
 
 function update_me(node) {
-    Logger.log_problem(`Reseting combo clone node ${node.id}`)
-    node.IS_COMBO_CLONE = true
-    node.widgets[0].options.values = [...node.properties.comboclone.options]
-    node.outputs[0].type = "COMBO"
-    node.outputs[0].label = node.properties.comboclone.name
+    if (node.properties.comboclone) {
+        Logger.log_problem(`Reseting combo clone node ${node.id}`)
+        node.widgets[0].options.values = [...node.properties.comboclone.options]
+        node.outputs[0].type = "COMBO"
+        node.outputs[0].label = node.properties.comboclone.name
+    }
+}
+
+export function is_combo_clone(node) {
+    return (node.type == "Combo Clone")
 }
 
 export function reset_comboclone_on_load(node) {
-    if (node.properties?.comboclone) update_me(node)
+    if (is_combo_clone(node)) update_me(node)
 }
 
 export function comboclone_on_connection(node, link_info, connect) {
+    if (!is_combo_clone(node)) return Logger.log_problem(`comboclone_on_connection called for node ${node.id} of type ${node.type}`)
     if (shared.graph_being_configured) return
     if (connect) {
         if (!link_info) return
@@ -31,6 +37,6 @@ export function comboclone_on_connection(node, link_info, connect) {
             link_info.type = "COMBO"
         }
     } else {
-        let a;
+        // no action when we disconnect
     }
 }

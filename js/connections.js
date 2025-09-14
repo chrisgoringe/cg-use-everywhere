@@ -3,7 +3,7 @@ import { get_real_node, is_UEnode, Logger } from "./use_everywhere_utilities.js"
 import { app } from "../../scripts/app.js";
 import { i18n } from "./i18n.js";
 import { shared } from "./shared.js";
-import { reset_comboclone_on_load } from "./combo_clone.js";
+import { reset_comboclone_on_load, is_combo_clone } from "./combo_clone.js";
 
 function get_type(node, link_info) {
     var type = null
@@ -47,55 +47,33 @@ export function input_changed(node, slot, connect, link_info) {
         node.inputs[slot].color_on = undefined;       
         node.inputs[slot].type = '*'
     }
-    fix_inputs(node)
+    fix_inputs(node, "input_changed")
 }
 
-function store_input_state(node) {
-    return
-    node.properties.ue_properties.input_state = []
-    node.inputs.filter((inputslot)=>(inputslot.type!='*')).forEach((input)=>{
-        node.properties.ue_properties.input_state.push( {
-            type     : input.type,
-            label    : input.label,
-            color_on : input.color_on
-        } )
-    })
-}
 
-function restore_input_state(node) {
-    return
-    if (node.properties.ue_properties.input_state) {
-        while (node.inputs.length < node.properties.ue_properties.input_state.length+1) add_new_input(node)
-        while (node.inputs.length > node.properties.ue_properties.input_state.length+1) {
-            if (!remove_excess_input(node)) return
-        }
-        node.properties.ue_properties.input_state.forEach((state, i) => {
-            Object.assign(node.inputs[i], state)
-        })
-    } else {
-        Logger.log_problem(`restore_input_state called for a node with no stored input state`)
-    }
-}
-
-export function restore_input_states(graph) {
+export function post_configure_fixes(graph) {
     graph.nodes.forEach((node) => {
-        reset_comboclone_on_load(node)
-        if (node.properties.ue_properties?.input_state) restore_input_state(node)
-        if (is_UEnode(node)) fix_inputs(node)
-        if (node.subgraph) restore_input_states(node.subgraph)
+        if (is_combo_clone(node)) reset_comboclone_on_load(node)
+        if (is_UEnode(node))      fix_inputs(node, "post_configure_fixes")
+        if (node.subgraph) post_configure_fixes(node.subgraph)
     })
 }
 
 function add_new_input(node) {
-    node.properties.ue_properties.next_input_index = (node.properties.ue_properties.next_input_index || 10) + 1
-    node.addInput(`anything${node.properties.ue_properties.next_input_index}`, "*", {label:i18n('anything')})
+    Logger.log_info(`Adding new anything input to node ${node.id} (${fix_call_message})`)
+    try {
+        node.properties.ue_properties.next_input_index = (node.properties.ue_properties.next_input_index || 10) + 1
+        node.addInput(`anything${node.properties.ue_properties.next_input_index}`, "*", {label:i18n('anything')})
+        return true
+    } catch (e) { Logger.log_error(e) }
+    return false
 }
 
 function remove_excess_input(node) {
     const idx = node.inputs.findIndex((inputslot)=>(inputslot.type=='*'))
     if (idx>=0) {
         try {
-            Logger.log_info(`Removing excess anything input from node ${node.id}`)
+            Logger.log_info(`Removing excess anything input from node ${node.id} (${fix_call_message})`)
             node.removeInput(idx)
             return true
         } catch (e) { Logger.log_error(e) }
@@ -106,26 +84,22 @@ function remove_excess_input(node) {
 /*
 This is called in various places (node load, creation, link change) to ensure there is exactly one empty input 
 */
-export function fix_inputs(node) {
+
+var fix_call_message;
+
+export function fix_inputs(node, message) {
+    fix_call_message = message
     if (!node.graph) return // node has been deleted prior to the fix
     if (shared.graph_being_configured) return
-    if (node.properties.ue_properties.fixed_inputs) return store_input_state(node)
-    
+    if (node.properties.ue_properties.fixed_inputs) return
 
     const empty_inputs = node.inputs.filter((inputslot)=>(inputslot.type=='*'))
     var excess_inputs = empty_inputs.length - 1
     
     if (excess_inputs<0) {
-        try {
-            Logger.log_info(`Adding new anything input to node ${node.id}`)
-            add_new_input(node)
-            fix_inputs(node)
-        } catch (e) {
-            Logger.log_error(e)
-        }
+        if (add_new_input(node)) fix_inputs(node)
     } else if (excess_inputs>0) {
         if (remove_excess_input(node)) fix_inputs(node)
     }
 
-    store_input_state(node)
 }

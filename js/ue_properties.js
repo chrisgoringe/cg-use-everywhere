@@ -139,5 +139,5 @@ function convert_node_types(node) {
         if (node.properties.ue_properties[rname]==".*") node.properties.ue_properties[rname] = undefined
     })
 
-    fix_inputs(node)
+    fix_inputs(node, "convert_node_types")
 }
