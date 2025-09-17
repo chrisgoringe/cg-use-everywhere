@@ -2,12 +2,13 @@ import { app } from "../../scripts/app.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
-import { Logger, VERSION } from "./use_everywhere_utilities.js";
+import { Logger } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { is_UEnode } from "./use_everywhere_utilities.js";
 import { i18ify_settings } from "./i18n.js";
+import { VERSION } from "./shared.js";
 
 const _SETTINGS = [
     {
