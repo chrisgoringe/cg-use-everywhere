@@ -87,11 +87,20 @@ This is called in various places (node load, creation, link change) to ensure th
 
 var fix_call_message;
 
+function fix_star_inputs(node) {
+    node.inputs.filter((input)=>(input.type=='*' && input.link)).forEach((input)=>{
+        const llink = node.graph.links[input.link]
+        if (llink.type) input.type = llink
+    })
+}
+
 export function fix_inputs(node, message) {
     fix_call_message = message
     if (!node.graph) return // node has been deleted prior to the fix
     if (shared.graph_being_configured) return
     if (node.properties.ue_properties.fixed_inputs) return
+
+    fix_star_inputs(node)
 
     const empty_inputs = node.inputs.filter((inputslot)=>(inputslot.type=='*'))
     var excess_inputs = empty_inputs.length - 1
