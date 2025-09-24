@@ -84,6 +84,7 @@ class GraphAnalyser extends Pausable {
             if (node && !node.properties.rejects_ue_links) {
                 //if (!real_node._widget_name_map) real_node._widget_name_map =  real_node.widgets?.map(w => w.name) || [];
                 node.inputs?.forEach((input,index) => {
+                    if (!input) return; // NoteNode has input = [undefined,] !
                     if (is_connected(input, treat_bypassed_as_live, node_graph(node))) return;  
                     if (node.reject_ue_connection && node.reject_ue_connection(input)) return;
                     if (is_connectable(node, input.name)) connectable.push({node, input, index});

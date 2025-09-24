@@ -133,29 +133,34 @@ class GraphConverter {
             }
         }
         // fix the localized names
-        node.inputs = node.inputs.map((input) => {
-            if (!input.localized_name || input.localized_name.startsWith(i18n('anything'))) input.localized_name = input.name
-            return input;
+        node.inputs = node.inputs.forEach((input) => {
+            if (input) {
+                if (!input.localized_name || input.localized_name.startsWith(i18n('anything'))) input.localized_name = input.name
+            } else {
+                let brteakpoint;
+            }
         })
 
         // set types to match
-        node.inputs.forEach((input) => {
-            if (input.type=='*') {
-                const graph = node_graph(node);
-                if (input.link) {
-                    const llink = graph.links[input.link];
-                    if (link_is_from_subgraph_input(llink)) {
-                        input.type = get_subgraph_input_type(graph, llink.origin_slot);
+        if (node.inputs) {
+            node.inputs.forEach((input) => {
+                if (input.type=='*') {
+                    const graph = node_graph(node);
+                    if (input.link) {
+                        const llink = graph.links[input.link];
+                        if (link_is_from_subgraph_input(llink)) {
+                            input.type = get_subgraph_input_type(graph, llink.origin_slot);
+                        } else {
+                            input.type = llink.type;
+                        }
                     } else {
-                        input.type = llink.type;
+                        input.type = (input.label && input.label!=i18n('anything')) ? input.label : input.name
                     }
-                } else {
-                    input.type = (input.label && input.label!=i18n('anything')) ? input.label : input.name
                 }
-            }
-        });
+            });
 
-        Logger.log_detail(`clean_ue_node ${node.id} (${node.type})`, node.inputs);
+            Logger.log_detail(`clean_ue_node ${node.id} (${node.type})`, node.inputs);
+        }
     }
 
     convert_if_pre_116(node) {
@@ -335,7 +340,7 @@ export function get_connection(node, i) {
     const in_link = node?.inputs[i]?.link;
     if (in_link) {
         var llink = graph.links[in_link]
-        llink = handle_bypass(llink, llink.type)
+        llink = handle_bypass(llink, llink.type, graph)
         if (!llink) {
             Logger.log_problem(`handle_bypass failing - subgraph issue?`)
             llink = graph.links[in_link]

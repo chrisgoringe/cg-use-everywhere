@@ -67,14 +67,12 @@ app.registerExtension({
             if (this.IS_UE && side==1) { // side 1 is input
                 input_changed(this, slot, connect, link_info)
                 
-                // I suspect this is no longer needed... in which case the whole Deferred can be dumped!
                 if (!shared.graph_being_configured) {
                     // do the fix at the end of graph change
-                    deferred_actions.push( { fn:fix_inputs, args:[this,"deferred",]} )
+                    deferred_actions.push( { fn:fix_inputs, args:[this,"deferred onConnectionsChange",]} )
                     // disconnecting doesn't trigger graphChange call?
                     setTimeout(deferred_actions.execute.bind(deferred_actions), 100)
                 }
-                // ...to here
             }
             linkRenderController?.mark_link_list_outdated();
             onConnectionsChange?.apply(this, arguments);

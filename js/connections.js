@@ -35,7 +35,12 @@ export function input_changed(node, slot, connect, link_info) {
     if (connect) {
         const type = get_type(node, link_info)
         if (app.ui.settings.getSettingValue("Use Everywhere.Options.use_output_name") && link_info) {
-            const out_slot = node.graph.getNodeById(link_info.origin_id)?.outputs[link_info.origin_slot]
+            var out_slot
+            if (link_info.origin_id==-10) {
+                out_slot = node.graph.inputNode?.allSlots[link_info.origin_slot]
+            } else {
+                out_slot = node.graph.getNodeById(link_info.origin_id)?.outputs[link_info.origin_slot]
+            }
             node.inputs[slot].label = out_slot?.label || out_slot?.localized_name || out_slot?.name || i18n(type);
         } else {
             node.inputs[slot].label = i18n(type);
@@ -47,7 +52,7 @@ export function input_changed(node, slot, connect, link_info) {
         node.inputs[slot].color_on = undefined;       
         node.inputs[slot].type = '*'
     }
-    fix_inputs(node, "input_changed")
+
 }
 
 
@@ -88,9 +93,12 @@ This is called in various places (node load, creation, link change) to ensure th
 var fix_call_message;
 
 function fix_star_inputs(node) {
+    node.inputs.filter((input)=>(!input.link)).forEach((input)=>{
+        input.type = '*'
+    })
     node.inputs.filter((input)=>(input.type=='*' && input.link)).forEach((input)=>{
         const llink = node.graph.links[input.link]
-        if (llink.type) input.type = llink
+        if (llink.type) input.type = llink.type
     })
 }
 
