@@ -171,7 +171,6 @@ class GraphConverter {
 
         if (node.IS_UE) {
             if (node.properties?.ue_properties?.version) return
-        } else {
             this.clean_ue_node(node)
         }
 

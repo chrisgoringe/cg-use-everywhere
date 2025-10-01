@@ -162,7 +162,7 @@ app.registerExtension({
         /* if we are on version 1.16 or later, stash input data to convert nodes when they are loaded */
         if (graphConverter.running_116_plus()) {
             const original_loadGraphData = app.loadGraphData;
-            app.loadGraphData = function (data) {
+            app.loadGraphData = async function (data) {
                 try {
                     graphConverter.store_node_input_map(data);
                 } catch (e) { Logger.log_error(e); }
@@ -170,8 +170,9 @@ app.registerExtension({
                 if (settingsCache.getSettingValue("Use Everywhere.Options.block_graph_validation")) {
                     app.ui.settings.setSettingValue("Comfy.Validation.Workflows", false);
                 }
-                original_loadGraphData.apply(this, arguments);
+                await original_loadGraphData.apply(this, arguments);
                 app.ui.settings.setSettingValue("Comfy.Validation.Workflows", cvw_was);
+                //return v;
             }
         }
         
@@ -181,7 +182,6 @@ app.registerExtension({
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             try {
-                linkRenderController.pause('drawNode')
                 const v = original_drawNode.apply(this, arguments);
                 linkRenderController.highlight_ue_connections(node, ctx);
                 if (node._last_seen_bg !== node.bgcolor) linkRenderController.mark_link_list_outdated();
@@ -190,13 +190,14 @@ app.registerExtension({
             } catch (e) {
                 Logger.log_error(e)
             } finally {          
-                linkRenderController.unpause()
+                
             }
         }
 
         const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
         LGraphCanvas.prototype.drawFrontCanvas = function() {
             try {
+                linkRenderController.pause('drawFrontCanvas')
                 linkRenderController.disable_all_connected_widgets(true)
                 return original_drawFrontCanvas.apply(this, arguments);
             }  catch (e) {
@@ -207,6 +208,7 @@ app.registerExtension({
                 } catch (e) {
                     Logger.log_error(e)
                 } 
+                linkRenderController.unpause()
             }
         }
 

@@ -1,7 +1,7 @@
 from .use_everywhere import SeedEverywhere, AnythingEverywherePrompts
 from typing import Any
 
-UE_VERSION = "7.2"
+UE_VERSION = "7.2.1"
 
 NODE_CLASS_MAPPINGS:dict[str,Any] = { "Seed Everywhere": SeedEverywhere }
 
