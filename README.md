@@ -31,6 +31,25 @@ This is what the default wan 2.2 s2v video workflow looks like:
 
 ---
 
+# 7.x Updates
+
+## 7.2
+
+- Added support for Combo inputs via the `Combo Clone` helper node
+- Fixed a number of issues related to subgraphs
+- Improved handling of disconnect
+- Added new options for handling multiple inputs of same type
+- Added internationalisation options
+
+## 7.1
+
+- Allowed individual inputs to block UE connections
+- Added support for multiple inputs of the same type
+- Fixed a number of minor subgraph issues
+- Fixed a serious bug with UE on Safari [details](https://github.com/chrisgoringe/cg-use-everywhere/issues/359)
+
+---
+
 # Anything Everywhere v7
 
 Version 7 is a major update to the Anything Everywhere nodes, so the documentation below is all new. If you are looking for the old docs, you can find them [here](https://github.com/chrisgoringe/cg-use-everywhere/README-old).
@@ -164,6 +183,36 @@ The bottom set, `Options`, modify behaviour:
 
 ---
 
+# Primitives and COMBOs and the like
+
+![primitives](docs/primitives.png)
+
+UE nodes work with the primitives added in more recent versions of Comfy (in the `primitive` submenu), 
+but not the old-style `Primitive`, or reroute nodes.
+
+It is very unlikely this will ever change, as it relates to some issues deep within Comfy.
+
+As of version 7.2, Combo inputs are now supported via a new helper node, `Combo Clone`. 
+
+## Combo Clone
+
+For each Combo type you want to use, add a Combo Clone node. Here we want to be able to broadcast `sampler_name` and `scheduler`.
+
+![CC1](docs/ComboClone1.png)
+
+Connect the `Combo Clone` output to a widget you want it to replicate. The `Combo Clone` copies the options from that widget, and the widget name.
+
+![CC2](docs/ComboClone2.png)
+
+Disconnect the `Combo Clone` and  connect it to an `Anything Everywhere` node. The name copying means you can connect multiple Combos to a single `Anything Everywhere` node.
+
+![CC3](docs/ComboClone3.png)
+
+It can now broadcast to any node with the same input type (but remember you will have to mark the Combo widget as UE Connectable, since widgets are not connectable by default). 
+
+
+---
+
 # Other features
 
 ## Third Party Integration - the UE API
@@ -197,18 +246,6 @@ If you want to share a workflow without UE nodes being required, or to save an A
 
 This can be done for a single node by right-clicking on it and selecting `Convert to real links`, or for all UE nodes in a workflow by right-clicking the background and selecting `Convert all UEs to real links`.
 
----
-
-# Primitives and COMBOs and the like
-
-![primitives](docs/primitives.png)
-
-UE nodes work with the primitives added in more recent versions of Comfy (in the `primitive` submenu), but not the old-style `Primitive`.
-They also do not work with COMBOs (the data type used for dropdown lists, which are also a type of primitive within Comfy), or reroute nodes.
-
-It is very unlikely this will ever change, as it relates to some issues deep within Comfy...
-
-For more on this, see [this discussion](https://github.com/chrisgoringe/cg-use-everywhere/issues/69)
 
 ---
 
