@@ -35,7 +35,7 @@ This is what the default wan 2.2 s2v video workflow looks like:
 
 ## 7.2
 
-- Added support for Combo inputs via the `Combo Clone` helper node
+- Added support for [Combo inputs](#combo-clone) via the `Combo Clone` helper node
 - Fixed a number of issues related to subgraphs
 - Improved handling of disconnect
 - Added new options for handling multiple inputs of same type
@@ -54,7 +54,7 @@ This is what the default wan 2.2 s2v video workflow looks like:
 
 Version 7 is a major update to the Anything Everywhere nodes, so the documentation below is all new. If you are looking for the old docs, you can find them [here](https://github.com/chrisgoringe/cg-use-everywhere/README-old).
 
-If you are new to Anything Everywhere, skip to [Anything Everywhere]().
+If you are new to Anything Everywhere, skip to [Anything Everywhere](#anything-everywhere).
 
 ## Major changes
 
