@@ -86,17 +86,6 @@ function indicate_restriction(ctx, title_height) {
     ctx.restore();
 }
 
-function update_input_label(node, slot, app) {
-    const type = node.inputs[slot].type
-    if (type) {
-        if (!node.inputs[slot].label || node.inputs[slot].label==i18n('anything')) node.inputs[slot].label = type;
-        node.inputs[slot].color_on = app.canvas.default_connection_color_byType[type];
-    } else {
-        node.inputs[slot].label = i18n('anything');
-        node.inputs[slot].color_on = undefined;
-    }
-}
-
 class LinkRenderController extends Pausable {
     static _instance;
     static instance(tga) {
@@ -167,26 +156,35 @@ class LinkRenderController extends Pausable {
     }
 
     disable_all_connected_widgets( disable ) {
+        const graph = app.canvas.graph
         if (disable) {
-            app.graph.extra['ue_links']?.forEach((uel) => {
-                const node = app.graph._nodes_by_id[uel.downstream]
+            graph.extra['ue_links']?.forEach((uel) => {
+                const node = graph._nodes_by_id[uel.downstream]
                 if (node) {
                     try {
-                        const name = node.inputs[uel.downstream_slot].name;
-                        const widget = node._getWidgetByName(name) 
-                        if (widget && !widget.disabled) {
-                            this.widgets_disabled.push(widget)
-                            widget.disabled = true;
+                        const name = node.inputs[uel.downstream_slot]?.name;
+                        if (name) {
+                            const widget = node._getWidgetByName(name) 
+                            if (widget) {
+                                if (!widget.disabled) {
+                                    this.widgets_disabled.push(widget)
+                                    widget.disabled = true;
+                                }
+                                widget.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
+                                    this.widgets_disabled.push(w)
+                                    w.disabled = true;
+                                })
+                            } else {
+                                // it's an input not a widget, so ignore
+                            }
+                        } else {
+                            Logger.log_problem(`In disable_all_connected_widgets, for downstream node ${node.id}, slot ${uel.downstream_slot} did not return a name`)
                         }
-                        widget?.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
-                            this.widgets_disabled.push(w)
-                            w.disabled = true;
-                        })
                     } catch(e) {
                         Logger.log_error(e);
                     }
                 } else {
-                    Logger.log_info(`Couldn't find node ${uel.downstream}`)
+                    Logger.log_problem(`In disable_all_connected_widgets, couldn't find downstream node ${uel.downstream}`)
                 }
             })   
         } else {
@@ -417,5 +415,5 @@ function modify(c) {
 
 
 
-export {update_input_label, nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
+export {/*update_input_label,*/ nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
 export{ LinkRenderController}

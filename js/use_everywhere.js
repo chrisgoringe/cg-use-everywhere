@@ -1,18 +1,22 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
-import { is_UEnode, is_helper, inject, Logger, get_real_node, defineProperty, graphConverter, fix_inputs, create } from "./use_everywhere_utilities.js";
-import { update_input_label, indicate_restriction } from "./use_everywhere_ui.js";
+import { shared } from "./shared.js";
+
+import { is_UEnode, inject, Logger, defineProperty, graphConverter, create } from "./use_everywhere_utilities.js";
+import { indicate_restriction } from "./use_everywhere_ui.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_everywhere_settings.js";
 import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
-import { get_subgraph_input_type, link_is_from_subgraph_input, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { master_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
+import { input_changed, fix_inputs, post_configure_fixes } from "./connections.js";
+import { reset_comboclone_on_load, comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
 
 /*
 The ui component that looks after the link rendering
@@ -58,24 +62,14 @@ app.registerExtension({
         If it is a UE node, we need to update it as well
         */
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
-        nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {        
+        nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {     
+            if (is_combo_clone(this)) comboclone_on_connection(this, link_info, connect)
             if (this.IS_UE && side==1) { // side 1 is input
-                var type = '*'
-                if (connect && link_info) {
-                    var connected_type
-                    if (link_is_from_subgraph_input(link_info)) { // input slot of subgraph
-                        connected_type = get_subgraph_input_type(node_graph(this), link_info.origin_slot)
-                    } else {
-                        connected_type = get_real_node(link_info.origin_id, node_graph(this))?.outputs[link_info.origin_slot]?.type
-                    }
-                    if (connected_type) type = connected_type;
-                };
-                this.inputs[slot].type = type;
-                if (link_info) link_info.type = type
-                update_input_label(this, slot, app);
-                if (!graphConverter.graph_being_configured) {
+                input_changed(this, slot, connect, link_info)
+                
+                if (!shared.graph_being_configured) {
                     // do the fix at the end of graph change
-                    deferred_actions.push( { fn:fix_inputs, args:[this,]} )
+                    deferred_actions.push( { fn:fix_inputs, args:[this,"deferred onConnectionsChange",]} )
                     // disconnecting doesn't trigger graphChange call?
                     setTimeout(deferred_actions.execute.bind(deferred_actions), 100)
                 }
@@ -83,6 +77,17 @@ app.registerExtension({
             linkRenderController?.mark_link_list_outdated();
             onConnectionsChange?.apply(this, arguments);
         };
+
+        /* Combo Clone can connect to COMBO or to UE nodes */
+        if (nodeData.name=="Combo Clone") {
+            const onConnectOutput = nodeType.prototype.onConnectOutput
+            nodeType.prototype.onConnectOutput = function(outputIndex, type, input, inputNode, inputIndex) {
+                if  (!(type=="COMBO" || is_UEnode(inputNode))) return false;
+                return onConnectOutput?.apply(this,arguments)
+            }
+        }
+        
+
         
         /*
         Extra menu options are the node right click menu.
@@ -110,15 +115,9 @@ app.registerExtension({
     },
 
     async nodeCreated(node) {
-        /* TODO see if we still need this
-        if (!node.__mode) {
-            node.__mode = node.mode
-            defineProperty(node, "mode", {
-                get: ( )=>{return node.__mode},
-                set: (v)=>{node.__mode = v; node.afterChangeMade?.('mode', v);}            
-            })
-        }*/
-
+        if (!node.properties.ue_properties && !is_UEnode(node) && !shared.graph_being_configured) {
+            node.properties.ue_properties = { widget_ue_connectable : {}, input_ue_unconnectable : {} }
+        }
         const original_afterChangeMade = node.afterChangeMade
         node.afterChangeMade = (p, v) => {
             original_afterChangeMade?.(p,v)
@@ -126,10 +125,6 @@ app.registerExtension({
                 linkRenderController.mark_link_list_outdated();
                 node.widgets?.forEach((widget) => {widget.onModeChange?.(v)}); // no idea why I have this?
             }
-        }
-
-        if (is_helper(node)) { // editing a helper node makes the list dirty
-            inject_outdating_into_objects(node.widgets,'callback',`widget callback on ${this.id}`);
         }
 
         // removing a node makes the list dirty
@@ -151,8 +146,8 @@ app.registerExtension({
                     graphConverter.convert_if_pre_116(n);
                 })
             }
-         }
-         setup_ue_properties_onload(node)
+        }
+        setup_ue_properties_onload(node)
     },
 
 	async setup() {
@@ -244,7 +239,7 @@ app.registerExtension({
             return options;
         }
 
-                        /*
+        /*
         Finding a widget by it's name is something done a lot of times in rendering, 
         so add a method that caches the names that can be used deep in the rendering code.
 
@@ -368,13 +363,14 @@ app.registerExtension({
     beforeConfigureGraph() {
         linkRenderController.pause("before configure", 1000)
         graphAnalyser.pause("before configure", 1000)
-        graphConverter.graph_being_configured = true
+        shared.graph_being_configured = true
     },
 
     afterConfigureGraph() {
         graphConverter.remove_saved_ue_links_recursively(app.graph)
         //convert_old_nodes(app.graph)
-        graphConverter.graph_being_configured = false
+        shared.graph_being_configured = false
+        post_configure_fixes(master_graph())
     }
 
 });

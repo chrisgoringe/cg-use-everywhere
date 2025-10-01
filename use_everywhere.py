@@ -6,6 +6,20 @@ class Base():
     CATEGORY = "everywhere"
     RETURN_TYPES = ()
 
+class ComboClone(Base):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required":{ "combo": (['connect me to a combo widget'], {}) }}
+    
+    @classmethod
+    def VALIDATE_INPUTS(cls, combo):
+        return isinstance(combo,str)
+
+    RETURN_TYPES = (IO.ANY,)
+
+    def func(self,combo):
+        return (combo,)   
+
 class SimpleString(Base):
     @classmethod
     def INPUT_TYPES(s):

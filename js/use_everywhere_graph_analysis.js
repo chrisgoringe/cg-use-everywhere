@@ -1,5 +1,5 @@
 import { UseEverywhereList } from "./use_everywhere_classes.js";
-import { node_in_loop, node_is_live, is_connected, is_UEnode, Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
+import { node_is_live, is_connected, is_UEnode, Logger, Pausable } from "./use_everywhere_utilities.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
@@ -69,22 +69,6 @@ class GraphAnalyser extends Pausable {
         return this.analyse_graph(graph);
     }
 
-    maybe_check_for_loops() {
-        if (settingsCache.getSettingValue('Use Everywhere.Options.checkloops')) {
-            try {
-                node_in_loop(live_nodes, links_added);
-            } catch (e) {
-                if (!e.stack) throw e;
-                if (e.ues && e.ues.length > 0){
-                    alert(`Loop (${e.stack}) with broadcast (${e.ues}) - not submitting workflow`);
-                } else {
-                    alert(`Loop (${e.stack}) - not submitting workflow`);
-                }
-                throw new Error(`Loop Detected ${e.stack}, ${e.ues}`, {"cause":e});
-            }
-        }
-    }
-
     analyse_graph(graph) {
         this.ambiguity_messages = [];
         const treat_bypassed_as_live = settingsCache.getSettingValue("Use Everywhere.Options.connect_to_bypassed") || this.connect_to_bypassed
@@ -100,6 +84,7 @@ class GraphAnalyser extends Pausable {
             if (node && !node.properties.rejects_ue_links) {
                 //if (!real_node._widget_name_map) real_node._widget_name_map =  real_node.widgets?.map(w => w.name) || [];
                 node.inputs?.forEach((input,index) => {
+                    if (!input) return; // NoteNode has input = [undefined,] !
                     if (is_connected(input, treat_bypassed_as_live, node_graph(node))) return;  
                     if (node.reject_ue_connection && node.reject_ue_connection(input)) return;
                     if (is_connectable(node, input.name)) connectable.push({node, input, index});

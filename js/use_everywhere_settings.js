@@ -2,12 +2,13 @@ import { app } from "../../scripts/app.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
-import { Logger, VERSION } from "./use_everywhere_utilities.js";
+import { Logger } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { is_UEnode } from "./use_everywhere_utilities.js";
 import { i18ify_settings } from "./i18n.js";
+import { VERSION } from "./shared.js";
 
 const _SETTINGS = [
     {
@@ -78,14 +79,6 @@ const _SETTINGS = [
         tooltip: "By default UE links are made to the node downstream of bypassed nodes."
     },
     {
-        id: "Use Everywhere.Options.checkloops",
-        name: "Check for loops before submitting",
-        type: "boolean",
-        defaultValue: true,
-        onChange: settingsCache.onSettingChange,
-        tooltip: "Check to see if UE links have created a loop that wasn't there before"
-    },
-    {
         id: "Use Everywhere.Options.logging",
         name: "Logging",
         type: "combo",
@@ -99,6 +92,14 @@ const _SETTINGS = [
         type: "boolean",
         defaultValue: true,
         tooltip: "Turn off workflow validation (which tends to replace UE links with real ones)",
+        onChange: settingsCache.onSettingChange,
+    },
+    {
+        id: "Use Everywhere.Options.use_output_name",
+        name: "When connecting, use the output slot's name as the input name",
+        type: "boolean",
+        defaultValue: false,
+        tooltip: "By default the link type is used as the name",
         onChange: settingsCache.onSettingChange,
     },
 ]
