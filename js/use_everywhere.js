@@ -63,7 +63,7 @@ app.registerExtension({
         */
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {     
-            if (is_combo_clone(this)) comboclone_on_connection(this, link_info, connect)
+            if (is_combo_clone(this) && !shared.prompt_being_queued) comboclone_on_connection(this, link_info, connect)
             if (this.IS_UE && side==1) { // side 1 is input
                 input_changed(this, slot, connect, link_info)
                 
@@ -271,12 +271,9 @@ app.registerExtension({
             original_afterChange?.apply(this, arguments)
         }
 
-
-        var prompt_being_queued = false;
-
         const original_graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
-            if (prompt_being_queued) {
+            if (shared.prompt_being_queued) {
                 return await graphAnalyser.graph_to_prompt( );
             } else {
                 return await original_graphToPrompt.apply(app, arguments);
@@ -289,11 +286,11 @@ app.registerExtension({
 
         const original_queuePrompt = app.queuePrompt;
         app.queuePrompt = async function () {
-            prompt_being_queued = true;
+            shared.prompt_being_queued = true;
             try {
                 return await original_queuePrompt.apply(app, arguments);
             } finally {
-                prompt_being_queued = false;
+                shared.prompt_being_queued = false;
             }
         }
         
