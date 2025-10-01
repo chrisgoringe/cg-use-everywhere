@@ -30,6 +30,7 @@ class WrappedInputNode {
         this.graph.last_link_id += 1
         this.graph.links[this.graph.last_link_id] = new LLink(this.graph.last_link_id, this.subgraph_input_node.slots[output_index].type, -10, output_index, input_node.id, input_index) 
         input_node.inputs[input_index].link = this.graph.last_link_id;
+        this.subgraph_input_node.slots[output_index].linkIds.push(this.graph.last_link_id)
         return this.graph.links[this.graph.last_link_id]
     }
 

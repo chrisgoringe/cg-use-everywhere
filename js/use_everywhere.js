@@ -182,6 +182,7 @@ app.registerExtension({
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             try {
+                linkRenderController.pause('drawFrontCanvas')
                 const v = original_drawNode.apply(this, arguments);
                 linkRenderController.highlight_ue_connections(node, ctx);
                 if (node._last_seen_bg !== node.bgcolor) linkRenderController.mark_link_list_outdated();
@@ -190,14 +191,14 @@ app.registerExtension({
             } catch (e) {
                 Logger.log_error(e)
             } finally {          
-                
+                linkRenderController.unpause()
             }
         }
 
         const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
         LGraphCanvas.prototype.drawFrontCanvas = function() {
             try {
-                linkRenderController.pause('drawFrontCanvas')
+                
                 linkRenderController.disable_all_connected_widgets(true)
                 return original_drawFrontCanvas.apply(this, arguments);
             }  catch (e) {
@@ -208,7 +209,7 @@ app.registerExtension({
                 } catch (e) {
                     Logger.log_error(e)
                 } 
-                linkRenderController.unpause()
+                
             }
         }
 
