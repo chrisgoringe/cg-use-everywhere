@@ -1,24 +1,47 @@
 import { app } from "../../scripts/app.js";
+import { Logger } from "./use_everywhere_utilities.js";
 
 export function master_graph()    { return app.graph }
 export function master_graph_id() { return master_graph().id }
 
 export function visible_graph()    { return app.canvas.graph }
-export function visible_graph_id() { return visible_graph().id }
-
-export function node_graph(node)    { return node.graph }
-export function node_graph_id(node) { return node_graph(node).id }
 
 export function in_visible_graph(node) { 
     try {
-        return node_graph_id(node) == visible_graph_id() 
-    } catch {
+        return node.graph.id == app.canvas.graph.id
+    } catch (e) {
+        Logger.log_error(e)
         return false
     }
 }
 
 export function get_subgraph_input_type(graph, slot) { return graph.inputNode.slots[slot].type }
 export function link_is_from_subgraph_input(link) { return link.origin_id==-10 }
+
+export function copy_ue_accepting(new_node) {
+    try {
+        const subgraph = new_node.subgraph
+        subgraph.inputNode.slots.forEach((slot, i)=>{
+            slot.linkIds.forEach((lid) => {
+                const link = subgraph.links[lid]
+                const target = subgraph._nodes_by_id[link.target_id]
+                const slot_name = target.inputs[link.target_slot].name
+                const ue_connectable = target.properties.ue_properties.widget_ue_connectable[slot_name]
+                if (ue_connectable) {
+                    const input_name = new_node.inputs[i]?.name
+                    if (slot_name!=input_name) {
+                        Logger.log_problem("In copy_ue_accepting names don't match")
+                    } else {
+                        new_node.properties.ue_properties.widget_ue_connectable[input_name] = true
+                    }
+                }
+            })
+        })
+    } catch (e) {
+        Logger.log_error(e, "in copy_ue_accepting")
+    }
+
+}
 
 class WrappedInputNode {
     constructor(subgraph_input_node) {

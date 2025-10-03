@@ -232,31 +232,33 @@ export function node_menu_settings(options, node) {
 
 export function canvas_menu_settings(options) {
     options.push(null); // divider
-    options.push({
-        content: (app.ui.settings.getSettingValue('Use Everywhere.Graphics.showlinks')>0) ? "Hide UE links" : "Show UE links",
-        callback: () => {
-            const setTo = (app.ui.settings.getSettingValue('Use Everywhere.Graphics.showlinks')>0) ? 0 : 4;
-            app.ui.settings.setSettingValue('Use Everywhere.Graphics.showlinks', setTo);
-            app.graph.change();
-        }
-    },
-    {
-        content: "Convert all UEs to real links",
-        callback: async () => {
-            if (window.confirm("This will convert all links created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
-                const ues = GraphAnalyser.instance().wait_to_analyse_visible_graph();
-                LinkRenderController.instance().pause("convert");
-                try {
-                    convert_to_links(ues, visible_graph());
-                    remove_all_ues(true);
-                } finally {
-                    app.graph.change();
-                    LinkRenderController.instance().unpause()
-                }
-                
+    options.push(
+        {
+            content: (app.ui.settings.getSettingValue('Use Everywhere.Graphics.showlinks')>0) ? "Hide UE links" : "Show UE links",
+            callback: () => {
+                const setTo = (app.ui.settings.getSettingValue('Use Everywhere.Graphics.showlinks')>0) ? 0 : 4;
+                app.ui.settings.setSettingValue('Use Everywhere.Graphics.showlinks', setTo);
+                app.graph.change();
             }
-        }
-    });
+        },
+        {
+            content: "Convert all UEs (in this graph/subgraph) to real links",
+            callback: async () => {
+                if (window.confirm("This will convert all links (in this graph/subgraph) created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
+                    const ues = GraphAnalyser.instance().wait_to_analyse_visible_graph();
+                    LinkRenderController.instance().pause("convert");
+                    try {
+                        convert_to_links(ues, visible_graph());
+                        remove_all_ues(true, visible_graph());
+                    } finally {
+                        app.graph.change();
+                        LinkRenderController.instance().unpause()
+                    }
+                    
+                }
+            }
+        },
+    );
     if (GraphAnalyser.instance().ambiguity_messages.length) {
         options.push({
             content: "Show UE broadcast clashes",

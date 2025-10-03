@@ -11,12 +11,12 @@ import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_ever
 import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
-import { master_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { master_graph, visible_graph, copy_ue_accepting } from "./use_everywhere_subgraph_utils.js";
 import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
 import { input_changed, fix_inputs, post_configure_fixes } from "./connections.js";
-import { reset_comboclone_on_load, comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
+import { comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
 
 /*
 The ui component that looks after the link rendering
@@ -340,11 +340,11 @@ app.registerExtension({
             const ctb_was = graphAnalyser.connect_to_bypassed
             graphAnalyser.connect_to_bypassed = true
             try {
-                
                 const cur_list = graphAnalyser.wait_to_analyse_visible_graph()
                 const mods = convert_to_links(cur_list, null, visible_graph());
                 const r = original_subgraph.apply(this, arguments);
                 mods.restorer()
+                copy_ue_accepting(r.node)
                 return r
             } finally {
                 graphAnalyser.connect_to_bypassed = ctb_was

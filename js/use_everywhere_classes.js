@@ -1,6 +1,6 @@
 import { i18n_functional, i18n_functional_regex } from "./i18n.js";
 import { default_priority } from "./ue_properties.js";
-import { node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
 import { Logger, node_is_live, get_real_node, get_connection } from "./use_everywhere_utilities.js";
 
@@ -160,7 +160,7 @@ export class UseEverywhereList {
             input_regex: input_regex_override || regex_for(node, 'input'),
             group_regex: regex_for(node, 'group'),
             priority: node.properties.ue_properties.priority || default_priority(node), 
-            graph: node_graph(node),
+            graph: node.graph,
             additional_requirement: additional_requirement,
         };
 

@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { link_is_from_subgraph_input, node_graph, visible_graph, wrap_input } from "./use_everywhere_subgraph_utils.js";
+import { link_is_from_subgraph_input, visible_graph, wrap_input } from "./use_everywhere_subgraph_utils.js";
 import { i18n } from "./i18n.js";
 
 export function create( tag, clss, parent, properties ) {
@@ -53,7 +53,10 @@ export class Logger {
     static LIMITED_LOG_MS      = 5000;
     static level;  // 0 for errors only, 1 activates 'log_problem', 2 activates 'log_info', 3 activates 'log_detail'
 
-    static log_error(message) { console.error(message) }
+    static log_error(message, more) { 
+        if (more) console.log(more)
+        console.error(message)
+    }
 
     static log(message, foreachable, limited) {    
         if (limited && Logger.check_limited()) return
@@ -145,7 +148,7 @@ class GraphConverter {
         if (node.inputs) {
             node.inputs.forEach((input) => {
                 if (input.type=='*') {
-                    const graph = node_graph(node);
+                    const graph = node.graph;
                     if (input.link) {
                         const llink = graph.links[input.link];
                         if (link_is_from_subgraph_input(llink)) {
@@ -335,7 +338,7 @@ export class Pausable {
 }
 
 export function get_connection(node, i) {
-    const graph = node_graph(node)
+    const graph = node.graph
     const in_link = node?.inputs[i]?.link;
     if (in_link) {
         var llink = graph.links[in_link]
