@@ -244,8 +244,7 @@ By default the animations turn off when the workflow is running to minimise impa
 
 If you want to share a workflow without UE nodes being required, or to save an API version of a workflow, you can replace the virtual links created by UE nodes with real links (and remove the UE nodes).
 
-This can be done for a single node by right-clicking on it and selecting `Convert to real links`, or for all UE nodes in a workflow by right-clicking the background and selecting `Convert all UEs to real links`.
-
+This can be done for a single node by right-clicking on it and selecting `Convert to real links`, or for all UE nodes in a graph or subgraph by right-clicking the background and selecting `Convert all UEs to real links`.
 
 ---
 
@@ -253,11 +252,10 @@ This can be done for a single node by right-clicking on it and selecting `Conver
 
 In the near future I hope to do the following:
 
-- Replace the `Prompt Everywhere` and `Seed Everywhere` nodes
-- Add a mechanism to retire `Seed Everywhere` (or auto convert to an integer node connected to a `Anything Everywhere` node)
-- Add localisation
-- Negative regexes ('must not match')
-- Possibly add a global variable system (so multiple modes can be changed with a single modification)
+- Deprecate the `Seed Everywhere` node [385](https://github.com/chrisgoringe/cg-use-everywhere/issues/385)
+- Deprecate the `Prompts Everywhere` node [386](https://github.com/chrisgoringe/cg-use-everywhere/issues/386)
+- Negative regexes ('must not match') [335](https://github.com/chrisgoringe/cg-use-everywhere/issues/387)
+- Add a global variable system (so multiple node regexes can be changed with a single modification) [387](https://github.com/chrisgoringe/cg-use-everywhere/issues/387)
 
 Feel free to [make suggestions](https://github.com/chrisgoringe/cg-use-everywhere/issues)
 
