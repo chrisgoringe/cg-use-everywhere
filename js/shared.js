@@ -6,4 +6,4 @@ class Shared {
 
 export const shared = new Shared()
 
-export const VERSION = "7.2.1"
+export const VERSION = "7.2.2"
