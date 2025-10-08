@@ -124,6 +124,9 @@ function remove_this(node, keep_seed_everywhere) {
     return  (is_UEnode(node) && !(keep_seed_everywhere && node.comfyClass=="Seed Everywhere") ) 
 }
 
-export function remove_all_ues(keep_seed_everywhere, graph) {
-    graph._nodes.filter((node)=>remove_this(node, keep_seed_everywhere)).forEach((node)=>{app.graph.remove(node)})
+export function remove_all_ues(keep_seed_everywhere, graph, recurse) {
+    graph._nodes.filter((node)=>remove_this(node, keep_seed_everywhere)).forEach((node)=>{graph.remove(node)})
+    if (recurse) {
+        graph._nodes.filter((node)=>(node.subgraph)).forEach((node)=>{remove_all_ues(keep_seed_everywhere, node.subgraph, recurse)})
+    }
 }

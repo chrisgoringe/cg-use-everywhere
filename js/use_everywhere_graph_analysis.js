@@ -22,7 +22,7 @@ class GraphAnalyser extends Pausable {
 
     modify_graphs_recursively(graph, mods) {
         const modifications = convert_to_links( this.analyse_graph(graph), null, graph )
-        mods.push( modifications );
+        if (mods) mods.push( modifications );
         if (!graph.extra) graph.extra = {}
         graph.extra['links_added_by_ue'] = modifications.added_links.map(x=>x.id)
         graph.nodes.filter((node)=>(node.subgraph)).forEach((node) => {this.modify_graphs_recursively(node.subgraph, mods);});

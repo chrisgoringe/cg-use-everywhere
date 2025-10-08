@@ -4,7 +4,7 @@ import { LinkRenderController } from "./use_everywhere_ui.js";
 import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
 import { Logger } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { visible_graph, master_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { is_UEnode } from "./use_everywhere_utilities.js";
 import { i18ify_settings } from "./i18n.js";
@@ -250,6 +250,22 @@ export function canvas_menu_settings(options) {
                     try {
                         convert_to_links(ues, visible_graph());
                         remove_all_ues(true, visible_graph());
+                    } finally {
+                        app.graph.change();
+                        LinkRenderController.instance().unpause()
+                    }
+                    
+                }
+            }
+        },
+        {
+            content: "Convert all UEs to real links",
+            callback: async () => {
+                if (window.confirm("This will convert all links created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
+                    LinkRenderController.instance().pause("convert");
+                    try {
+                        GraphAnalyser.instance().modify_graphs_recursively(master_graph())
+                        remove_all_ues(true, master_graph(), true);
                     } finally {
                         app.graph.change();
                         LinkRenderController.instance().unpause()
