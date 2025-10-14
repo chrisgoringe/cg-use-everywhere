@@ -1,17 +1,17 @@
-import { link_is_from_subgraph_input, get_subgraph_input_type, node_graph } from "./use_everywhere_subgraph_utils.js"
+import { link_is_from_subgraph_input, get_subgraph_input_type } from "./use_everywhere_subgraph_utils.js"
 import { get_real_node, is_UEnode, Logger } from "./use_everywhere_utilities.js";
 import { app } from "../../scripts/app.js";
 import { i18n } from "./i18n.js";
 import { shared } from "./shared.js";
 import { reset_comboclone_on_load, is_combo_clone } from "./combo_clone.js";
 
-function get_type(node, link_info) {
+function get_type(graph, link_info) {
     var type = null
     if (link_info) {
         if (link_is_from_subgraph_input(link_info)) { // input slot of subgraph
-            type = get_subgraph_input_type(node_graph(node), link_info.origin_slot)
+            type = get_subgraph_input_type(graph, link_info.origin_slot)
         } else {
-            type = get_real_node(link_info.origin_id, node_graph(node))?.outputs[link_info.origin_slot]?.type
+            type = get_real_node(link_info.origin_id, graph)?.outputs[link_info.origin_slot]?.type
         }
         if (type != link_info.type && link_info.type != '*') {
             Logger.log_problem(`Type detected from upstream, ${type} != type on link_info ${link_info.type}`)
@@ -25,32 +25,38 @@ function get_type(node, link_info) {
     return type
 }
 
+
 /*
 Called by onConnectionsChange for a UE_Node when side == 1 (input).
 */
 
 export function input_changed(node, slot, connect, link_info) {
     if (shared.graph_being_configured) return 
+    if (!node?.inputs) return Logger.log_problem(`input_changed called but node.inputs not retrievable`)
+    const in_slot = node.inputs[slot]
+    if (!in_slot) return Logger.log_problem(`input_changed called for node #${node.id} slot ${slot} but that wasn't found`)
+    const graph = node.graph
 
     if (connect) {
-        const type = get_type(node, link_info)
-        if (app.ui.settings.getSettingValue("Use Everywhere.Options.use_output_name") && link_info) {
-            var out_slot
-            if (link_info.origin_id==-10) {
-                out_slot = node.graph.inputNode?.allSlots[link_info.origin_slot]
-            } else {
-                out_slot = node.graph.getNodeById(link_info.origin_id)?.outputs[link_info.origin_slot]
-            }
-            node.inputs[slot].label = out_slot?.label || out_slot?.localized_name || out_slot?.name || i18n(type);
+        const type = get_type(graph, link_info)
+        if (in_slot.transient_label) {
+            in_slot.label = in_slot.transient_label
+        } else if (app.ui.settings.getSettingValue("Use Everywhere.Options.use_output_name") && link_info) {
+            const out_slot = (link_info.origin_id==-10) ? 
+                                graph.inputNode?.allSlots[link_info.origin_slot] : 
+                                graph.getNodeById(link_info.origin_id)?.outputs[link_info.origin_slot]
+            in_slot.label = out_slot?.label || out_slot?.localized_name || out_slot?.name || i18n(type);
         } else {
-            node.inputs[slot].label = i18n(type);
+            in_slot.label = i18n(type);
         }
-        node.inputs[slot].color_on = app.canvas.default_connection_color_byType[type];
-        node.inputs[slot].type = type
+        in_slot.color_on = app.canvas.default_connection_color_byType[type];
+        in_slot.type = type
     } else {
-        node.inputs[slot].label = i18n('anything');
-        node.inputs[slot].color_on = undefined;       
-        node.inputs[slot].type = '*'
+        in_slot.transient_label = in_slot.label
+        in_slot.label = i18n('anything');
+        in_slot.color_on = undefined;       
+        in_slot.type = '*'
+        setTimeout(()=>{in_slot.transient_label=null}, 100)
     }
 
 }

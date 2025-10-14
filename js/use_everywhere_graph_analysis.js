@@ -3,7 +3,7 @@ import { node_is_live, is_connected, is_UEnode, Logger, Pausable } from "./use_e
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { master_graph, node_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { master_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { is_connectable } from "./use_everywhere_settings.js";
 
 class GraphAnalyser extends Pausable {
@@ -22,7 +22,7 @@ class GraphAnalyser extends Pausable {
 
     modify_graphs_recursively(graph, mods) {
         const modifications = convert_to_links( this.analyse_graph(graph), null, graph )
-        mods.push( modifications );
+        if (mods) mods.push( modifications );
         if (!graph.extra) graph.extra = {}
         graph.extra['links_added_by_ue'] = modifications.added_links.map(x=>x.id)
         graph.nodes.filter((node)=>(node.subgraph)).forEach((node) => {this.modify_graphs_recursively(node.subgraph, mods);});
@@ -85,7 +85,7 @@ class GraphAnalyser extends Pausable {
                 //if (!real_node._widget_name_map) real_node._widget_name_map =  real_node.widgets?.map(w => w.name) || [];
                 node.inputs?.forEach((input,index) => {
                     if (!input) return; // NoteNode has input = [undefined,] !
-                    if (is_connected(input, treat_bypassed_as_live, node_graph(node))) return;  
+                    if (is_connected(input, treat_bypassed_as_live, node.graph)) return;  
                     if (node.reject_ue_connection && node.reject_ue_connection(input)) return;
                     if (is_connectable(node, input.name)) connectable.push({node, input, index});
                 })

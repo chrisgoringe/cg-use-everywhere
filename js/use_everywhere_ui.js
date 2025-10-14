@@ -1,14 +1,13 @@
 import { Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { in_visible_graph, node_graph } from "./use_everywhere_subgraph_utils.js";
+import { in_visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { maybe_show_tooltip } from "./tooltip_window.js";
 import { is_connectable } from "./use_everywhere_settings.js";
-import { i18n } from "./i18n.js";
 
 function nodes_in_my_group(node) {
     const nodes_in = new Set();
-    node_graph(node)._groups.forEach((group) => {
+    node.graph._groups.forEach((group) => {
         if (!app.canvas.selected_group_moving) group.recomputeInsideNodes();
         if (group._nodes?.find((nd) => { return (nd.id===node.id) } )) {
             group._nodes.forEach((nd) => { nodes_in.add(nd.id) } )
@@ -20,7 +19,7 @@ function nodes_in_my_group(node) {
 function nodes_not_in_my_group(node) {
     const nid = nodes_in_my_group(node);
     const nodes_not_in = [];
-    node_graph(node)._nodes.forEach((nd) => {
+    node.graph._nodes.forEach((nd) => {
         if (!nid.includes(nd.id)) nodes_not_in.push(nd.id);
     });
     return nodes_not_in;
@@ -51,10 +50,10 @@ function nodes_my_color(node, already_limited_to) {
     const color = node.color;
     if (already_limited_to) {
         already_limited_to.forEach((nid) => {
-            if (get_real_node(nid, node_graph(node)).color==color) nodes_in.add(nid)
+            if (get_real_node(nid, node.graph).color==color) nodes_in.add(nid)
         })
     } else {
-        node_graph(node)._nodes.forEach((nd) => {
+        node.graph._nodes.forEach((nd) => {
             if (nd.color==color) nodes_in.add(nd.id)
         })
     }
@@ -66,10 +65,10 @@ function nodes_not_my_color(node, already_limited_to) {
     const color = get_real_node(node.id).color;
     if (already_limited_to) {
         already_limited_to.forEach((nid) => {
-            if (get_real_node(nid, node_graph(node)).color!=color) nodes_in.add(nid)
+            if (get_real_node(nid, node.graph).color!=color) nodes_in.add(nid)
         })
     } else {
-        node_graph(node)._nodes.forEach((nd) => {
+        node.graph._nodes.forEach((nd) => {
             if (nd.color!=color) nodes_in.add(nd.id)
         })
     }

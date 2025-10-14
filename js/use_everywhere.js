@@ -11,12 +11,12 @@ import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_ever
 import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
-import { master_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { master_graph, visible_graph, copy_ue_accepting } from "./use_everywhere_subgraph_utils.js";
 import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
 import { input_changed, fix_inputs, post_configure_fixes } from "./connections.js";
-import { reset_comboclone_on_load, comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
+import { comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
 
 /*
 The ui component that looks after the link rendering
@@ -182,6 +182,7 @@ app.registerExtension({
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             try {
+                linkRenderController.pause('drawFrontCanvas')
                 const v = original_drawNode.apply(this, arguments);
                 linkRenderController.highlight_ue_connections(node, ctx);
                 if (node._last_seen_bg !== node.bgcolor) linkRenderController.mark_link_list_outdated();
@@ -190,14 +191,14 @@ app.registerExtension({
             } catch (e) {
                 Logger.log_error(e)
             } finally {          
-                
+                linkRenderController.unpause()
             }
         }
 
         const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
         LGraphCanvas.prototype.drawFrontCanvas = function() {
             try {
-                linkRenderController.pause('drawFrontCanvas')
+                
                 linkRenderController.disable_all_connected_widgets(true)
                 return original_drawFrontCanvas.apply(this, arguments);
             }  catch (e) {
@@ -208,7 +209,7 @@ app.registerExtension({
                 } catch (e) {
                     Logger.log_error(e)
                 } 
-                linkRenderController.unpause()
+                
             }
         }
 
@@ -257,8 +258,6 @@ app.registerExtension({
             }
             return this._widgetNameMap[nm]
         }
-
-
 	},
 
     init() {
@@ -317,33 +316,17 @@ app.registerExtension({
 
         if (false) add_debug();
 
-        const export_api_label = Array.from(document.getElementsByClassName('p-menubar-item-label')).find((e)=>e.innerText=='Export (API)')
-        if (export_api_label) {
-            export_api_label.addEventListener('click', (e)=>{
-                const ue_links = app.graph.extra['ue_links'];
-                if (ue_links.length>0) {
-                    if (!confirm("This model contains links added by Use Everywhere which won't work with the API. " + 
-                        "You probably want to use 'Convert all UEs to real links' on the canvas right click menu before saving.\n\n" + 
-                        "Save anyway?")) 
-                    {
-                        e.stopImmediatePropagation()
-                        e.stopPropagation()
-                        e.preventDefault()
-                    }
-                }
-            })
-        }
 
         const original_subgraph = app.graph.convertToSubgraph
         app.graph.convertToSubgraph = function () {
             const ctb_was = graphAnalyser.connect_to_bypassed
             graphAnalyser.connect_to_bypassed = true
             try {
-                
                 const cur_list = graphAnalyser.wait_to_analyse_visible_graph()
                 const mods = convert_to_links(cur_list, null, visible_graph());
                 const r = original_subgraph.apply(this, arguments);
                 mods.restorer()
+                copy_ue_accepting(r.node)
                 return r
             } finally {
                 graphAnalyser.connect_to_bypassed = ctb_was

@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { display_name } from "./use_everywhere_classes.js";
-import { master_graph, node_graph } from "./use_everywhere_subgraph_utils.js";
+import { master_graph } from "./use_everywhere_subgraph_utils.js";
 import { is_UEnode, get_real_node, Logger } from "./use_everywhere_utilities.js";
 
 
@@ -33,9 +33,9 @@ function _convert_to_links(ue, added_links, removed_links) {
     });
 }
 
-function convert_to_links(ues, control_node, graph) {
+export function convert_to_links(ues, control_node, graph) {
     if (control_node) {
-        if (!graph) graph = node_graph(control_node)
+        if (!graph) graph = control_node.graph
         return _convert_graph_to_links(graph, ues, control_node.id );
     } else {
         if (!graph) graph = master_graph();
@@ -124,8 +124,9 @@ function remove_this(node, keep_seed_everywhere) {
     return  (is_UEnode(node) && !(keep_seed_everywhere && node.comfyClass=="Seed Everywhere") ) 
 }
 
-function remove_all_ues(keep_seed_everywhere) {
-    app.graph._nodes.filter((node)=>remove_this(node, keep_seed_everywhere)).forEach((node)=>{app.graph.remove(node)})
+export function remove_all_ues(keep_seed_everywhere, graph, recurse) {
+    graph._nodes.filter((node)=>remove_this(node, keep_seed_everywhere)).forEach((node)=>{graph.remove(node)})
+    if (recurse) {
+        graph._nodes.filter((node)=>(node.subgraph)).forEach((node)=>{remove_all_ues(keep_seed_everywhere, node.subgraph, recurse)})
+    }
 }
-
-export {convert_to_links, remove_all_ues}
