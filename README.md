@@ -33,6 +33,20 @@ This is what the default wan 2.2 s2v video workflow looks like:
 
 # 7.x Updates
 
+## 7.3
+
+Bugfixes: 
+[361](https://github.com/chrisgoringe/cg-use-everywhere/issues/361), 
+[379](https://github.com/chrisgoringe/cg-use-everywhere/issues/379), 
+[381](https://github.com/chrisgoringe/cg-use-everywhere/issues/381)
+
+## 7.2.1 and 7.2.2
+
+Bugfixes: 
+[383](https://github.com/chrisgoringe/cg-use-everywhere/issues/383), 
+[384](https://github.com/chrisgoringe/cg-use-everywhere/issues/384), 
+[388](https://github.com/chrisgoringe/cg-use-everywhere/issues/388)
+
 ## 7.2
 
 - Added support for [Combo inputs](#combo-clone) via the `Combo Clone` helper node
