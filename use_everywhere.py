@@ -1,86 +1,153 @@
 
 from comfy.comfy_types.node_typing import IO
+from comfy_api.latest import io
 
-class Base():
-    FUNCTION = "func"
-    CATEGORY = "everywhere"
-    RETURN_TYPES = ()
+anything = io.Custom(IO.ANY)
 
-class ComboClone(Base):
+class ComboClone(io.ComfyNode):
     @classmethod
-    def INPUT_TYPES(s):
-        return {"required":{ "combo": (['connect me to a combo widget'], {}) }}
+    def define_schema(cls):
+        return io.Schema(
+            node_id  = "Combo Clone",
+            category = "everywhere",
+            display_name = "Combo Clone",
+            description = "The combo on this node will replicate whatever the output is connected to",
+            inputs   = [
+                io.Combo.Input("combo", options=['connect me to a combo widget']),
+            ],
+            outputs = [
+                anything.Output("comboout"),
+            ],
+        )
+
+    @classmethod
+    def validate_inputs(cls, **kwargs) -> bool:
+        return isinstance(kwargs.get('combo', None),str)
+
+    @classmethod
+    def execute(cls, combo): # type: ignore
+        return io.NodeOutput(combo)
+
+class SimpleString(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id  = "Simple String",
+            category = "everywhere/deprecated",
+            display_name = "Simple String",
+            description = "Deprecated - use the core comfy string",
+            is_deprecated = True,
+            inputs   = [
+                io.String.Input("string", default=""),
+            ],
+            outputs = [
+                io.String.Output("stringout"),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, string): # type: ignore
+        return io.NodeOutput(string)
+
+class SeedEverywhere(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id  = "Seed Everywhere",
+            category = "everywhere/deprecated",
+            display_name = "Seed Everywhere",
+            description = "Deprecated - should automatically be replaced",
+            is_deprecated = True,
+            inputs   = [
+                io.Int.Input("seed", default=0, min=0, max=0xffffffffffffffff),
+            ],
+            outputs = [
+                io.Int.Output("int"),
+            ],
+        )
     
     @classmethod
-    def VALIDATE_INPUTS(cls, combo):
-        return isinstance(combo,str)
+    def execute(cls, string): # type: ignore
+        return io.NodeOutput(string)
 
-    RETURN_TYPES = (IO.ANY,)
-
-    def func(self,combo):
-        return (combo,)   
-
-class SimpleString(Base):
+class AnythingEverywhere(io.ComfyNode):
     @classmethod
-    def INPUT_TYPES(s):
-        return {"required":{ "string": ("STRING", {"default": ""}) }}
-    RETURN_TYPES = ("STRING",)
-
-    def func(self,string):
-        return (string,)
-
-class SeedEverywhere(Base):
-    @classmethod
-    def INPUT_TYPES(s):
-        return {"required":{ "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}) },
-                 "hidden": {"id":"UNIQUE_ID"} }
-
-    RETURN_TYPES = ("INT",)
-
-    def func(self, seed, id):
-        return (seed,)
-
-class AnythingEverywhere(Base):
-    @classmethod
-    def INPUT_TYPES(s):
-        return {"required":{}, 
-                "optional": { "anything" : (IO.ANY, {}), },
-                 "hidden": {"id":"UNIQUE_ID"} }
-
-    def func(self, **kwargs):
-        return ()
-
-class AnythingEverywherePrompts(Base):
-    @classmethod
-    def INPUT_TYPES(s):
-        return {"required":{}, 
-                "optional": { "+ve" : (IO.ANY, {}), "-ve" : (IO.ANY, {}), } }
+    def define_schema(cls):
+        return io.Schema(
+            node_id  = "Anything Everywhere",
+            category = "everywhere",
+            display_name = "Anything Everywhere",
+            inputs   = [
+                anything.Input("anything", optional=True),
+            ],
+            outputs = [ ],
+        )
     
-    def func(self, **kwargs):
-        return ()
-        
-class AnythingEverywhereTriplet(Base):
-    CATEGORY = "everywhere/deprecated"
     @classmethod
-    def INPUT_TYPES(s):
-        return {"required":{}, 
-                "optional": { "anything" : (IO.ANY, {}), "anything2" : (IO.ANY, {}), "anything3" : (IO.ANY, {}),} }
-    
-    def func(self, **kwargs):
-        return ()
-    
-class AnythingSomewhere(Base):
-    CATEGORY = "everywhere/deprecated"
-    @classmethod
-    def INPUT_TYPES(s):
-        return {"required":{}, 
-                "optional": { 
-                    "anything" : (IO.ANY, {}), 
-                    "title_regex" : ("STRING", {"default":".*"}),
-                    "input_regex" : ("STRING", {"default":".*"}),
-                    "group_regex" : ("STRING", {"default":".*"}),
-                    },
-                 "hidden": {"id":"UNIQUE_ID"} }
+    def execute(cls, **kwargs): 
+        return io.NodeOutput()
 
-    def func(self, **kwargs):
-        return ()
+class AnythingEverywherePrompts(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id  = "Prompts Everywhere",
+            category = "everywhere/deprecated",
+            display_name = "Anything Everywhere Prompts", 
+            description = "Deprecated - should automatically be replaced",
+            is_deprecated = True,
+            inputs   = [
+                anything.Input("positive", display_name="+ve", optional=True),
+                anything.Input("negative", display_name="-ve", optional=True),
+            ],
+            outputs = [ ],
+        )
+    
+    @classmethod
+    def execute(cls, **kwargs): 
+        return io.NodeOutput()
+
+class AnythingEverywhereTriplet(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id  = "Anything Everywhere3",
+            category = "everywhere/deprecated",
+            display_name = "Anything Everywhere Triplet", 
+            description = "Deprecated - should automatically be replaced",
+            is_deprecated = True,
+            inputs   = [
+                anything.Input("anything", display_name="anything", optional=True),
+                anything.Input("anything2", display_name="anything2", optional=True),
+                anything.Input("anything3", display_name="anything3", optional=True),
+            ],
+            outputs = [ ],
+        )
+    
+    @classmethod
+    def execute(cls, **kwargs): 
+        return io.NodeOutput()
+    
+class AnythingSomewhere(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id  = "Anything Everywhere?",
+            category = "everywhere/deprecated",
+            display_name = "Anything Somewhere", 
+            description = "Deprecated - should automatically be replaced",
+            is_deprecated = True,
+            inputs   = [
+                anything.Input("anything", display_name="anything", optional=True),
+                io.String.Input("title_regex", default="", optional=True),
+                io.String.Input("input_regex", default="", optional=True),
+                io.String.Input("group_regex", default="", optional=True),
+            ],
+            outputs = [ ],
+        )
+    
+    @classmethod
+    def execute(cls, **kwargs): 
+        return io.NodeOutput()
+    
+
