@@ -19,12 +19,6 @@ import { input_changed, fix_inputs, post_configure_fixes } from "./connections.j
 import { comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
 
 /*
-The ui component that looks after the link rendering
-*/
-var linkRenderController;
-var graphAnalyser;
-
-/*
 Inject a call to linkRenderController.mark_list_link_outdated into a method with name methodname on all objects in the array
 If object is undefined, do nothing.
 The injection is added at the end of the existing method (if the method didn't exist, it is created).
@@ -35,7 +29,7 @@ function inject_outdating_into_objects(array, methodname, tracetext) {
     }
 }
 function inject_outdating_into_object_method(object, methodname, tracetext) {
-    if (object) inject(object, methodname, tracetext, linkRenderController.mark_link_list_outdated, linkRenderController);
+    if (object) inject(object, methodname, tracetext, shared.linkRenderController.mark_link_list_outdated, shared.linkRenderController);
 }
 
 class Deferred {
@@ -74,7 +68,7 @@ app.registerExtension({
                     setTimeout(deferred_actions.execute.bind(deferred_actions), 100)
                 }
             }
-            linkRenderController?.mark_link_list_outdated();
+            shared.linkRenderController?.mark_link_list_outdated();
             onConnectionsChange?.apply(this, arguments);
         };
 
@@ -122,7 +116,7 @@ app.registerExtension({
         node.afterChangeMade = (p, v) => {
             original_afterChangeMade?.(p,v)
             if (p==='mode') {
-                linkRenderController.mark_link_list_outdated();
+                shared.linkRenderController.mark_link_list_outdated();
                 node.widgets?.forEach((widget) => {widget.onModeChange?.(v)}); // no idea why I have this?
             }
         }
@@ -134,7 +128,7 @@ app.registerExtension({
         add_extra_menu_items(node, inject_outdating_into_object_method)
 
         // creating a node makes the link list dirty - but give the system a moment to finish
-        setTimeout( ()=>{linkRenderController.mark_link_list_outdated()}, 100 );
+        setTimeout( ()=>{shared.linkRenderController.mark_link_list_outdated()}, 100 );
     }, 
 
     // When a graph node is loaded convert it if needed
@@ -156,7 +150,7 @@ app.registerExtension({
             {'rel':'stylesheet', 'type':'text/css', 'href': new URL("./ue.css", import.meta.url).href } )
 
         api.addEventListener("status", ({detail}) => {
-            if (linkRenderController) linkRenderController.note_queue_size(detail ? detail.exec_info.queue_remaining : 0)
+            if (shared.linkRenderController) shared.linkRenderController.note_queue_size(detail ? detail.exec_info.queue_remaining : 0)
         });
 
         /* if we are on version 1.16 or later, stash input data to convert nodes when they are loaded */
@@ -182,16 +176,16 @@ app.registerExtension({
         const original_drawNode = LGraphCanvas.prototype.drawNode;
         LGraphCanvas.prototype.drawNode = function(node, ctx) {
             try {
-                linkRenderController.pause('drawFrontCanvas')
+                shared.linkRenderController.pause('drawFrontCanvas')
                 const v = original_drawNode.apply(this, arguments);
-                linkRenderController.highlight_ue_connections(node, ctx);
-                if (node._last_seen_bg !== node.bgcolor) linkRenderController.mark_link_list_outdated();
+                shared.linkRenderController.highlight_ue_connections(node, ctx);
+                if (node._last_seen_bg !== node.bgcolor) shared.linkRenderController.mark_link_list_outdated();
                 node._last_seen_bg = node.bgcolor
                 return v
             } catch (e) {
                 Logger.log_error(e)
             } finally {          
-                linkRenderController.unpause()
+                shared.linkRenderController.unpause()
             }
         }
 
@@ -199,13 +193,13 @@ app.registerExtension({
         LGraphCanvas.prototype.drawFrontCanvas = function() {
             try {
                 
-                linkRenderController.disable_all_connected_widgets(true)
+                shared.linkRenderController.disable_all_connected_widgets(true)
                 return original_drawFrontCanvas.apply(this, arguments);
             }  catch (e) {
                 Logger.log_error(e)
             } finally {
                 try {
-                    linkRenderController.disable_all_connected_widgets(false)
+                    shared.linkRenderController.disable_all_connected_widgets(false)
                 } catch (e) {
                     Logger.log_error(e)
                 } 
@@ -220,7 +214,7 @@ app.registerExtension({
         LGraphCanvas.prototype.drawConnections = function(ctx) {
             drawConnections?.apply(this, arguments);
             try {
-                linkRenderController.render_all_ue_links(ctx);
+                shared.linkRenderController.render_all_ue_links(ctx);
             } catch (e) {
                 Logger.log_error(e)
             }
@@ -261,8 +255,8 @@ app.registerExtension({
 	},
 
     init() {
-        graphAnalyser = GraphAnalyser.instance();
-        linkRenderController = LinkRenderController.instance(graphAnalyser);
+        shared.graphAnalyser        = new GraphAnalyser();
+        shared.linkRenderController = new LinkRenderController(shared.graphAnalyser);
 
         const original_afterChange = app.graph.afterChange
         app.graph.afterChange = function () {
@@ -273,14 +267,14 @@ app.registerExtension({
         const original_graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
             if (shared.prompt_being_queued) {
-                return await graphAnalyser.graph_to_prompt( );
+                return await shared.graphAnalyser.graph_to_prompt( );
             } else {
                 return await original_graphToPrompt.apply(app, arguments);
             }
         }
         
         app.ue_modified_prompt = async function () {
-            return await graphAnalyser.graph_to_prompt();
+            return await shared.graphAnalyser.graph_to_prompt();
         }
 
         const original_queuePrompt = app.queuePrompt;
@@ -296,11 +290,11 @@ app.registerExtension({
         app.canvas.__node_over = app.canvas.node_over;
         defineProperty(app.canvas, 'node_over', {
             get: ( )=>{return app.canvas.__node_over },
-            set: (v)=>{app.canvas.__node_over = v; linkRenderController.node_over_changed(v)}   
+            set: (v)=>{app.canvas.__node_over = v; shared.linkRenderController.node_over_changed(v)}   
         } )
 
         app.canvas.canvas.addEventListener('litegraph:set-graph', ()=>{
-            linkRenderController.mark_link_list_outdated()
+            shared.linkRenderController.mark_link_list_outdated()
             setTimeout(()=>{app.canvas.setDirty(true,true)},200)
         })
 
@@ -319,17 +313,17 @@ app.registerExtension({
 
         const original_subgraph = app.graph.convertToSubgraph
         app.graph.convertToSubgraph = function () {
-            const ctb_was = graphAnalyser.connect_to_bypassed
-            graphAnalyser.connect_to_bypassed = true
+            const ctb_was = shared.graphAnalyser.connect_to_bypassed
+            shared.graphAnalyser.connect_to_bypassed = true
             try {
-                const cur_list = graphAnalyser.wait_to_analyse_visible_graph()
+                const cur_list = shared.graphAnalyser.wait_to_analyse_visible_graph()
                 const mods = convert_to_links(cur_list, null, visible_graph());
                 const r = original_subgraph.apply(this, arguments);
                 mods.restorer()
                 copy_ue_accepting(r.node)
                 return r
             } finally {
-                graphAnalyser.connect_to_bypassed = ctb_was
+                shared.graphAnalyser.connect_to_bypassed = ctb_was
             }
         }
 
@@ -343,8 +337,8 @@ app.registerExtension({
     },
 
     beforeConfigureGraph() {
-        linkRenderController.pause("before configure", 1000)
-        graphAnalyser.pause("before configure", 1000)
+        shared.linkRenderController.pause("before configure", 1000)
+        shared.graphAnalyser.pause("before configure", 1000)
         shared.graph_being_configured = true
     },
 

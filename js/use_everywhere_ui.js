@@ -4,6 +4,7 @@ import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { maybe_show_tooltip } from "./tooltip_window.js";
 import { is_connectable } from "./use_everywhere_settings.js";
+import { shared } from "./shared.js";
 
 function nodes_in_my_group(node) {
     const nodes_in = new Set();
@@ -86,15 +87,9 @@ function indicate_restriction(ctx, title_height) {
 }
 
 class LinkRenderController extends Pausable {
-    static _instance;
-    static instance(tga) {
-        if (!this._instance) this._instance = new LinkRenderController();
-        if (tga && !this._instance.the_graph_analyser) this._instance.the_graph_analyser = tga;
-        return this._instance
-    }
-    constructor() {
+
+    constructor(tga) {
         super('LinkRenderController')
-        this.the_graph_analyser = null;
         this.ue_list            = undefined; // the most current ue list - set to undefined if we know it is out of date
         this.last_used_ue_list  = undefined; // the last ue list we actually used to generate graphics
         this.link_list_outdated = false;
@@ -143,7 +138,7 @@ class LinkRenderController extends Pausable {
 
     _request_link_list_update() {
         try {
-            const ues = this.the_graph_analyser.analyse_visible_graph()
+            const ues = shared.graphAnalyser.analyse_visible_graph()
             if (ues==null) return false // graph analyser was paused
             this.ue_list = ues;
             if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
@@ -263,7 +258,7 @@ class LinkRenderController extends Pausable {
     }
 
     _list_ready() {
-        if (!this.the_graph_analyser) return false; // we don't have the analyser yet (still loading)
+        if (!shared.graphAnalyser) return false; // we don't have the analyser yet (still loading)
         if (!this.ue_list) {
             this.mark_link_list_outdated();
             return false;

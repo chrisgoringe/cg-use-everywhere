@@ -3,6 +3,7 @@ import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPT
 import { app } from "../../scripts/app.js";
 import { default_priority } from "./ue_properties.js";
 import { edit_window } from "./floating_window.js";
+import { shared } from "./shared.js";
 
 const REGEXES = ['title', 'input', 'group']
 const P_REGEXES = ['prompt', 'negative']
@@ -47,7 +48,7 @@ function changed(node, property, value) {
     const elem = document.getElementById(`${property}_value`)
     if (elem) elem.style.opacity = (value) ? "1" : "0.5"
 
-    LinkRenderController.instance().mark_link_list_outdated()
+    shared.linkRenderController.mark_link_list_outdated()
     app.canvas.setDirty(true,true)
 }
 

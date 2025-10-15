@@ -7,11 +7,6 @@ import { master_graph, visible_graph } from "./use_everywhere_subgraph_utils.js"
 import { is_connectable } from "./use_everywhere_settings.js";
 
 class GraphAnalyser extends Pausable {
-    static _instance;
-    static instance() {
-        if (!this._instance) this._instance = new GraphAnalyser();
-        return this._instance;
-    }
 
     constructor() {
         super('GraphAnalyser')
