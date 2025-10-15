@@ -64,7 +64,7 @@ app.registerExtension({
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {     
             if (is_combo_clone(this) && !shared.prompt_being_queued) comboclone_on_connection(this, link_info, connect)
-            if (this.IS_UE && side==1) { // side 1 is input
+            if (is_UEnode(this) && side==1) { // side 1 is input
                 input_changed(this, slot, connect, link_info)
                 
                 if (!shared.graph_being_configured) {
@@ -307,7 +307,7 @@ app.registerExtension({
         app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
             if (e?.detail?.subType=='node-double-click') {
                 const node = e.detail.node
-                if (node.IS_UE) {
+                if (is_UEnode(node)) {
                     if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
                     edit_restrictions(null, null, null, null, node)
                 }

@@ -1,7 +1,7 @@
 
 import { any_restrictions, describe_restrictions } from "./ue_properties.js";
 import { app } from "../../scripts/app.js";
-import { create } from "./use_everywhere_utilities.js";
+import { create, is_UEnode } from "./use_everywhere_utilities.js";
 import { edit_window } from "./floating_window.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 
@@ -46,7 +46,7 @@ export function maybe_show_tooltip() {
 
     if (!node) return hide_tooltip()
     if (edit_window.showing) return hide_tooltip()
-    if (!(node.IS_UE && any_restrictions(node))) return hide_tooltip()
+    if (!(is_UEnode(node) && any_restrictions(node))) return hide_tooltip()
     
     if (ue_tooltip_element.showing) return
     

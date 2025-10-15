@@ -172,7 +172,7 @@ class GraphConverter {
         if (node.properties?.ue_properties?.widget_ue_connectable) return
         if (node.properties?.widget_ue_connectable) return  // pre 7.0 node which will be converted
 
-        if (node.IS_UE) {
+        if (is_UEnode(node)) {
             if (node.properties?.ue_properties?.version) return
             this.clean_ue_node(node)
         }

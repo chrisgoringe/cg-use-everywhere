@@ -67,8 +67,8 @@ class SeedEverywhere(io.ComfyNode):
         )
     
     @classmethod
-    def execute(cls, string): # type: ignore
-        return io.NodeOutput(string)
+    def execute(cls, seed): # type: ignore
+        return io.NodeOutput(seed)
 
 class AnythingEverywhere(io.ComfyNode):
     @classmethod

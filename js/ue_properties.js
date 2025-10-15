@@ -1,4 +1,4 @@
-import { version_at_least, create } from "./use_everywhere_utilities.js"
+import { version_at_least, create, is_UEnode } from "./use_everywhere_utilities.js"
 import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
 import { shared } from "./shared.js";
 import { fix_inputs } from "./connections.js";
@@ -74,7 +74,6 @@ If the graph is still being configured, then that means the node is being create
 In that case the properties need to be set later, in setup_ue_properties_onload
 */
 export function setup_ue_properties_oncreate(node) {
-    node.IS_UE = true
     if (shared.graph_being_configured) return
     if (!node.properties) node.properties = {}
     node.properties.ue_properties = {...DEFAULT_PROPERTIES}
@@ -87,7 +86,7 @@ Convert node properties when loaded.
 export function setup_ue_properties_onload(node) {
     if (!node.properties?.ue_properties) node.properties.ue_properties = {}
     if ( !version_at_least(node.properties?.ue_properties?.version, "7.0") ) {
-        if (node.IS_UE) {
+        if (is_UEnode(node)) {
         // convert a pre 7.0 UE node
             node.properties.ue_properties = {
                 version               : VERSION,
@@ -117,7 +116,7 @@ export function setup_ue_properties_onload(node) {
 }
 
 function convert_node_types(node) {
-    if (!node.IS_UE) return
+    if (!is_UEnode(node)) return
 
     if (node.type=="Anything Everywhere?") {
         node.widgets.forEach((w)=>{w.hidden=true})
