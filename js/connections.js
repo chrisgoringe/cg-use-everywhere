@@ -62,11 +62,12 @@ export function input_changed(node, slot, connect, link_info) {
 }
 
 
-export function post_configure_fixes(graph) {
+export function post_configure_fixes(graph, callback) {
     graph.nodes.forEach((node) => {
         if (is_combo_clone(node)) reset_comboclone_on_load(node)
-        if (is_UEnode(node))      fix_inputs(node, "post_configure_fixes")
-        if (node.subgraph) post_configure_fixes(node.subgraph)
+        if (is_UEnode(node, false)) fix_inputs(node, "post_configure_fixes")
+        if (callback) callback(node)
+        if (node.subgraph) post_configure_fixes(node.subgraph, callback)
     })
 }
 

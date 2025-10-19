@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { Logger } from "./use_everywhere_utilities.js";
 
+
 export function master_graph()    { return app.graph }
 export function master_graph_id() { return master_graph().id }
 
@@ -17,6 +18,21 @@ export function in_visible_graph(node) {
 
 export function get_subgraph_input_type(graph, slot) { return graph.inputNode.slots[slot].type }
 export function link_is_from_subgraph_input(link) { return link.origin_id==-10 }
+
+export function connection_from_output_as_input(node, slot) {
+    try {
+        return {
+            type : node.outputs[slot].type, 
+            link : {
+                origin_id   : node.id, 
+                origin_slot : slot,
+            },
+        }
+    } catch (e) {
+        console.error(e)
+        return false
+    }
+}
 
 export function copy_ue_accepting(new_node) {
     try {
@@ -40,7 +56,6 @@ export function copy_ue_accepting(new_node) {
     } catch (e) {
         Logger.log_error(e, "in copy_ue_accepting")
     }
-
 }
 
 class WrappedInputNode {

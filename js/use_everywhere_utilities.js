@@ -172,7 +172,7 @@ class GraphConverter {
         if (node.properties?.ue_properties?.widget_ue_connectable) return
         if (node.properties?.widget_ue_connectable) return  // pre 7.0 node which will be converted
 
-        if (is_UEnode(node)) {
+        if (is_UEnode(node, false)) {
             if (node.properties?.ue_properties?.version) return
             this.clean_ue_node(node)
         }
@@ -264,7 +264,8 @@ export function is_connected(input, treat_bypassed_as_live, graph) {
 /*
 Is this a UE node?
 */
-export function is_UEnode(node_or_nodeType) {
+export function is_UEnode(node_or_nodeType, include_converts) {
+    if (include_converts && node_or_nodeType.properties?.ue_convert) return true;
     const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
     return ((title) && (title.startsWith("Anything Everywhere") || title==="Seed Everywhere" || title==="Prompts Everywhere"))
 }

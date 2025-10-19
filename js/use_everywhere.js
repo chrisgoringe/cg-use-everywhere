@@ -4,8 +4,7 @@ import { api } from "../../scripts/api.js";
 import { shared } from "./shared.js";
 
 import { is_UEnode, inject, Logger, defineProperty, graphConverter, create } from "./use_everywhere_utilities.js";
-import { indicate_restriction } from "./use_everywhere_ui.js";
-import { LinkRenderController } from "./use_everywhere_ui.js";
+import { indicate_restriction, LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_everywhere_settings.js";
 import { add_debug } from "./ue_debug.js";
@@ -17,6 +16,21 @@ import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
 import { input_changed, fix_inputs, post_configure_fixes } from "./connections.js";
 import { comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
+
+export function add_ue_methods(node) {
+    if (node.ue_methods_added) return;
+    if (!node.subgraph) return;
+    node.ue_methods_added = true;
+    const original_onDrawTitleBar = node.onDrawTitleBar;
+    node.onDrawTitleBar = function(ctx, title_height) {
+        if (original_onDrawTitleBar) original_onDrawTitleBar.apply(this, arguments);
+        if (is_UEnode(this, true) && any_restrictions(this)) {
+            indicate_restriction(ctx, title_height);
+        } else if (this.properties.ue_convert) {
+            indicate_restriction(ctx, title_height, "rgba(102, 255, 102, 0.5)");
+        }
+    }
+}
 
 /*
 Inject a call to linkRenderController.mark_list_link_outdated into a method with name methodname on all objects in the array
@@ -58,7 +72,7 @@ app.registerExtension({
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {     
             if (is_combo_clone(this) && !shared.prompt_being_queued) comboclone_on_connection(this, link_info, connect)
-            if (is_UEnode(this) && side==1) { // side 1 is input
+            if (is_UEnode(this, false) && side==1) { // side 1 is input
                 input_changed(this, slot, connect, link_info)
                 
                 if (!shared.graph_being_configured) {
@@ -76,12 +90,10 @@ app.registerExtension({
         if (nodeData.name=="Combo Clone") {
             const onConnectOutput = nodeType.prototype.onConnectOutput
             nodeType.prototype.onConnectOutput = function(outputIndex, type, input, inputNode, inputIndex) {
-                if  (!(type=="COMBO" || is_UEnode(inputNode))) return false;
+                if  (!(type=="COMBO" || is_UEnode(inputNode, false))) return false;
                 return onConnectOutput?.apply(this,arguments)
             }
         }
-        
-
         
         /*
         Extra menu options are the node right click menu.
@@ -109,7 +121,7 @@ app.registerExtension({
     },
 
     async nodeCreated(node) {
-        if (!node.properties.ue_properties && !is_UEnode(node) && !shared.graph_being_configured) {
+        if (!node.properties.ue_properties && !is_UEnode(node, false) && !shared.graph_being_configured) {
             node.properties.ue_properties = { widget_ue_connectable : {}, input_ue_unconnectable : {} }
         }
         const original_afterChangeMade = node.afterChangeMade
@@ -301,7 +313,7 @@ app.registerExtension({
         app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
             if (e?.detail?.subType=='node-double-click') {
                 const node = e.detail.node
-                if (is_UEnode(node)) {
+                if (is_UEnode(node, true)) {
                     if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
                     edit_restrictions(null, null, null, null, node)
                 }
@@ -321,6 +333,7 @@ app.registerExtension({
                 const r = original_subgraph.apply(this, arguments);
                 mods.restorer()
                 copy_ue_accepting(r.node)
+                add_ue_methods(r.node)
                 return r
             } finally {
                 shared.graphAnalyser.connect_to_bypassed = ctb_was
@@ -346,7 +359,7 @@ app.registerExtension({
         graphConverter.remove_saved_ue_links_recursively(app.graph)
         //convert_old_nodes(app.graph)
         shared.graph_being_configured = false
-        post_configure_fixes(master_graph())
+        post_configure_fixes(master_graph(), add_ue_methods)
     }
 
 });

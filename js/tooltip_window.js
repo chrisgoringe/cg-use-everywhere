@@ -46,7 +46,7 @@ export function maybe_show_tooltip() {
 
     if (!node) return hide_tooltip()
     if (edit_window.showing) return hide_tooltip()
-    if (!(is_UEnode(node) && any_restrictions(node))) return hide_tooltip()
+    if (!(is_UEnode(node, true) && any_restrictions(node))) return hide_tooltip()
     
     if (ue_tooltip_element.showing) return
     

@@ -71,11 +71,11 @@ class GraphAnalyser extends Pausable {
                 
         // Create a UseEverywhereList and populate it from all live (not bypassed) UE nodes
         const ues = new UseEverywhereList();
-        live_nodes.filter((node) => is_UEnode(node)).filter((node)=>node_is_live(node,false)).forEach(node => { ues.add_ue_from_node(node); })
+        live_nodes.filter((node) => is_UEnode(node, true)).filter((node)=>node_is_live(node,false)).forEach(node => { ues.add_ue_from_node(node); })
 
         // List all unconnected inputs on non-UE nodes which are connectable
         const connectable = []
-        live_nodes.filter((node) => !is_UEnode(node)).forEach(node => {
+        live_nodes.filter((node) => !is_UEnode(node, false)).forEach(node => {
             if (node && !node.properties.rejects_ue_links) {
                 //if (!real_node._widget_name_map) real_node._widget_name_map =  real_node.widgets?.map(w => w.name) || [];
                 node.inputs?.forEach((input,index) => {

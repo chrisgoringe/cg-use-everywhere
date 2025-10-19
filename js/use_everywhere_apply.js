@@ -121,7 +121,7 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
 }
 
 function remove_this(node, keep_seed_everywhere) {
-    return  (is_UEnode(node) && !(keep_seed_everywhere && node.comfyClass=="Seed Everywhere") ) 
+    return  (is_UEnode(node, false) && !(keep_seed_everywhere && node.comfyClass=="Seed Everywhere") ) 
 }
 
 export function remove_all_ues(keep_seed_everywhere, graph, recurse) {

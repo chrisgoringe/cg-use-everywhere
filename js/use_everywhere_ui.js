@@ -76,10 +76,10 @@ function nodes_not_my_color(node, already_limited_to) {
     return [...nodes_in];
 }
 
-function indicate_restriction(ctx, title_height) {
+function indicate_restriction(ctx, title_height, color) {
     ctx.save();
     ctx.lineWidth = 2;
-    ctx.strokeStyle = "#6F6";
+    ctx.strokeStyle = color || "#6F6";
     ctx.beginPath();
     ctx.roundRect(5,5-title_height,20,20,8);
     ctx.stroke();
@@ -345,22 +345,29 @@ class LinkRenderController extends Pausable {
             /* this is the end node; get the position of the input */
             var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
 
-            /* get the position of the *input* that is being echoed - except for the Seed Anywhere node, 
-            which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
-            const input_source = (ue_connection.control_node_input_index >= 0); 
-            const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
-            const pos1 = graph._nodes_by_id[ue_connection.control_node.id]?.getConnectionPos(input_source, source_index, this.slot_pos2);    
-
-            if (!pos1) {
+            const control_node = graph._nodes_by_id[ue_connection.control_node.id]
+            if (!control_node) {
                 Logger.problem(`Couldn't find position for UE link ${ue_connection}.`,null,true)
                 return;
             }
+
+
+            /* 
+                get the position of the *input* that is being echoed except for:
+                - the Seed Anywhere node: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...)
+                - subgraph converts
+                those link to outputs
+            */
+            const input_source = (ue_connection.control_node_input_index >= 0 && !control_node.properties.ue_convert); 
+            const source_index = (ue_connection.control_node_input_index >= 0 ) ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
+            const pos1 = control_node.getConnectionPos(input_source, source_index, this.slot_pos2);    
+
 
             /* get the direction that we start and end */
             const delta_x = pos2[0] - pos1[0];
             const delta_y = pos2[1] - pos1[1];
             const end_direction = LiteGraph.LEFT; // always end going into an input
-            const sta_direction = ((Math.abs(delta_y) > Math.abs(delta_x))) ? 
+            const sta_direction = ((Math.abs(delta_y) > Math.abs(delta_x)) && input_source) ? 
                                         ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
                                         ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
 

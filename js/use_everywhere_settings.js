@@ -176,18 +176,43 @@ export function add_extra_menu_items(node_or_node_type, ioio) {
     const getExtraMenuOptions = node_or_node_type.getExtraMenuOptions;
     node_or_node_type.getExtraMenuOptions = function(_, options) {
         getExtraMenuOptions?.apply(this, arguments);
-        if (is_UEnode(this)) {
+        options.push(null);
+        if (is_UEnode(this, true)) {
             node_menu_settings(options, this);
         } else {
             non_ue_menu_settings(options, this);
         }
+        options.push(null);
         ioio(options,'callback',`menu option on ${this.id}`);
     }
     node_or_node_type.ue_extra_menu_items_added = true
 }
 
-export function non_ue_menu_settings(options, node) {
-    options.push(null);
+
+function node_menu_settings(options, node) {
+    options.push(
+        {
+            content: "Edit restrictions",
+            callback: edit_restrictions,
+        }        
+    )
+    if (is_UEnode(node, false)) {
+        options.push(
+            {
+                content: "Convert to real links",
+                callback: async () => {
+                    const ues = shared.graphAnalyser.wait_to_analyse_visible_graph();
+                    convert_to_links(ues, node);
+                    visible_graph().remove(node);
+                }
+            }
+        )
+    } else {
+        non_ue_menu_settings(options, node)
+    }
+}
+
+function non_ue_menu_settings(options, node) {
     options.push(
         {
             content: node.properties.rejects_ue_links ? "Allow UE Links" : "Reject UE Links",
@@ -204,29 +229,17 @@ export function non_ue_menu_settings(options, node) {
             }            
         )
     }
-    options.push(null);
+    if (node.subgraph) {
+        options.push(
+            {
+                content: node.properties.ue_convert ? "Remove UE broadcasting" : "Add UE broadcasting",
+                has_submenu: false,
+                callback: () => { node.properties.ue_convert = !!!node.properties.ue_convert  },                
+            }
+        )
+    }
 }
 
-export function node_menu_settings(options, node) {
-    options.push(null);
-    options.push(
-        {
-            content: "Edit restrictions",
-            callback: edit_restrictions,
-        }        
-    )
-    options.push(
-        {
-            content: "Convert to real links",
-            callback: async () => {
-                const ues = shared.graphAnalyser.wait_to_analyse_visible_graph();
-                convert_to_links(ues, node);
-                visible_graph().remove(node);
-            }
-        }
-    )
-    options.push(null);
-}
 
 export function canvas_menu_settings(options) {
     options.push(null); // divider
