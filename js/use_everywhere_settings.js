@@ -1,12 +1,13 @@
 import { app } from "../../scripts/app.js";
-import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
+import { convert_to_links, remove_removable_ues } from "./use_everywhere_apply.js";
 import { Logger } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { visible_graph, master_graph } from "./use_everywhere_subgraph_utils.js";
+import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { is_UEnode } from "./use_everywhere_utilities.js";
 import { i18ify_settings } from "./i18n.js";
 import { VERSION, shared } from "./shared.js";
+import { for_all_graphs } from "./recursive_callbacks.js";
 
 const _SETTINGS = [
     {
@@ -201,9 +202,14 @@ function node_menu_settings(options, node) {
             {
                 content: "Convert to real links",
                 callback: async () => {
-                    const ues = shared.graphAnalyser.wait_to_analyse_visible_graph();
-                    convert_to_links(ues, node);
-                    visible_graph().remove(node);
+                    const ues = shared.graphAnalyser.analyse_graph(visible_graph());
+                    if (ues===null) {
+                        Logger.log_problem("Convert to real links failed to get ues")
+                        alert("Convert failed - press f12 to see the console log")
+                    } else {
+                        convert_to_links(ues, node);
+                        visible_graph().remove(node);
+                    }
                 }
             }
         )
@@ -256,16 +262,15 @@ export function canvas_menu_settings(options) {
             content: "Convert all UEs (in this graph/subgraph) to real links",
             callback: async () => {
                 if (window.confirm("This will convert all links (in this graph/subgraph) created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
-                    const ues = shared.graphAnalyser.wait_to_analyse_visible_graph();
                     shared.linkRenderController.pause("convert");
                     try {
-                        convert_to_links(ues, visible_graph());
-                        remove_all_ues(true, visible_graph());
+                        const graph = visible_graph()
+                        shared.graphAnalyser.modify_graph( graph )
+                        remove_removable_ues( graph )
                     } finally {
                         app.graph.change();
                         shared.linkRenderController.unpause()
                     }
-                    
                 }
             }
         },
@@ -275,8 +280,8 @@ export function canvas_menu_settings(options) {
                 if (window.confirm("This will convert all links created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
                     shared.linkRenderController.pause("convert");
                     try {
-                        shared.graphAnalyser.modify_graphs_recursively(master_graph())
-                        remove_all_ues(true, master_graph(), true);
+                        for_all_graphs(shared.graphAnalyser.modify_graph)
+                        for_all_graphs(remove_removable_ues)
                     } finally {
                         app.graph.change();
                         shared.linkRenderController.unpause()

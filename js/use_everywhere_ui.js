@@ -1,7 +1,7 @@
 import { Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { in_visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { in_visible_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { maybe_show_tooltip } from "./tooltip_window.js";
 import { is_connectable } from "./use_everywhere_settings.js";
 import { shared } from "./shared.js";
@@ -138,7 +138,7 @@ class LinkRenderController extends Pausable {
 
     _request_link_list_update() {
         try {
-            const ues = shared.graphAnalyser.analyse_visible_graph()
+            const ues = shared.graphAnalyser.analyse_graph(visible_graph())
             if (ues==null) return false // graph analyser was paused
             this.ue_list = ues;
             if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();

@@ -4,6 +4,7 @@ import { app } from "../../scripts/app.js";
 import { i18n } from "./i18n.js";
 import { shared } from "./shared.js";
 import { reset_comboclone_on_load, is_combo_clone } from "./combo_clone.js";
+import { ue_callbacks } from "./recursive_callbacks.js";
 
 function get_type(graph, link_info) {
     var type = null
@@ -61,15 +62,11 @@ export function input_changed(node, slot, connect, link_info) {
 
 }
 
-
-export function post_configure_fixes(graph, callback) {
-    graph.nodes.forEach((node) => {
-        if (is_combo_clone(node)) reset_comboclone_on_load(node)
-        if (is_UEnode(node, false)) fix_inputs(node, "post_configure_fixes")
-        if (callback) callback(node)
-        if (node.subgraph) post_configure_fixes(node.subgraph, callback)
-    })
+function post_configure_fixes(node) {
+    if (is_combo_clone(node)) reset_comboclone_on_load(node)
+    if (is_UEnode(node, false)) fix_inputs(node, "post_configure_fixes")
 }
+ue_callbacks.register_allnode_callback('afterConfigureGraph', post_configure_fixes)
 
 function add_new_input(node) {
     Logger.log_info(`Adding new anything input to node ${node.id} (${fix_call_message})`)

@@ -10,13 +10,18 @@ import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_ever
 import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
-import { master_graph, visible_graph, copy_ue_accepting } from "./use_everywhere_subgraph_utils.js";
+import { visible_graph, fix_new_subgraph_node } from "./use_everywhere_subgraph_utils.js";
 import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
-import { input_changed, fix_inputs, post_configure_fixes } from "./connections.js";
+import { input_changed, fix_inputs } from "./connections.js";
 import { comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
+import { ue_callbacks } from "./recursive_callbacks.js";
 
+/*
+Subgraphs need to have the onDrawTitleBar method for the UI. 
+This is called when they are created, and when they are reloaded.
+*/
 export function add_ue_methods(node) {
     if (node.ue_methods_added) return;
     if (!node.subgraph) return;
@@ -328,11 +333,12 @@ app.registerExtension({
             const ctb_was = shared.graphAnalyser.connect_to_bypassed
             shared.graphAnalyser.connect_to_bypassed = true
             try {
-                const cur_list = shared.graphAnalyser.wait_to_analyse_visible_graph()
+                const cur_list = shared.graphAnalyser.analyse_graph(visible_graph())
+                if (!cur_list) Logger.log_problem('convert to subgraph failed to get ues')
                 const mods = convert_to_links(cur_list, null, visible_graph());
                 const r = original_subgraph.apply(this, arguments);
                 mods.restorer()
-                copy_ue_accepting(r.node)
+                fix_new_subgraph_node(r.node)
                 add_ue_methods(r.node)
                 return r
             } finally {
@@ -356,10 +362,10 @@ app.registerExtension({
     },
 
     afterConfigureGraph() {
-        graphConverter.remove_saved_ue_links_recursively(app.graph)
-        //convert_old_nodes(app.graph)
         shared.graph_being_configured = false
-        post_configure_fixes(master_graph(), add_ue_methods)
+        ue_callbacks.dispatch('afterConfigureGraph')
     }
 
 });
+
+ue_callbacks.register_allnode_callback('afterConfigureGraph', add_ue_methods)

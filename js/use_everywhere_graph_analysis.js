@@ -3,8 +3,9 @@ import { node_is_live, is_connected, is_UEnode, Logger, Pausable } from "./use_e
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { master_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { is_connectable } from "./use_everywhere_settings.js";
+import { for_all_graphs } from "./recursive_callbacks.js";
 
 class GraphAnalyser extends Pausable {
 
@@ -13,29 +14,39 @@ class GraphAnalyser extends Pausable {
         this.original_graphToPrompt = app.graphToPrompt;
         this.ambiguity_messages = [];
         this.latest_ues = null
+        this.mods = []
     }
 
-    modify_graphs_recursively(graph, mods) {
-        const modifications = convert_to_links( this.analyse_graph(graph), null, graph )
-        if (mods) mods.push( modifications );
+    modify_graph(graph) {
+        const ues = this.analyse_graph(graph)
+        if (ues===null) {
+            Logger.log_problem(`modify_graph called but no ues could be obtained for ${graph.id}`)
+            console.trace()
+        }
+        const modifications = convert_to_links( ues, null, graph )
+        this.mods.push( modifications );
         if (!graph.extra) graph.extra = {}
         graph.extra['links_added_by_ue'] = modifications.added_links.map(x=>x.id)
-        graph.nodes.filter((node)=>(node.subgraph)).forEach((node) => {this.modify_graphs_recursively(node.subgraph, mods);});
+    }
+
+    modify_all_graphs() {
+        for_all_graphs(this.modify_graph)
     }
 
     async graph_to_prompt() {
         var p;
         this.pause('graph_to_prompt')
-        const mods = []
+        this.mods = []
         try { 
-            this.modify_graphs_recursively(master_graph(), mods);
+            for_all_graphs(this.modify_graph)
             // Now create the prompt using the ComfyUI original functionality and the patched graph
             p = await this.original_graphToPrompt.apply(app);
         } catch (e) { 
             Logger.log_error(e)
         } finally { 
             try {
-                mods.forEach((mod)=>{mod.restorer()})
+                this.mods.forEach((mod)=>{mod.restorer()})
+                this.mods = []
             } finally {
                 this.unpause()
             }
@@ -49,22 +60,9 @@ class GraphAnalyser extends Pausable {
         return p;
     }
 
-    analyse_visible_graph() { return this.analyse_graph(visible_graph()); }
+    analyse_graph(graph, ignore_pause) {
+        if (this.paused() && !ignore_pause) return null
 
-    analyse_master_graph() { return this.analyse_graph(master_graph()); }
-
-    wait_to_analyse_visible_graph() { return this.wait_to_analyse_graph(visible_graph()); }
-
-    wait_to_analyse_master_graph() { return this.wait_to_analyse_graph(master_graph()); }
-
-    wait_to_analyse_graph(graph) {
-        if (this.paused()) { 
-            Logger.log_problem("Don't know how to wait", null, true);
-        }
-        return this.analyse_graph(graph);
-    }
-
-    analyse_graph(graph) {
         this.ambiguity_messages = [];
         const treat_bypassed_as_live = settingsCache.getSettingValue("Use Everywhere.Options.connect_to_bypassed") || this.connect_to_bypassed
         const live_nodes = graph.nodes.filter((node) => node_is_live(node, treat_bypassed_as_live))
