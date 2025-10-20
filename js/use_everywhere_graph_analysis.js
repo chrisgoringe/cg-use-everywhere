@@ -18,7 +18,7 @@ class GraphAnalyser extends Pausable {
     }
 
     modify_graph(graph) {
-        const ues = this.analyse_graph(graph)
+        const ues = this.analyse_graph(graph, true)
         if (ues===null) {
             Logger.log_problem(`modify_graph called but no ues could be obtained for ${graph.id}`)
             console.trace()
@@ -30,7 +30,7 @@ class GraphAnalyser extends Pausable {
     }
 
     modify_all_graphs() {
-        for_all_graphs(this.modify_graph)
+        for_all_graphs(this.modify_graph.bind(this))
     }
 
     async graph_to_prompt() {
@@ -38,7 +38,7 @@ class GraphAnalyser extends Pausable {
         this.pause('graph_to_prompt')
         this.mods = []
         try { 
-            for_all_graphs(this.modify_graph)
+            for_all_graphs(this.modify_graph.bind(this))
             // Now create the prompt using the ComfyUI original functionality and the patched graph
             p = await this.original_graphToPrompt.apply(app);
         } catch (e) { 

@@ -56,9 +56,9 @@ function _graph_dispatch(callback, graph) {
 export const ue_callbacks = new RecursiveCallbacks()
 
 export function for_all_graphs(callback) {
-    ue_callbacks._graph_dispatch(callback, app.graph)
+    _graph_dispatch(callback, app.graph)
 }
 
 export function for_all_nodes(callback) {
-    ue_callbacks._node_dispatch(callback)
+    _node_dispatch(callback, app.graph)
 }

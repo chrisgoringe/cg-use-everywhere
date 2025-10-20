@@ -280,7 +280,7 @@ export function canvas_menu_settings(options) {
                 if (window.confirm("This will convert all links created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
                     shared.linkRenderController.pause("convert");
                     try {
-                        for_all_graphs(shared.graphAnalyser.modify_graph)
+                        for_all_graphs(shared.graphAnalyser.modify_graph.bind(shared.graphAnalyser))
                         for_all_graphs(remove_removable_ues)
                     } finally {
                         app.graph.change();
