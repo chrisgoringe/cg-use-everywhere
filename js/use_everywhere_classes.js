@@ -15,11 +15,22 @@ export function display_name(node) {
 function regex_for(node, k) {
     try {
         const w0 = node.properties.ue_properties[`${k}_regex`]
-        return (w0 && w0!='.*') ? new RegExp(w0) : null;
+        return (w0 && w0!='.*') ? {regex:new RegExp(w0), invert:node.properties.ue_properties[`${k}_regex_invert`]} : null;
     } catch (e) {
         return null
     }
 }
+
+
+const P_REGEXES = ['prompt', 'negative']
+const PROMPT_REGEXES = [new RegExp(i18n_functional('prompt_regex')), new RegExp(i18n_functional('negative_regex'))]
+
+function prompt_regex(node, i) {
+    const reg = node.properties.ue_properties[`${P_REGEXES[i]}_regex`]
+    if (reg) return {regex:new RegExp(reg), invert:node.properties.ue_properties[`${P_REGEXES[i]}_regex_invert`]}
+    else return {regex:i18n_functional_regex(`${P_REGEXES[i]}_regex`), invert:node.properties.ue_properties[`${P_REGEXES[i]}_regex_invert`]}
+}
+
 
 /*
 The UseEverywhere object represents a single 'broadcast'. It generally contains
@@ -59,8 +70,8 @@ class UseEverywhere {
             // for breakpointing
             throw e;
         }
-        if (this.title_regex) this.description += ` - node title regex '${this.title_regex.source}'`;
-        if (this.input_regex) this.description += ` - input name regex '${this.input_regex.source}'`;
+        if (this.title_regex) this.description += ` - node title regex '${this.title_regex.regex.source} ${(this.title_regex.invert) ? "(inverted)" : ""}'`;
+        if (this.input_regex) this.description += ` - input name regex '${this.input_regex.regex.source} ${(this.input_regex.invert) ? "(inverted)" : ""}''`;
     }
 
     sending_differs_from(another_ue) {
@@ -87,9 +98,9 @@ class UseEverywhere {
         const input_label = input.label || input.localized_name || input.name;
         const node_label = node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type);
         if (this.title_regex) {
-            if (!(this.title_regex.test(node_label))) return false;
+            if ( this.title_regex.regex.test(node_label) == this.title_regex.invert ) return false;
         }
-        if (node.type=="Highway" && typeof this.input_regex==='string') { // Highway nodes - broken if there are two matches...
+        /*if (node.type=="Highway" && typeof this.input_regex==='string') { // Highway nodes - broken if there are two matches...
             const input_label_split = input_label.split(':');
             if (input_label_split.length==1) {
                 if (input_label==this.input_regex) {
@@ -102,7 +113,7 @@ class UseEverywhere {
                 if ((input_label_split[0]==this.input_regex) && input_label_split[1]==input.type) return true;
                 return false;
             }
-        }
+        }*/
         if (this.type != input.type) {
             if (this.type=="STRING" && 
                 input.type=="COMBO" && 
@@ -112,8 +123,8 @@ class UseEverywhere {
                 return false
             }
         } 
-        if (this.input_regex && typeof this.input_regex==='string') return false; // input_regex started '+', which targets Highway nodes only
-        if (this.input_regex && !this.input_regex.test(input_label)) return false;
+        //if (this.input_regex && typeof this.input_regex==='string') return false; // input_regex started '+', which targets Highway nodes only
+        if (this.input_regex && ( this.input_regex.regex.test(input_label)==this.input_regex.invert )) return false;
         
         return true;
     }
@@ -254,7 +265,7 @@ export class UseEverywhereList {
     add_ue_from_node(node) {
 
         if (node.properties.ue_properties.seed_inputs) {
-            this.add_ue(node, -1, "INT", [node.id.toString(),0], regex_for(node, 'input'));
+            this.add_ue(node, -1, "INT", [node.id.toString(),0], regex_for(node, 'input') );
         } else {
 
             var the_possibles
@@ -317,14 +328,5 @@ export class UseEverywhereList {
             })
         }
     }
-}
-
-const P_REGEXES = ['prompt', 'negative']
-const PROMPT_REGEXES = [new RegExp(i18n_functional('prompt_regex')), new RegExp(i18n_functional('negative_regex'))]
-
-function prompt_regex(node, i) {
-    const reg = node.properties.ue_properties[`${P_REGEXES[i]}_regex`]
-    if (reg) return new RegExp(reg)
-    else return i18n_functional_regex(`${P_REGEXES[i]}_regex`)
 }
 

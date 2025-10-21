@@ -29,7 +29,7 @@ function nodes_not_in_my_group(node) {
 function nodes_in_groups_matching(regex, already_limited_to) {
     const nodes_in = new Set();
     app.graph._groups.forEach((group) => {
-        if (regex.test(group.title)) {
+        if (regex.regex.test(group.title) != regex.invert) {
             if (!app.canvas.selected_group_moving) group.recomputeInsideNodes();
             /* 
             Note for optimisation - it would be more efficient to calculate what nodes are in what groups

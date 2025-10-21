@@ -29,8 +29,11 @@ export function describe_restrictions(node) {
     const statements = []
     if (node.properties.ue_properties) {
         ALL_REGEXES.forEach((r)=>{
-            const reg = node.properties.ue_properties[`${r}_regex`]
-            if (reg && reg.length>0) statements.push([`${i18n(r)} regex`, reg])    
+            var reg = node.properties.ue_properties[`${r}_regex`]    
+            if (reg && reg.length>0) {
+                const condition = i18n((node.properties.ue_properties[`${r}_regex_invert`]) ? "not match" : "match")
+                statements.push([`${i18n(r)} regex`, `${condition} ${reg}`])    
+            }
         })
         if (node.properties.ue_properties.group_restricted) statements.push(['group',i18n(GROUP_RESTRICTION_OPTIONS[node.properties.ue_properties.group_restricted])])
         if (node.properties.ue_properties.color_restricted) statements.push(['color',i18n(COLOR_RESTRICTION_OPTIONS[node.properties.ue_properties.color_restricted])])
@@ -62,6 +65,9 @@ const DEFAULT_PROPERTIES = {
                     title_regex           : null,
                     input_regex           : null,
                     group_regex           : null,
+                    title_regex_invert    : false,
+                    input_regex_invert    : false,
+                    group_regex_invert    : false,
                     priority              : undefined,
                     repeated_type_rule    : 0,
                     string_to_combo       : 0,
