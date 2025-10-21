@@ -1,15 +1,13 @@
 name: Bug Report
-description: File a bug report.
+description: Report a bug in the UE nodes
 title: "[Bug]: "
-labels: ["bug", "triage"]
-projects: ["octo-org/1", "octo-org/44"]
-assignees:
-  - octocat
+labels: 
+projects: 
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
+         I haven't made any of the fields below mandatory, but the more infomation you give me, the better the chance I will be able to help! |See [this discussion](https://github.com/chrisgoringe/cg-use-everywhere/discussions/294) for more details.
   - type: input
     id: contact
     attributes:
