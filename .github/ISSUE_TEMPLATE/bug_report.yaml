@@ -14,7 +14,7 @@ body:
 - type: markdown
   attributes:
     value: --- |
-    *Versions* |
+    _Versions_ |
     You can find the ComfyUI and ComfyUI_frontend numbers in `Settings -> About`, and the Use Everywhere version in `Settings -> Use Everywhere`.
 - type: input
   id: version
@@ -35,7 +35,7 @@ body:
 - type: markdown
   attributes:
     value: --- |
-    *Console Log* |
+    _Console Log_ |
     Press f12 on your browser when the bug occurs and see if there is anthing in the console that looks like it might be relevant - copy and paste it here if so.
 - type: textarea
   id: console
@@ -44,7 +44,7 @@ body:
 - type: markdown
   attributes:
     value: --- |
-    *Anything Else?* |
+    _Anything Else?_ |
     Anything else that might help - screenshots, an example workflow (as simple as possible to illustrate the problem), anything you think might help.
 - type: textarea
   id: anythingelse
