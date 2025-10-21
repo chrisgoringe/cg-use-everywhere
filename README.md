@@ -31,7 +31,14 @@ This is what the default wan 2.2 s2v video workflow looks like:
 
 ---
 
-# 7.x Updates
+# Recent Changes
+
+If upgrading from before version 7, see the end of this document for the major changes in v7.
+
+## 7.4
+
+- Added broadcasting for Subgraphs
+- Added negative regex option
 
 ## 7.3
 
@@ -64,43 +71,6 @@ Bugfixes:
 
 ---
 
-# Anything Everywhere v7
-
-Version 7 is a major update to the Anything Everywhere nodes, so the documentation below is all new. If you are looking for the old docs, you can find them [here](https://github.com/chrisgoringe/cg-use-everywhere/README-old).
-
-If you are new to Anything Everywhere, skip to [Anything Everywhere](#anything-everywhere).
-
-## Major changes
-
-If you used Anything Everywhere prior to v7, the major improvements are:
-
-- The `Anything Everywhere3` and `Anything Everywhere?` nodes are deprecated, as their features are now part of the standard `Anything Everywhere` node.
-- `Anything Everywhere` nodes now have dynamic inputs, so you can plug as many different things into them as you like.
-- All the restrictions on what nodes data will be sent to are now in a restrictions editor, that can be accessed through the right click menu of the node, or by double-clicking the body of the node.
-  - In the restrictions editor you can set title, input, and group regexes, color restrictions, group restrictions, and priority (for when two nodes both match)
-  - The green circle is used to indicate that _any_ restrictions are in place; if you hover over a node with restrictions they will appear in a tooltip
-- Subgraphs are supported (in the majority of cases). Yay subgraphs! Seriously, they are _so_ much better than group nodes.
-  - There are lots of odd cases with subgraphs, so if you find a case not covered properly, please [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues)
-
-There are a couple of features that have been removed:
-
-- Group nodes are no longer supported, as they are deprecated in ComfyUI in favour of the new subgraphs, which are supported (in most configurations)
-- The `Simple String` mechanism to provide an input to the regex of an `Anything Everywhere?` node is no longer supported
-  - Other UI mechanisms to address this need are under consideration
-
-## Upgrade considerations
-
-Other than the limitations noted, old workflows _should_ load and work out of the box, 
-with `Anything Everywhere3` and `Anything Everywhere?` nodes automatically converted to `Anything Everywhere` nodes with the appropriate restrictions applied.
-
-However, there may be edge cases that don't work; if you have any problems, please [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues).
-
-You will _not_ be able to use workflows saved using v7 with older versions of ComfyUI or older versions of UE.
-
-**Group Nodes are no longer supported**
-
----
-
 # Anything Everywhere
 
 The `Anything Everywhere` node takes one or more inputs (currently limited to one input of any data type) and sends the data to other nodes that need it. 
@@ -130,7 +100,7 @@ These restrictions can be accessed by double-clicking the body of the node, or t
 ![restrictions](docs/restrictions.png)
 
 The first three entries are [regex](https://regex101.com/) patterns. 
-The node will only send data to another node if the regex matches the receiving node title, the name of the input, or the name of a group the receiving node is in, respectively.
+The node will only send data to another node if the regex matches the receiving node title, the name of the input, or the name of a group the receiving node is in, respectively. Check the 'invert' checkbox to invert the regex (send only to things which _don't_ match).
 
 The Group and Colour restrictions will constrain the node to only send to nodes in (or not in) the same group, and of the same (or different) colour.
 
@@ -158,6 +128,8 @@ You can see this prority in the restrictions dialog, and you can choose to repla
 
 If two more more `Anything Everywhere` nodes match the same input, the higher priority node is used. If there is a tie, _no connection is made_.
 When there is a tie, if you right-click on the canvas you will find an option to show which nodes are the problem.
+
+---
 
 ## Special Case Nodes
 
@@ -228,6 +200,16 @@ It can now broadcast to any node with the same input type (but remember you will
 ---
 
 # Other features
+
+## Subgraph broadcasting
+
+If you create a subgraph, you can set it to broadcast with `Add UE broadcasting` in the right-click menu. 
+You can see a subgraph has broadcasting on by the pale green circle in the top left - if you add restrictions, 
+that circle will be bold, like it is on a UE node.
+
+When broadcasting, the subgraph acts like all its outputs were connected to a single UE node, so
+
+![with](docs/broadcaston.png) is equivalent to ![without](docs/broadcastoff.png).
 
 ## Third Party Integration - the UE API
 
@@ -334,3 +316,40 @@ The following people have contributed code or helpful discussions, without which
 - [JorgeR81](https://github.com/JorgeR81)
 
 Feel free to [make suggestions, or implement features](https://github.com/chrisgoringe/cg-use-everywhere/issues) to get your name added here!
+
+---
+
+# Anything Everywhere v7
+
+Version 7 is a major update to the Anything Everywhere nodes, so the documentation below is all new. If you are looking for the old docs, you can find them [here](https://github.com/chrisgoringe/cg-use-everywhere/README-old).
+
+If you are new to Anything Everywhere, skip to [Anything Everywhere](#anything-everywhere).
+
+## Major changes
+
+If you used Anything Everywhere prior to v7, the major improvements are:
+
+- The `Anything Everywhere3` and `Anything Everywhere?` nodes are deprecated, as their features are now part of the standard `Anything Everywhere` node.
+- `Anything Everywhere` nodes now have dynamic inputs, so you can plug as many different things into them as you like.
+- All the restrictions on what nodes data will be sent to are now in a restrictions editor, that can be accessed through the right click menu of the node, or by double-clicking the body of the node.
+  - In the restrictions editor you can set title, input, and group regexes, color restrictions, group restrictions, and priority (for when two nodes both match)
+  - The green circle is used to indicate that _any_ restrictions are in place; if you hover over a node with restrictions they will appear in a tooltip
+- Subgraphs are supported (in the majority of cases). Yay subgraphs! Seriously, they are _so_ much better than group nodes.
+  - There are lots of odd cases with subgraphs, so if you find a case not covered properly, please [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues)
+
+There are a couple of features that have been removed:
+
+- Group nodes are no longer supported, as they are deprecated in ComfyUI in favour of the new subgraphs, which are supported (in most configurations)
+- The `Simple String` mechanism to provide an input to the regex of an `Anything Everywhere?` node is no longer supported
+  - Other UI mechanisms to address this need are under consideration
+
+## Upgrade considerations
+
+Other than the limitations noted, old workflows _should_ load and work out of the box, 
+with `Anything Everywhere3` and `Anything Everywhere?` nodes automatically converted to `Anything Everywhere` nodes with the appropriate restrictions applied.
+
+However, there may be edge cases that don't work; if you have any problems, please [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues).
+
+You will _not_ be able to use workflows saved using v7 with older versions of ComfyUI or older versions of UE.
+
+**Group Nodes are no longer supported**
