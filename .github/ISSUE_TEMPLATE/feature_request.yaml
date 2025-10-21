@@ -1,0 +1,20 @@
+name: Feature Request
+description: Suggest a new feature for the UE nodes
+title: "[Feature]: "
+labels: 'Incoming'
+assignees: 'chrisgoringe'
+body:
+- type: textarea
+  id: description
+  attributes:
+    label: What do you want to see added to the UE nodes?
+
+- type: textarea
+  id: reason
+  attributes:
+    label: How will this help you, or other users?
+
+- type: textarea
+  id: anythingelse
+  attributes:
+    label: Anything else that might help - screenshots, workflow etc.
