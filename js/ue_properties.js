@@ -31,13 +31,14 @@ export function describe_restrictions(node) {
         ALL_REGEXES.forEach((r)=>{
             var reg = node.properties.ue_properties[`${r}_regex`]    
             if (reg && reg.length>0) {
-                const condition = i18n((node.properties.ue_properties[`${r}_regex_invert`]) ? "not match" : "match")
+                const condition = i18n((node.properties.ue_properties[`${r}_regex_invert`]) ? i18n("not match"): i18n("match"))
                 statements.push([`${i18n(r)} regex`, `${condition} ${reg}`])    
             }
         })
-        if (node.properties.ue_properties.group_restricted) statements.push(['group',i18n(GROUP_RESTRICTION_OPTIONS[node.properties.ue_properties.group_restricted])])
-        if (node.properties.ue_properties.color_restricted) statements.push(['color',i18n(COLOR_RESTRICTION_OPTIONS[node.properties.ue_properties.color_restricted])])
+        if (node.properties.ue_properties.group_restricted) statements.push([i18n('group'),i18n(GROUP_RESTRICTION_OPTIONS[node.properties.ue_properties.group_restricted])])
+        if (node.properties.ue_properties.color_restricted) statements.push([i18n('color'),i18n(COLOR_RESTRICTION_OPTIONS[node.properties.ue_properties.color_restricted])])
     }
+    if (node.properties.ue_properties.priority !== undefined) statements.push([i18n('priority'), node.properties.ue_properties.priority])  
     const table = create('table')
     statements.forEach((s)=>{
         const row = create('tr', null, table)

@@ -15,7 +15,7 @@ export function display_name(node) {
 function regex_for(node, k) {
     try {
         const w0 = node.properties.ue_properties[`${k}_regex`]
-        return (w0 && w0!='.*') ? {regex:new RegExp(w0), invert:node.properties.ue_properties[`${k}_regex_invert`]} : null;
+        return (w0 && w0!='.*') ? {regex:new RegExp(w0), invert:!!node.properties.ue_properties[`${k}_regex_invert`]} : null;
     } catch (e) {
         return null
     }
@@ -28,7 +28,7 @@ const PROMPT_REGEXES = [new RegExp(i18n_functional('prompt_regex')), new RegExp(
 function prompt_regex(node, i) {
     const reg = node.properties.ue_properties[`${P_REGEXES[i]}_regex`]
     if (reg) return {regex:new RegExp(reg), invert:node.properties.ue_properties[`${P_REGEXES[i]}_regex_invert`]}
-    else return {regex:i18n_functional_regex(`${P_REGEXES[i]}_regex`), invert:node.properties.ue_properties[`${P_REGEXES[i]}_regex_invert`]}
+    else return {regex:i18n_functional_regex(`${P_REGEXES[i]}_regex`), invert:!!node.properties.ue_properties[`${P_REGEXES[i]}_regex_invert`]}
 }
 
 
@@ -55,23 +55,23 @@ class UseEverywhere {
         try {
             if (this.output[0]==-10) {
                 this.description = `source subgraph input slot ${this?.output[1]} ` +
-                                `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index].name} (${this?.controller.id}.${this?.control_node_input_index}) ` +
+                                `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index]?.name} (${this?.controller?.id}.${this?.control_node_input_index}) ` +
                                 `"${this.type}" <-  (priority ${this.priority})`;
             }
             else if (this.control_node_input_index>=0) {
-                this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]].name} (${this?.output[0]}.${this?.output[1]}) ` +
-                                `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index].name} (${this?.controller.id}.${this?.control_node_input_index}) ` +
+                this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]]?.name} (${this?.output[0]}.${this?.output[1]}) ` +
+                                `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index]?.name} (${this?.controller.id}.${this?.control_node_input_index}) ` +
                                 `"${this.type}" <-  (priority ${this.priority})`;
             } else {
-                this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]].name} (${this?.output[0]}.${this?.output[1]}) ` +
+                this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]]?.name} (${this?.output[0]}.${this?.output[1]}) ` +
                                 `"${this.type}" <-  (priority ${this.priority})`;
             }                
         } catch (e) {
             // for breakpointing
             throw e;
         }
-        if (this.title_regex) this.description += ` - node title regex '${this.title_regex.regex.source} ${(this.title_regex.invert) ? "(inverted)" : ""}'`;
-        if (this.input_regex) this.description += ` - input name regex '${this.input_regex.regex.source} ${(this.input_regex.invert) ? "(inverted)" : ""}''`;
+        if (this.title_regex) this.description += ` - node title regex '${this.title_regex.regex?.source} ${(this.title_regex.invert) ? "(inverted)" : ""}'`;
+        if (this.input_regex) this.description += ` - input name regex '${this.input_regex.regex?.source} ${(this.input_regex.invert) ? "(inverted)" : ""}''`;
     }
 
     sending_differs_from(another_ue) {
