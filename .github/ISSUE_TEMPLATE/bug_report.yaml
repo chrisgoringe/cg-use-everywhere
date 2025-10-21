@@ -15,7 +15,7 @@ body:
     
 - type: markdown
   attributes:
-    value: You can find the ComfyUI and ComfyUI_frontend numbers in Settings -> About, and the Use Everywhere version in Settings -> Use Everywhere.
+    value: ||You can find the ComfyUI and ComfyUI_frontend numbers in Settings -> About, and the Use Everywhere version in Settings -> Use Everywhere.
 
 - type: input
   id: version
