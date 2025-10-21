@@ -15,7 +15,7 @@ body:
 
 - type: markdown
   attributes:
-    value: "## Versions"
+    value: "# Versions"
 
 - type: markdown
   attributes:
@@ -40,6 +40,10 @@ body:
   id: OS
   attributes:
     label: Operating System and Browser
+
+- type: markdown
+  attributes:
+    value: "# Javascript Console"
     
 - type: markdown
   attributes:
@@ -50,6 +54,10 @@ body:
   attributes:
     label: Javascript Console Log
 
+- type: markdown
+  attributes:
+    value: "# Anything Else?"
+    
 - type: markdown
   attributes:
     value: Anything else that might help - screenshots, an example workflow (as simple as possible to illustrate the problem), anything you think might help.
