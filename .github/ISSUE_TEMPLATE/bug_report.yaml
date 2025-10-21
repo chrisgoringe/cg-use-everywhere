@@ -12,12 +12,14 @@ body:
   id: description
   attributes:
     label: Describe the bug
-    
+
 - type: markdown
   attributes:
-    value: |
-    |
-    You can find the ComfyUI and ComfyUI_frontend numbers in Settings -> About, and the Use Everywhere version in Settings -> Use Everywhere.
+    value: "## Versions"
+
+- type: markdown
+  attributes:
+    value: You can find the ComfyUI and ComfyUI_frontend numbers in Settings -> About, and the Use Everywhere version in Settings -> Use Everywhere.
 
 - type: input
   id: version
