@@ -1,12 +1,15 @@
 name: Bug Report
 description: Report a bug in the UE nodes
 title: "[Bug]: "
-labels: 
-projects: 
+labels: ["bug", "triage"]
+projects: ["octo-org/1", "octo-org/44"]
+assignees:
+  - octocat
 body:
   - type: markdown
     attributes:
-      value: The more infomation you give me, the better the chance I will be able to help!
+      value: |
+        Thanks for taking the time to fill out this bug report!
   - type: input
     id: contact
     attributes:
