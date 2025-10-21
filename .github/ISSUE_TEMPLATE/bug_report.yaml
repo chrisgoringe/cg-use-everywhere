@@ -13,7 +13,8 @@ body:
     label: Describe the bug
 - type: markdown
   attributes:
-    value: --- |
+    value: |
+    --- |
     Versions |
     You can find the ComfyUI and ComfyUI_frontend numbers in `Settings -> About`, and the Use Everywhere version in `Settings -> Use Everywhere`.
 - type: input
