@@ -2,7 +2,7 @@ name: Bug report
 about: 
 title: "[Bug]: "
 labels: ''
-assignees: ''
+assignees: 'chrisgoringe'
 body:
 - type: markdown
   attributes:
