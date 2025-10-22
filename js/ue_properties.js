@@ -133,9 +133,11 @@ function convert_node_types(node) {
         if (node.title=="Anything Everywhere3") node.title = "Anything Everywhere"
         node.type = "Anything Everywhere"        
     } else if (node.type=="Seed Everywhere") {
+        node.type = "PrimitiveInt"
+        node.properties.ue_convert = true
         node.properties.ue_properties.fixed_inputs = true
         node.properties.ue_properties.seed_inputs  = true
-        node.properties.ue_properties.input_regex  = node.properties.ue_properties.input_regex || i18n_functional('seed_input_regex')        
+        node.properties.ue_properties.input_regex  = node.properties.ue_properties.input_regex || i18n_functional('seed_input_regex')   
     } else if (node.type=="Prompts Everywhere") {
         node.properties.ue_properties.fixed_inputs   = true
         node.properties.ue_properties.prompt_regexes = true

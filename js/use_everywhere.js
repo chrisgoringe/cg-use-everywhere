@@ -120,29 +120,6 @@ app.registerExtension({
             node.properties.ue_properties = { widget_ue_connectable : {}, input_ue_unconnectable : {} }
         }
 
-
-
-        /* could drop all the rest of this because we have periodic outdatings */
-
-        /*
-        const original_afterChangeMade = node.afterChangeMade
-        node.afterChangeMade = (p, v) => {
-            original_afterChangeMade?.(p,v)
-            if (p==='mode') {
-                shared.linkRenderController.mark_link_list_outdated();
-                node.widgets?.forEach((widget) => {widget.onModeChange?.(v)}); // no idea why I have this?
-            }
-        }
-
-        // removing a node makes the list dirty
-        inject_outdating_into_object_method(node, 'onRemoved', `node ${node.id} removed`)
-
-
-
-        // creating a node makes the link list dirty
-        deferred_actions.push( { fn:shared.linkRenderController.mark_link_list_outdated, args:[]} ) 
-
-        */
     }, 
 
     // When a graph node is loaded convert it if needed
@@ -203,10 +180,13 @@ app.registerExtension({
             }
         }
 
+        /*
+        Before drawing the canvas, temporarily disable all the ue connected widgets  
+        so they get rendered as greyed out.
+        */
         const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
         LGraphCanvas.prototype.drawFrontCanvas = function() {
             try {
-                
                 shared.linkRenderController.disable_all_connected_widgets(true)
                 return original_drawFrontCanvas.apply(this, arguments);
             }  catch (e) {
@@ -235,8 +215,7 @@ app.registerExtension({
         }
         
         /* 
-        Canvas menu is the right click on backdrop.
-        We need to add our options, and hijack the others to mark link list dirty
+        Canvas menu is the right click on backdrop.  Add our settings there.
         */
         const original_getCanvasMenuOptions = LGraphCanvas.prototype.getCanvasMenuOptions;
         LGraphCanvas.prototype.getCanvasMenuOptions = function () {
@@ -255,6 +234,7 @@ app.registerExtension({
         so add a method that caches the names that can be used deep in the rendering code.
 
         TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
+        TODO: Or better maybe to retire this.
         */
         LGraphNode.prototype._getWidgetByName = function(nm) {
             if (this._widgetNameMap === undefined || !this._widgetNameMap[nm]) {
