@@ -4,14 +4,14 @@ import { api } from "../../scripts/api.js";
 import { shared } from "./shared.js";
 
 import { is_UEnode, inject, Logger, defineProperty, graphConverter, create } from "./use_everywhere_utilities.js";
-import { indicate_restriction, LinkRenderController } from "./use_everywhere_ui.js";
+import { title_bar_additions, LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_everywhere_settings.js";
 import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { visible_graph, fix_new_subgraph_node } from "./use_everywhere_subgraph_utils.js";
-import { any_restrictions, setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
+import { setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
 import { input_changed, fix_inputs } from "./connections.js";
@@ -19,22 +19,24 @@ import { comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
 import { ue_callbacks } from "./recursive_callbacks.js";
 
 /*
-Subgraphs need to have the onDrawTitleBar method for the UI. 
-This is called when they are created, and when they are reloaded.
+All nodes need the onDrawTitleBar method so they can show if they are broadcasting UE data.
 */
-export function add_ue_methods(node) {
-    if (node.ue_methods_added) return;
-    if (!node.subgraph) return;
-    node.ue_methods_added = true;
-    const original_onDrawTitleBar = node.onDrawTitleBar;
-    node.onDrawTitleBar = function(ctx, title_height) {
-        if (original_onDrawTitleBar) original_onDrawTitleBar.apply(this, arguments);
-        if (is_UEnode(this, true) && any_restrictions(this)) {
-            indicate_restriction(ctx, title_height);
-        } else if (this.properties.ue_convert) {
-            indicate_restriction(ctx, title_height, "rgba(102, 255, 102, 0.5)");
+function add_methods_to_all_nodes(node) {
+    if (node.ue_methods_added) return Logger.log_problem(`Node ${node.id} already has UE methods added`);
+
+    try {
+        add_extra_menu_items(node, inject_outdating_into_object_method) // right click menu additions
+        
+        const original_onDrawTitleBar = node.onDrawTitleBar;
+        node.onDrawTitleBar = function(ctx, title_height) {
+            if (original_onDrawTitleBar) original_onDrawTitleBar.apply(this, arguments);
+            title_bar_additions(node, ctx, title_height)
         }
+        node.ue_methods_added = true;
+    } catch (e) {
+        Logger.log_error(e);
     }
+    
 }
 
 /*
@@ -52,11 +54,11 @@ function inject_outdating_into_object_method(object, methodname, tracetext) {
 }
 
 class Deferred {
-    constructor() { this.deferred_actions = [] }
-    push(x) { this.deferred_actions.push(x) } // add action of the form: { fn:function, args:array }
+    constructor() { this.action_list = [] }
+    push(x) { this.action_list.push(x) } // add action of the form: { fn:function, args:array }
     execute() {
-        while (this.deferred_actions.length>0) {
-            const action = this.deferred_actions.pop()
+        while (this.action_list.length>0) {
+            const action = this.action_list.pop()
             try { action?.fn(...action?.args) } 
             catch (e) { Logger.log_error(e) }
         }
@@ -99,20 +101,6 @@ app.registerExtension({
                 return onConnectOutput?.apply(this,arguments)
             }
         }
-        
-        /*
-        Extra menu options are the node right click menu.
-        We add to this list, and also insert a link list outdate to everything.
-        */
-        add_extra_menu_items(nodeType.prototype, inject_outdating_into_object_method)
-
-        if (is_UEnode(nodeType)) {
-            const original_onDrawTitleBar = nodeType.prototype.onDrawTitleBar;
-            nodeType.prototype.onDrawTitleBar = function(ctx, title_height) {
-                original_onDrawTitleBar?.apply(this, arguments);
-                if (any_restrictions(this)) indicate_restriction(ctx, title_height);
-            }
-        }
 
         if (is_UEnode(nodeType)) {
             const onNodeCreated = nodeType.prototype.onNodeCreated;
@@ -125,10 +113,18 @@ app.registerExtension({
         }
     },
 
-    async nodeCreated(node) {
+    async nodeCreated(node) { // the node isn't part of the graph yet, so can't do anything involving id or links.
+        add_methods_to_all_nodes(node)
+
         if (!node.properties.ue_properties && !is_UEnode(node, false) && !shared.graph_being_configured) {
             node.properties.ue_properties = { widget_ue_connectable : {}, input_ue_unconnectable : {} }
         }
+
+
+
+        /* could drop all the rest of this because we have periodic outdatings */
+
+        /*
         const original_afterChangeMade = node.afterChangeMade
         node.afterChangeMade = (p, v) => {
             original_afterChangeMade?.(p,v)
@@ -141,11 +137,12 @@ app.registerExtension({
         // removing a node makes the list dirty
         inject_outdating_into_object_method(node, 'onRemoved', `node ${node.id} removed`)
 
-        // check if the extra menu_items have been added (catch subgraph niode creation)
-        add_extra_menu_items(node, inject_outdating_into_object_method)
 
-        // creating a node makes the link list dirty - but give the system a moment to finish
-        setTimeout( ()=>{shared.linkRenderController.mark_link_list_outdated()}, 100 );
+
+        // creating a node makes the link list dirty
+        deferred_actions.push( { fn:shared.linkRenderController.mark_link_list_outdated, args:[]} ) 
+
+        */
     }, 
 
     // When a graph node is loaded convert it if needed
@@ -273,7 +270,7 @@ app.registerExtension({
 
     init() {
         shared.graphAnalyser        = new GraphAnalyser();
-        shared.linkRenderController = new LinkRenderController(shared.graphAnalyser);
+        shared.linkRenderController = new LinkRenderController();
 
         const original_afterChange = app.graph.afterChange
         app.graph.afterChange = function () {
@@ -286,18 +283,19 @@ app.registerExtension({
             if (shared.prompt_being_queued) {
                 return await shared.graphAnalyser.graph_to_prompt( );
             } else {
+                Logger.log_problem("graphToPrompt called when !prompt_being_queued - why?")
                 return await original_graphToPrompt.apply(app, arguments);
             }
         }
         
-        app.ue_modified_prompt = async function () {
+        app.ue_modified_prompt = async function () { // API function
             return await shared.graphAnalyser.graph_to_prompt();
         }
 
         const original_queuePrompt = app.queuePrompt;
         app.queuePrompt = async function () {
-            shared.prompt_being_queued = true;
             try {
+                shared.prompt_being_queued = true;
                 return await original_queuePrompt.apply(app, arguments);
             } finally {
                 shared.prompt_being_queued = false;
@@ -339,7 +337,6 @@ app.registerExtension({
                 const r = original_subgraph.apply(this, arguments);
                 mods.restorer()
                 fix_new_subgraph_node(r.node)
-                add_ue_methods(r.node)
                 return r
             } finally {
                 shared.graphAnalyser.connect_to_bypassed = ctb_was
@@ -367,5 +364,3 @@ app.registerExtension({
     }
 
 });
-
-ue_callbacks.register_allnode_callback('afterConfigureGraph', add_ue_methods)

@@ -1,12 +1,13 @@
-import { Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, Pausable, is_UEnode } from "./use_everywhere_utilities.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { maybe_show_tooltip } from "./tooltip_window.js";
 import { is_connectable } from "./use_everywhere_settings.js";
 import { shared } from "./shared.js";
+import { any_restrictions } from "./ue_properties.js";
 
-function nodes_in_my_group(node) {
+export function nodes_in_my_group(node) {
     const nodes_in = new Set();
     node.graph._groups.forEach((group) => {
         if (!app.canvas.selected_group_moving) group.recomputeInsideNodes();
@@ -17,7 +18,7 @@ function nodes_in_my_group(node) {
     return [...nodes_in];
 }
 
-function nodes_not_in_my_group(node) {
+export function nodes_not_in_my_group(node) {
     const nid = nodes_in_my_group(node);
     const nodes_not_in = [];
     node.graph._nodes.forEach((nd) => {
@@ -26,7 +27,7 @@ function nodes_not_in_my_group(node) {
     return nodes_not_in;
 }
 
-function nodes_in_groups_matching(regex, already_limited_to) {
+export function nodes_in_groups_matching(regex, already_limited_to) {
     const nodes_in = new Set();
     app.graph._groups.forEach((group) => {
         if (regex.regex.test(group.title) != regex.invert) {
@@ -46,7 +47,7 @@ function nodes_in_groups_matching(regex, already_limited_to) {
 }
 
 
-function nodes_my_color(node, already_limited_to) {
+export function nodes_my_color(node, already_limited_to) {
     const nodes_in = new Set();
     const color = node.color;
     if (already_limited_to) {
@@ -61,7 +62,7 @@ function nodes_my_color(node, already_limited_to) {
     return [...nodes_in];
 }
 
-function nodes_not_my_color(node, already_limited_to) {
+export function nodes_not_my_color(node, already_limited_to) {
     const nodes_in = new Set();
     const color = get_real_node(node.id).color;
     if (already_limited_to) {
@@ -76,19 +77,27 @@ function nodes_not_my_color(node, already_limited_to) {
     return [...nodes_in];
 }
 
-function indicate_restriction(ctx, title_height, color) {
-    ctx.save();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = color || "#6F6";
-    ctx.beginPath();
-    ctx.roundRect(5,5-title_height,20,20,8);
-    ctx.stroke();
-    ctx.restore();
+export function title_bar_additions(node, ctx, title_height) {
+    if (is_UEnode(node, true)) {
+        const restricted = any_restrictions(node);
+        const sending    = shared.linkRenderController.node_sending_anywhere(node);
+
+        const color = restricted ? ( sending ? "rgba(255, 72, 72, 1)" : "rgba(255, 72, 72, 0.35)" ) :
+                                   ( sending ? "rgba(72, 255, 72, 1)" : "rgba(72, 255, 72, 0.35)" );
+
+        ctx.save();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(5,5-title_height,20,20,8);
+        ctx.stroke();
+        ctx.restore();
+    }
 }
 
-class LinkRenderController extends Pausable {
+export class LinkRenderController extends Pausable {
 
-    constructor(tga) {
+    constructor() {
         super('LinkRenderController')
         this.ue_list            = undefined; // the most current ue list - set to undefined if we know it is out of date
         this.last_used_ue_list  = undefined; // the last ue list we actually used to generate graphics
@@ -266,6 +275,11 @@ class LinkRenderController extends Pausable {
         return true;
     }
 
+    node_sending_anywhere(node) {
+        if (!this._list_ready()) return false;
+        return this.ue_list.node_sending_anywhere(node);
+    }
+
     node_in_ueconnection(ue_connection, id) {
         if (ue_connection.control_node?.id == id) return true
         if (ue_connection.sending_to?.id   == id) return true
@@ -413,8 +427,3 @@ function modify(c) {
     if (c.length==7) return c + "66"
     return c
 }
-
-
-
-export {/*update_input_label,*/ nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
-export{ LinkRenderController}

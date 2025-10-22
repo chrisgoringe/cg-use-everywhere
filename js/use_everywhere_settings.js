@@ -235,15 +235,13 @@ function non_ue_menu_settings(options, node) {
             }            
         )
     }
-    if (node.subgraph) {
-        options.push(
-            {
-                content: node.properties.ue_convert ? "Remove UE broadcasting" : "Add UE broadcasting",
-                has_submenu: false,
-                callback: () => { node.properties.ue_convert = !!!node.properties.ue_convert  },                
-            }
-        )
-    }
+    options.push(
+        {
+            content: node.properties.ue_convert ? "Remove UE broadcasting" : "Add UE broadcasting",
+            has_submenu: false,
+            callback: () => { node.properties.ue_convert = !!!node.properties.ue_convert  },                
+        }
+    )
 }
 
 

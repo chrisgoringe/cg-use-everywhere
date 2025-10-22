@@ -15,7 +15,7 @@ function create_element(tag, parent, options={}) {
     return elem
 }
 
-export function edit_restrictions(a,b,c,d, node) {
+export function edit_restrictions(a,b,c,d, node) { // a,b,c,d parameters are ignored - called from menu system
     edit_window.set_body(create_editor_html(node))
     edit_window.set_title(`Restrictions for node #${node.id}`)
     edit_window.maybe_move_to(app.canvas.mouse[0]+10, app.canvas.mouse[1]+10)

@@ -11,22 +11,22 @@ var mouse_pos     = [0,0]
 
 const ue_tooltip_element = create('span', 'ue_tooltip', document.body, {id:'ue_tooltip'})
 
-function show_tooltip(node) {
-    if (!node) return
+function show_tooltip() {
     ue_tooltip_element.style.display = "block"
-    ue_tooltip_element.style.left = `${mouse_pos.x+10}px`
-    ue_tooltip_element.style.top = `${mouse_pos.y+5}px`
+    ue_tooltip_element.style.left = `${mouse_pos[0]+10}px`
+    ue_tooltip_element.style.top = `${mouse_pos[1]+5}px`
     ue_tooltip_element.innerHTML = ""
-    ue_tooltip_element.appendChild(describe_restrictions(node))
-    ue_tooltip_element.showing = node.id
+    ue_tooltip_element.appendChild(describe_restrictions(app.canvas.node_over))
+    ue_tooltip_element.showing = true
 }
 
 function show_on_hover() {
-    if (mouse_pos.x==app.canvas.mouse[0] && mouse_pos.y==app.canvas.mouse[1]) {
-        show_tooltip(app.canvas.node_over)
-    } else if (app.canvas.node_over?.id == hover_node_id) {
-        mouse_pos = { x:app.canvas.mouse[0], y:app.canvas.mouse[1] }
-        setTimeout(show_on_hover, HOVERTIME)
+    if (!tooltipable()) return
+
+    if (mouse_pos[0]==app.canvas.mouse[0] && mouse_pos[1]==app.canvas.mouse[1]) {
+        show_tooltip()
+    } else {
+        maybe_show_tooltip()
     }
 }
 
@@ -34,22 +34,26 @@ function hide_tooltip() {
     var ue_tooltip_element = document.getElementById('ue_tooltip')
     if (ue_tooltip_element) {
         ue_tooltip_element.style.display = "none"
-        ue_tooltip_element.showing = null
+        ue_tooltip_element.showing = false
     }
 }
 
+function tooltipable() {
+    if (
+        (!app.canvas?.node_over)                                             ||
+        ( edit_window.showing)                                               ||
+        ( ue_tooltip_element.showing)                                        ||
+        (!settingsCache.getSettingValue('Use Everywhere.Graphics.tooltips')) ||
+        (!any_restrictions(app.canvas.node_over))
+    ) return false
+
+    return true
+}
+
 export function maybe_show_tooltip() {
-    if (!settingsCache.getSettingValue('Use Everywhere.Graphics.tooltips')) return
+    if (!tooltipable()) return hide_tooltip()
 
-    const node = app.canvas?.node_over
-    hover_node_id = node?.id
-
-    if (!node) return hide_tooltip()
-    if (edit_window.showing) return hide_tooltip()
-    if (!(is_UEnode(node, true) && any_restrictions(node))) return hide_tooltip()
-    
-    if (ue_tooltip_element.showing) return
-    
-    mouse_pos = { x:app.canvas.mouse[0], y:app.canvas.mouse[1] }
+    mouse_pos = [...app.canvas.mouse]
+    hover_node_id = app.canvas.node_over.id
     setTimeout(show_on_hover, HOVERTIME)
 }

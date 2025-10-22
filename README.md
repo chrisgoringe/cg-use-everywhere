@@ -1,43 +1,23 @@
 # UE Nodes
 
-Love this node? [Buy me a coffee!](https://www.buymeacoffee.com/chrisgoringe)
+## Love this node? 
 
-Getting started? Download the test workflow below and see how it works.
+[Buy me a coffee!](https://www.buymeacoffee.com/chrisgoringe)
 
-Problems? Jump down to [logging and debugging](https://github.com/chrisgoringe/cg-use-everywhere/blob/main/README.md#loggingdebugging)
+## Shameless plug
 
-Ideas for how to improve the nodes (or bug reports) - [raise an issue](https://github.com/chrisgoringe/cg-use-everywhere/issues)
-
-Shameless plug for another nodes -> Check out [Image Picker](https://github.com/chrisgoringe/cg-image-filter) for another way to make some workflows smoother. And leave a star if you like something!
-
----
-
-# TL;DR
-
-Here's the standard ComfyUI template modified to use `AnythingEverywhere`
-
-|workflow|output image you can drop into Comfy|
-|-|-|
-|![simple](docs/simple-example.png)|![simple](docs/simple-example-image.png)|
-
-The `MODEL`, `CLIP`, and `VAE` are automatically broadcast to all the places they are needed.
-
-Doesn't make much difference in this simple case, but with complex workflows it really does.
-This is what the default wan 2.2 s2v video workflow looks like:
-
-|before|after|
-|-|-|
-|![before](docs/before.png)|![after](docs/after.png)|
-
----
+Check out [Image Picker](https://github.com/chrisgoringe/cg-image-filter) for another way to make some workflows smoother.
 
 # Recent Changes
 
 If upgrading from before version 7, see the end of this document for the major changes in v7.
 
+<details>
+<summary>Changes since 7.0</summary>
+
 ## 7.4
 
-- Added broadcasting for Subgraphs
+- Added broadcasting from [any node](#any-node-broadcasting)
 - Added negative regex option
 
 ## 7.3
@@ -69,14 +49,49 @@ Bugfixes:
 - Fixed a number of minor subgraph issues
 - Fixed a serious bug with UE on Safari [details](https://github.com/chrisgoringe/cg-use-everywhere/issues/359)
 
----
+</details>
 
-# Anything Everywhere
+# What is Anything Everywhere?
 
-The `Anything Everywhere` node takes one or more inputs (currently limited to one input of any data type) and sends the data to other nodes that need it. 
-When you connect an input, a new one automatically appears.
+The `Anything Everywhere` node takes one or more inputs and sends the data to other nodes that need it. 
 
-## Where will the data be sent?
+<details>
+<summary>A quick example</summary>
+
+Here's the standard ComfyUI template modified to use `AnythingEverywhere`
+
+|workflow|output image you can drop into Comfy|
+|-|-|
+|![simple](docs/simple-example.png)|![simple](docs/simple-example-image.png)|
+
+The `MODEL`, `CLIP`, and `VAE` are automatically broadcast to all the places they are needed.
+
+Doesn't make much difference in this simple case, but with complex workflows it really does.
+This is what the default wan 2.2 s2v video workflow looks like:
+
+|before|after|
+|-|-|
+|![before](docs/before.png)|![after](docs/after.png)|
+</details>
+
+# Any node broadcasting
+
+<details>
+<summary>Any node can be set to broadcast</summary>
+
+As of version `7.4`, any node can be set to broadcast with `Add UE broadcasting` in the right-click menu. I find this really helpful for subgraphs especially.
+
+When broadcasting, the node acts like all its outputs were connected to a single UE node, so
+
+![with](docs/broadcaston.png) is equivalent to ![without](docs/broadcastoff.png).
+</details>
+
+# Where will the data be sent?
+
+<details>
+<summary>
+The key to using Anything Everywhere nodes
+</summary>
 
 By default the data will be sent to any input of the same data type which does not have a connection, and does not have a widget providing the value.
 
@@ -84,15 +99,6 @@ You can specify that an input should not accept data, or that one with a widget 
 the green bar indicates an input is connectable. The `Reject UE links` option can be used to make this node completely reject UE links, regardless of other settings.
 
 ![uec](docs/connectable.png)
-
-The node also has visual indications: a black ring and a glow on the input dot indicates it is connectable. 
-In the image below, `positive` has been set to not accept UE inputs, `steps` has been set to accept them, and `model` has a UE connection.
-
-![uec](docs/connectable2.png)
-
-If a widget is getting data from a UE connection, it is grayed out, like `steps` below:
-
-![uec](docs/connectable3.png)
 
 You can also constrain where the data gets send through  _restrictions_ applied to the `Anything Everywhere` node. 
 These restrictions can be accessed by double-clicking the body of the node, or through the right-click menu.
@@ -129,10 +135,47 @@ You can see this prority in the restrictions dialog, and you can choose to repla
 If two more more `Anything Everywhere` nodes match the same input, the higher priority node is used. If there is a tie, _no connection is made_.
 When there is a tie, if you right-click on the canvas you will find an option to show which nodes are the problem.
 
----
+</details>
 
-## Special Case Nodes
+# Graphics
 
+<details>
+<summary>How Anything Everywhere shows what it is doing</summary>
+
+## Show links - visualisation and animation.
+
+If you want to see the UE links, you can turn them on and off by right-clicking on the canvas. For finer control, the main settings menu has options to show links when the mouse moves over the node at either end, or when one of those nodes is selected.
+
+The links can be animated to distinguish them from normal links - this animation can take the form of moving dots, a pulsing glow, or both. This may impact performance in some cases - note that the pulse animation requires less processing than the moving dots. Control this in the main settings menu.
+
+By default the animations turn off when the workflow is running to minimise impact on CPU/GPU - you can change this in the settings too.
+
+## Node identification
+
+Any node that is capable of broadcasting data (a UE node, or another node to which braodcasting has been added) is marked with a circle in the top left hand corner.
+
+If the circle is green, the node has no additional restrictions on where data will be sent; 
+if it is red, there are one or more restrictions which you can see by hovering your mouse over it, or by editing restrictions 
+with the option on the right click menu, or by double clicking the node (unless this is set to do something else).
+
+## Input visual hints
+
+The state of inputs is represented visually: a black ring and a glow on the input dot indicates it is connectable. 
+In the image below, `positive` has been set to not accept UE inputs, `steps` has been set to accept them, and `model` has a UE connection.
+
+![uec](docs/connectable2.png)
+
+If a widget is getting data from a UE connection, it is grayed out, like `steps` below:
+
+![uec](docs/connectable3.png)
+</details>
+
+# Special Case Nodes
+
+<details>
+<summary>
+Two nodes that can be used in special cases
+</summary>
 These two nodes might go away in the future; if they do, workflows using them will be automatically updated with their replacements...
 
 ## Seed Everywhere
@@ -150,12 +193,14 @@ The actual regexes used are `(_|\\b)pos(itive|_|\\b)|^prompt|正面` and `(_|\\b
 |-|-|
 |![pe](docs/PE.png)|![pe](docs/conditioning.png)
 
----
+</details>
 
 # Options
 
+<details>
+<summary>
 In the main settings menu, you will find the Use Everywhere options:
-
+</summary>
 ![options](docs/options.png)
 
 The top set, `Graphics`, modify the visual appearance only. 
@@ -167,9 +212,14 @@ The bottom set, `Options`, modify behaviour:
 - Logging. Increase the logging level if you are asked to help debug.
 - Connect to bypassed nodes. When off, Use Everywhere will not connect to a bypassed node, and will attempt to work out whether an input is connected when upstream nodes are bypassed. I recommend turning this on.
 
----
+</details>
 
-# Primitives and COMBOs and the like
+# Primitives and COMBOs
+
+<details>
+<summary>
+Tips on using primitives, and how to broadcast COMBOs
+</summary>
 
 ![primitives](docs/primitives.png)
 
@@ -196,23 +246,14 @@ Disconnect the `Combo Clone` and  connect it to an `Anything Everywhere` node. T
 
 It can now broadcast to any node with the same input type (but remember you will have to mark the Combo widget as UE Connectable, since widgets are not connectable by default). 
 
-
----
+</details>
 
 # Other features
 
-## Subgraph broadcasting
-
-If you create a subgraph, you can set it to broadcast with `Add UE broadcasting` in the right-click menu. 
-You can see a subgraph has broadcasting on by the pale green circle in the top left - if you add restrictions, 
-that circle will be bold, like it is on a UE node.
-
-When broadcasting, the subgraph acts like all its outputs were connected to a single UE node, so
-
-![with](docs/broadcaston.png) is equivalent to ![without](docs/broadcastoff.png).
-
-## Third Party Integration - the UE API
-
+<details>
+<summary>
+Third Party Integration - the UE API
+</summary>
 At the suggestion of [@fighting-tx](https://github.com/fighting-tx), 
 I've added a method that third party nodes can use if they want to see the prompt as generated by UE. 
 It's attached to the `app` object, so you can check if it is present and use it something like this:
@@ -227,39 +268,23 @@ if (app.ue_modified_prompt) {
 ```
 
 Other methods could be exposed if there is interest - raise an issue if you'd like to see something. 
+</details>
 
-## Show links - visualisation and animation.
-
-If you want to see the UE links, you can turn them on and off by right-clicking on the canvas. For finer control, the main settings menu has options to show links when the mouse moves over the node at either end, or when one of those nodes is selected.
-
-The links can be animated to distinguish them from normal links - this animation can take the form of moving dots, a pulsing glow, or both. This may impact performance in some cases - note that the pulse animation requires less processing than the moving dots. Control this in the main settings menu.
-
-By default the animations turn off when the workflow is running to minimise impact on CPU/GPU - you can change this in the settings too.
-
-## Convert to real links
+<details>
+<summary>
+Convert to real links
+</summary>
 
 If you want to share a workflow without UE nodes being required, or to save an API version of a workflow, you can replace the virtual links created by UE nodes with real links (and remove the UE nodes).
 
 This can be done for a single node by right-clicking on it and selecting `Convert to real links`, or for all UE nodes in a graph or subgraph by right-clicking the background and selecting `Convert all UEs to real links`.
 
----
+</details>
 
-# Roadmap
+# Subgraph creation
 
-In the near future I hope to do the following:
-
-- Deprecate the `Seed Everywhere` node [385](https://github.com/chrisgoringe/cg-use-everywhere/issues/385)
-- Deprecate the `Prompts Everywhere` node [386](https://github.com/chrisgoringe/cg-use-everywhere/issues/386)
-- Negative regexes ('must not match') [335](https://github.com/chrisgoringe/cg-use-everywhere/issues/387)
-- Add a global variable system (so multiple node regexes can be changed with a single modification) [387](https://github.com/chrisgoringe/cg-use-everywhere/issues/387)
-
-Feel free to [make suggestions](https://github.com/chrisgoringe/cg-use-everywhere/issues)
-
----
-
-# More detailed notes on a few things
-
-## Subgraph creation
+<details>
+<summary>When you create a subgraph, Anything Everywhere nodes do their best...</summary>
 
 There are three nodes involved in every UE link: 
 - Source (the link sending the data), 
@@ -283,9 +308,12 @@ No* indicates a case that does not work, but might get implemented.
 
 No indicates a case I'm unlikely ever to support
 
----
+</details>
 
 # Reporting a bug well
+
+<details>
+<summary>What information to provide</summary>
 
 If you are having problems, the better information you give me, the more chance I can fix it! 
 
@@ -299,7 +327,7 @@ Read the list below and include anything that seems relevant. If you can't get t
 - press f12 and see if there are any errors in the javascript console that look like they might be relevant
 - look at the server (python) console log and see if there are any errors there
 
----
+</details>
 
 # Thanks to 
 
@@ -323,9 +351,8 @@ Feel free to [make suggestions, or implement features](https://github.com/chrisg
 
 Version 7 is a major update to the Anything Everywhere nodes, so the documentation below is all new. If you are looking for the old docs, you can find them [here](https://github.com/chrisgoringe/cg-use-everywhere/README-old).
 
-If you are new to Anything Everywhere, skip to [Anything Everywhere](#anything-everywhere).
-
-## Major changes
+<details>
+<summary>Major changes in v7</summary>
 
 If you used Anything Everywhere prior to v7, the major improvements are:
 
@@ -353,3 +380,5 @@ However, there may be edge cases that don't work; if you have any problems, plea
 You will _not_ be able to use workflows saved using v7 with older versions of ComfyUI or older versions of UE.
 
 **Group Nodes are no longer supported**
+
+</details>

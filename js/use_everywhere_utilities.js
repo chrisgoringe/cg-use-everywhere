@@ -346,7 +346,7 @@ export function get_connection(node, i) {
         var llink = graph.links[in_link]
         llink = handle_bypass(llink, llink.type, graph)
         if (!llink) {
-            Logger.log_problem(`handle_bypass failing - subgraph issue?`)
+            Logger.log(`handle_bypass failing - subgraph issue?`, null, true)
             llink = graph.links[in_link]
         }
         return { link:llink, type:llink.type }

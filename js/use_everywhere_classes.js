@@ -152,6 +152,10 @@ function validity_errors(params) {
 export class UseEverywhereList {
     constructor() { this.ues = []; this.unmatched_inputs = []; }
 
+    node_sending_anywhere(node) {
+        return this.ues.find((ue)=>(ue.controller?.id==node.id && ue.sending_to?.length>0)) ? true : false;
+    }
+
     differs_from(another_uel) {
         if (!another_uel || !another_uel.ues || !this.ues) return true;
         if (this.ues.length != another_uel.ues.length) return true;
@@ -183,19 +187,20 @@ export class UseEverywhereList {
 
         if (params.group_regex) params.restrict_to = nodes_in_groups_matching(params.group_regex, params.restrict_to, graph);
         
-        var error = ""
+        var fail = ""
         var ue = null;
         try {
             ue = new UseEverywhere(params);
-            error = validity_errors(params);
+            fail = validity_errors(params);
         } catch (e) {
-            error = `Error creating UseEverywhere object: ${e}`;
+            Logger.log_problem(`Error creating UseEverywhere object from node ${node.id}: ${e}`);
+            Logger.log_error(e);
         }
-        if (error==="") { 
+        if (fail==="") { 
             this.ues.push(ue);
             Logger.log_detail(`Added ${ue.description}`)
         } else {
-            Logger.log_problem(`Rejected ${ue?.description} because ${error}`);
+            Logger.log_info(`Rejected ${ue?.description} because ${fail}`);
         }
     }
 
