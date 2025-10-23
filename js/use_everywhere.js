@@ -1,7 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
-import { shared } from "./shared.js";
+import { shared, deferred_actions } from "./shared.js";
 
 import { is_UEnode, inject, Logger, defineProperty, graphConverter, create } from "./use_everywhere_utilities.js";
 import { title_bar_additions, LinkRenderController } from "./use_everywhere_ui.js";
@@ -53,20 +53,6 @@ function inject_outdating_into_object_method(object, methodname, tracetext) {
     if (object) inject(object, methodname, tracetext, shared.linkRenderController.mark_link_list_outdated, shared.linkRenderController);
 }
 
-class Deferred {
-    constructor() { this.action_list = [] }
-    push(x) { this.action_list.push(x) } // add action of the form: { fn:function, args:array }
-    execute() {
-        while (this.action_list.length>0) {
-            const action = this.action_list.pop()
-            try { action?.fn(...action?.args) } 
-            catch (e) { Logger.log_error(e) }
-        }
-    }
-}
-
-const deferred_actions = new Deferred()
-
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
     settings: SETTINGS, 
@@ -85,8 +71,6 @@ app.registerExtension({
                 if (!shared.graph_being_configured) {
                     // do the fix at the end of graph change
                     deferred_actions.push( { fn:fix_inputs, args:[this,"deferred onConnectionsChange",]} )
-                    // disconnecting doesn't trigger graphChange call?
-                    setTimeout(deferred_actions.execute.bind(deferred_actions), 100)
                 }
             }
             shared.linkRenderController?.mark_link_list_outdated();
@@ -252,10 +236,16 @@ app.registerExtension({
         shared.graphAnalyser        = new GraphAnalyser();
         shared.linkRenderController = new LinkRenderController();
 
+        const original_beforeChange = app.graph.beforeChange
+        app.graph.beforeChange = function () {
+            shared.in_midst_of_change = true
+            original_beforeChange?.apply(this, arguments)
+        }
+
         const original_afterChange = app.graph.afterChange
         app.graph.afterChange = function () {
-            deferred_actions.execute()
             original_afterChange?.apply(this, arguments)
+            shared.in_midst_of_change = false
         }
 
         const original_graphToPrompt = app.graphToPrompt;
