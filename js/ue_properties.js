@@ -18,9 +18,9 @@ function any_regex_restrictions(node) {
 
 export function any_restrictions(node) {
     return (
-        node.properties.ue_properties.group_restricted || 
-        node.properties.ue_properties.color_restricted || 
-        node.properties.ue_properties.priority         || 
+        node.properties.ue_properties?.group_restricted || 
+        node.properties.ue_properties?.color_restricted || 
+        node.properties.ue_properties?.priority         || 
         any_regex_restrictions(node)
     )
 }
