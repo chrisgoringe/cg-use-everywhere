@@ -101,7 +101,7 @@ class GraphAnalyser extends Pausable {
 
         graph.extra['ue_links'] = Array.from(links_added)
     
-        if (this.ambiguity_messages.length) Logger.log_problem("Ambiguous connections", this.ambiguity_messages, true);
+        if (this.ambiguity_messages.length) Logger.log_info("Ambiguous connections", this.ambiguity_messages, true);
  
         this.latest_ues = ues;
         return this.latest_ues;
