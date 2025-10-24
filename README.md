@@ -334,8 +334,7 @@ An Anything Everywhere node in your main graph can send to the input of a subgra
 you can also connect as Anything Everywhere node to one of the inputs inside a subgraph.
 
 You can connect an output of the subgraph node to an Anything Everywhere node (or set the subgraph node to broadcast), 
-but you can't broadcast data within the subgraph to its output panel (because of difficulties determining the type)
-although this may change [issue 405](https://github.com/chrisgoringe/cg-use-everywhere/issues/405).
+and you can broadcast from within the subgraph to the output panel of the subgraph.
 
 </details>
 
