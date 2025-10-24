@@ -54,9 +54,8 @@ Bugfixes:
 # What is Anything Everywhere?
 
 The `Anything Everywhere` node takes one or more inputs and sends the data to other nodes that need it. 
-
-<details>
-<summary>A quick example</summary>
+You can connect as many inputs to an `Anything Everywhere` node as you like, and there are a range of ways
+to control where the data will be sent.
 
 Here's the standard ComfyUI template modified to use `AnythingEverywhere`
 
@@ -72,36 +71,45 @@ This is what the default wan 2.2 s2v video workflow looks like:
 |before|after|
 |-|-|
 |![before](docs/before.png)|![after](docs/after.png)|
-</details>
 
 # Any node broadcasting
 
 <details>
-<summary>Any node can be set to broadcast</summary>
+<summary>New in version 7.4 - any node can broadcast itas outputs</summary>
 
 As of version `7.4`, any node can be set to broadcast with `Add UE broadcasting` in the right-click menu. I find this really helpful for subgraphs especially.
 
 When broadcasting, the node acts like all its outputs were connected to a single UE node, so
 
-![with](docs/broadcaston.png) is equivalent to ![without](docs/broadcastoff.png).
+|This...|...does the same as this|
+|-|-|
+|![with](docs/broadcaston.png)|![without](docs/broadcastoff.png)|
 </details>
 
 # Where will the data be sent?
 
+The key to using Anything Everywhere nodes is understanding where the data will be sent.
+
+By default the data will be sent to any input of the same data type which does not have a connection, 
+and does not have a widget providing the value.
+
 <details>
 <summary>
-The key to using Anything Everywhere nodes
+At the receiving end: you can specify that an input should not accept data, or that one with a widget should.
 </summary>
 
-By default the data will be sent to any input of the same data type which does not have a connection, and does not have a widget providing the value.
-
-You can specify that an input should not accept data, or that one with a widget should, via the `UE Connectable Inputs` menu: 
+In the `UE Connectable Inputs` menu (right-click on a node): 
 the green bar indicates an input is connectable. The `Reject UE links` option can be used to make this node completely reject UE links, regardless of other settings.
 
 ![uec](docs/connectable.png)
+</details>
 
-You can also constrain where the data gets send through  _restrictions_ applied to the `Anything Everywhere` node. 
-These restrictions can be accessed by double-clicking the body of the node, or through the right-click menu.
+<details>
+<summary>
+At the sending end, you can constrain where the data gets send through  restrictions applied to the `Anything Everywhere` node. 
+</summary>
+
+Restrictions can be accessed by double-clicking the body of the node, or through the right-click menu.
 
 ![restrictions](docs/restrictions.png)
 
@@ -123,11 +131,16 @@ so you can match `seed` to `seed` or `noise_seed` by naming the `Anything Everyw
 
 You can rename input slots by right-clicking on the input dot - but you can't rename widget inputs - this is a limitation imposed by ComfyUI ([discussion](https://github.com/Comfy-Org/ComfyUI_frontend/issues/3654)). The work-around is to rename the target node (or use multiple `Anything Everywhere` nodes with other constraints, especially color matching).
 
-`String to Combos` (default `no`) can be used to allow a `STRING` input to be sent to a `COMBO` widget. Since there may be a lot of combo widgets, this should be used with care - you will almost certainly want to use other restrictions (such as an `input regex`, or the `Repeated Types` constraint withj multiple strings (eg `sampler_name` and `scheduler`)). *No validation takes place* to ensure that the string sent is one of the combo options!
+`String to Combos` (default `no`) can be used to allow a `STRING` input to be sent to a `COMBO` widget. Since there may be a lot of combo widgets, this should be used with care - you will almost certainly want to use other restrictions (such as an `input regex`, or the `Repeated Types` constraint with multiple strings (eg `sampler_name` and `scheduler`)). *No validation takes place* to ensure that the string sent is one of the combo options!
 
-## Resolving clashes
+You are probably better off using the `Combo Clone` [helper node](#special-case-nodes)
 
-What if two or more `Anything Everywhere` nodes can send to the same input?
+</details>
+
+<details>
+<summary>
+What if two or more `Anything Everywhere` nodes can send to the same input? How are conflicts resolved?
+</summary>
 
 Each node has an automatically calculated priority - in general the more restrictive the node, the higher the priority.
 You can see this prority in the restrictions dialog, and you can choose to replace the automatically calculated value if you wish.
@@ -137,30 +150,39 @@ When there is a tie, if you right-click on the canvas you will find an option to
 
 </details>
 
-# Graphics
+# Visual Clues
+
+Anything Everywhere has a number of ways to help you visualise what it is doing.
 
 <details>
-<summary>How Anything Everywhere shows what it is doing</summary>
-
-## Show links - visualisation and animation.
+<summary>Show Anything Everywhere links</summary>
 
 If you want to see the UE links, you can turn them on and off by right-clicking on the canvas. For finer control, the main settings menu has options to show links when the mouse moves over the node at either end, or when one of those nodes is selected.
 
-The links can be animated to distinguish them from normal links - this animation can take the form of moving dots, a pulsing glow, or both. This may impact performance in some cases - note that the pulse animation requires less processing than the moving dots. Control this in the main settings menu.
+The links can be animated to distinguish them from normal links - this animation can take the form of moving dots, a pulsing glow, or both. This may impact performance in some cases - note that the pulse animation requires less processing than the moving dots. Control this in the main settings menu. 
 
-By default the animations turn off when the workflow is running to minimise impact on CPU/GPU - you can change this in the settings too.
+Animation takes quite a lot of processing, so don't use it unless you really need to. By default the animations turn off when the workflow is running to minimise impact on CPU/GPU - you can change this in the settings too.
+</details>
 
-## Node identification
+<details>
+<summary>Nodes that broadcast have a badge</summary>
 
-Any node that is capable of broadcasting data (a UE node, or another node to which braodcasting has been added) is marked with a circle in the top left hand corner.
+Any node that is capable of broadcasting data (a UE node, or another node to which broadcasting has been added) is marked with a circle in the top left hand corner.
 
 If the circle is green, the node has no additional restrictions on where data will be sent; 
-if it is red, there are one or more restrictions which you can see by hovering your mouse over it, or by editing restrictions 
-with the option on the right click menu, or by double clicking the node (unless this is set to do something else).
+if it is red, it has one or more restrictions (which you can see by hovering your mouse over it, or by editing restrictions 
+with the option on the right click menu, or by double clicking the node).
 
-## Input visual hints
+If the node is actually sending data, the circle (red or green) is bold; if the node is capable of sending but is not actually making
+and connections, it is muted.
 
-The state of inputs is represented visually: a black ring and a glow on the input dot indicates it is connectable. 
+![redgreen](docs/redgreen.png)
+</details>
+
+<details>
+<summary>Inputs have a subtle visual clue</summary>
+
+The state of inputs is also represented visually: a black ring and a glow on the input dot indicates it is connectable. 
 In the image below, `positive` has been set to not accept UE inputs, `steps` has been set to accept them, and `model` has a UE connection.
 
 ![uec](docs/connectable2.png)
@@ -173,64 +195,7 @@ If a widget is getting data from a UE connection, it is grayed out, like `steps`
 # Special Case Nodes
 
 <details>
-<summary>
-Two nodes that can be used in special cases
-</summary>
-These two nodes might go away in the future; if they do, workflows using them will be automatically updated with their replacements...
-
-## Seed Everywhere
-
-Seed Everywhere connects to any unconnected INT input which matches the regex `seed|随机种` (basically all the default seed input names). 
-It has the control_after_generate feature. So if you mark the seed widgets as allowing UE Connections, you can use the same seed everywhere.
-
-## Prompts Everywhere
-
-Prompt Everywhere has two inputs. They will be sent with regex matching rules designed to match `prompt` or `positive`, and `neg`, respectively.
-
-The actual regexes used are `(_|\\b)pos(itive|_|\\b)|^prompt|正面` and `(_|\\b)neg(ative|_|\\b)|负面`
-
-|strings|conditionings|
-|-|-|
-|![pe](docs/PE.png)|![pe](docs/conditioning.png)
-
-</details>
-
-# Options
-
-<details>
-<summary>
-In the main settings menu, you will find the Use Everywhere options:
-</summary>
-![options](docs/options.png)
-
-The top set, `Graphics`, modify the visual appearance only. 
-
-The bottom set, `Options`, modify behaviour:
-
-- When connecting, use the output slot's name as the input name. When a new connection is made to a UE node, the default is to name the input with the type. Select this option to use the output name of the node the link is from.
-- Block workflow validation. This prevents other nodes from complaining about the lack of connections, or creating them. If you turn this off, there may be unexpected consequences.
-- Logging. Increase the logging level if you are asked to help debug.
-- Connect to bypassed nodes. When off, Use Everywhere will not connect to a bypassed node, and will attempt to work out whether an input is connected when upstream nodes are bypassed. I recommend turning this on.
-
-</details>
-
-# Primitives and COMBOs
-
-<details>
-<summary>
-Tips on using primitives, and how to broadcast COMBOs
-</summary>
-
-![primitives](docs/primitives.png)
-
-UE nodes work with the primitives added in more recent versions of Comfy (in the `primitive` submenu), 
-but not the old-style `Primitive`, or reroute nodes.
-
-It is very unlikely this will ever change, as it relates to some issues deep within Comfy.
-
-As of version 7.2, Combo inputs are now supported via a new helper node, `Combo Clone`. 
-
-## Combo Clone
+<summary>To broadcast to COMBO (dropdown menu) widgets, you can either use String to Combos (above) or a Combo Clone</summary>
 
 For each Combo type you want to use, add a Combo Clone node. Here we want to be able to broadcast `sampler_name` and `scheduler`.
 
@@ -248,12 +213,79 @@ It can now broadcast to any node with the same input type (but remember you will
 
 </details>
 
+<details>
+<summary>Prompts Everywhere handles a positive and a negative prompt</summary>
+
+
+Prompt Everywhere has two inputs. They will be sent with regex matching rules designed to match `prompt` or `positive`, and `neg`, respectively.
+
+The actual regexes used are `(_|\\b)pos(itive|_|\\b)|^prompt|正面` and `(_|\\b)neg(ative|_|\\b)|负面`
+
+|strings|conditionings|
+|-|-|
+|![pe](docs/PE.png)|![pe](docs/conditioning.png)
+
+</details>
+
+
+<details>
+<summary>Seed Everywhere, Anything Everywhere? and Anything Everywhere3 are deprecated and will be automatically replaced</summary>
+
+The `Seed Everywhere` node will be replaced with a primitive int, set to broadcast, with an input regex restriction that matches the localised name of the `seed` input on the base `KSampler` node - `seed` or `随机种` being the most common.
+
+The `Anything Everywhere?` node will be replaced with an `Anything Everywhere` node with restrictions.
+
+The `Anything Everywhere3` node will be replaced with an `Anything Everywhere` node with multiple inputs and any appropriate restrictions.
+
+These replacements should not break any workflows. If they do... sorry.
+
+</details>
+
+
+# Options
+
+<details>
+<summary>
+In the main settings menu, you will find the Use Everywhere options:
+</summary>
+
+![options](docs/options.png)
+
+The top set, `Graphics`, modify the visual appearance only. 
+
+The bottom set, `Options`, modify behaviour:
+
+- When connecting, use the output slot's name as the input name. When a new connection is made to a UE node, the default is to name the input with the type. Select this option to use the output name of the node the link is from.
+- Block workflow validation. This prevents other nodes from complaining about the lack of connections, or creating them. If you turn this off, there may be unexpected consequences.
+- Logging. Increase the logging level if you are asked to help debug.
+- Connect to bypassed nodes. When off, Use Everywhere will not connect to a bypassed node, and will attempt to work out whether an input is connected when upstream nodes are bypassed. I recommend turning this on.
+
+</details>
+
+# Primitives and Reroutes
+
+<details>
+<summary>
+UE nodes work with the new primitives added in more recent versions of Comfy (in the `primitive` submenu)
+</summary>
+
+![primitives](docs/primitives.png)
+
+UE nodes do not work with the old-style `Primitive` nodes (which automatically determined what data type they needed to be),
+nor do they work with reroute nodes.
+
+In both cases that is dues to some issues that are deep within ComfyUI, related to the way that these nodes work out 
+the data type they represent, which makes it next to impossible for UE to correctly intereact with them.
+
+</details>
+
 # Other features
 
 <details>
 <summary>
 Third Party Integration - the UE API
 </summary>
+
 At the suggestion of [@fighting-tx](https://github.com/fighting-tx), 
 I've added a method that third party nodes can use if they want to see the prompt as generated by UE. 
 It's attached to the `app` object, so you can check if it is present and use it something like this:
@@ -275,15 +307,40 @@ Other methods could be exposed if there is interest - raise an issue if you'd li
 Convert to real links
 </summary>
 
-If you want to share a workflow without UE nodes being required, or to save an API version of a workflow, you can replace the virtual links created by UE nodes with real links (and remove the UE nodes).
+If you want to share a workflow without Anything Everywhere nodes being required, or to save an API version of a workflow, you can replace the virtual links created by Anything Everywhere nodes with real links (and remove the UE nodes).
 
 This can be done for a single node by right-clicking on it and selecting `Convert to real links`, or for all UE nodes in a graph or subgraph by right-clicking the background and selecting `Convert all UEs to real links`.
 
 </details>
 
-# Subgraph creation
+# Subgraphs
+
+Anything Everywhere works fairly well with the new subgraphs (and setting a subgraph to broadcast its outputs is very powerful!). 
+A couple of caveats:
 
 <details>
+<summary>Data is only broadcast within a graph</summary>
+
+Anything Everywhere will not make links from nodes in one graph into a different graph. So you cannot broadcast data into a subgraph, nor can you broadcast it out.
+
+This is a deliberate design decision, reflecting the fundamental principle of subgraphs - that they are self contained. 
+Data can only go in or out of a subgraph through its input and output panels. 
+This sort of data isolation is a very good thing in terms of maintaining a workflow, and by working consistently with the expectated
+behaviour of subgraphs it is far less like that future changes in the front end will break Anything Everywhere.
+
+This is not open for discussion. There are plenty of better ways to achieve the same end.
+
+An Anything Everywhere node in your main graph can send to the input of a subgraph node; 
+you can also connect as Anything Everywhere node to one of the inputs inside a subgraph.
+
+You can connect an output of the subgraph node to an Anything Everywhere node (or set the subgraph node to broadcast), 
+but you can't broadcast data within the subgraph to its output panel (because of difficulties determining the type)
+although this may change [issue 405](https://github.com/chrisgoringe/cg-use-everywhere/issues/405).
+
+</details>
+
+<details>
+
 <summary>When you create a subgraph, Anything Everywhere nodes do their best...</summary>
 
 There are three nodes involved in every UE link: 
@@ -312,22 +369,23 @@ No indicates a case I'm unlikely ever to support
 
 # Reporting a bug well
 
-<details>
-<summary>What information to provide</summary>
+If there is a bug in Anything Everywhere, I want to fix it. 
+But my ability to do so depends on the quality of the information I have.
 
-If you are having problems, the better information you give me, the more chance I can fix it! 
+Seriously, people submit bug reports which just say "It isn't working since I updated". 
+Well, it's working for me, so I don't have any idea what your problem is.
 
-Read the list below and include anything that seems relevant. If you can't get the information, that's ok, it just makes it less likely I'll be able to work out what's going on!
+Give me good information, and if I can reproduce the problem, there's a good chance I'll fix it (or suggest a work-around).
 
-- **describe what you did, what you expected, and what happened**
-- if you have a simple workflow that recreates the problem, that's a huge help
-- Comfy version information (in Settings - About, it looks like this:)
-![versions](https://github.com/user-attachments/assets/a16812a3-94c9-4eb7-8e0e-0d8b5319cd8f)
-- check your version of the node (look in the `Use Everywhere` settings)
-- press f12 and see if there are any errors in the javascript console that look like they might be relevant
-- look at the server (python) console log and see if there are any errors there
+So if you have a problem, go to [the issues page](https://github.com/chrisgoringe/cg-use-everywhere/issues), 
+click on `New Issue`, select, `Bug Report`, and fill in as much of the information as you can.
 
-</details>
+# Suggesting new features
+
+Go to [the issues page](https://github.com/chrisgoringe/cg-use-everywhere/issues), 
+click on `New Issue`, select, `Feature Request`, and tell me your idea. 
+If you can explain why the feature would be helpful to you, and ideally to others, I'm 
+much more likely to think about whether it's possible.
 
 # Thanks to 
 
