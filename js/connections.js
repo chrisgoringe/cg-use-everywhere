@@ -46,7 +46,7 @@ export function input_changed(node, slot, connect, link_info) {
         } else {
             if (in_slot.transient_label) {
                 in_slot.label = in_slot.transient_label
-            } else if (in_slot.label != i18n('anything')) {
+            } else if (in_slot.label && in_slot.label != i18n('anything')) {
                 // leave custom label alone
             } else if (app.ui.settings.getSettingValue("Use Everywhere.Options.use_output_name") && link_info) {
                 const out_slot = (link_info.origin_id==-10) ? 
