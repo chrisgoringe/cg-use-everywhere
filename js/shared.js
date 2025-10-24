@@ -1,3 +1,4 @@
+export const VERSION = "7.5"
 
 class Shared {
     graph_being_configured = false
@@ -28,4 +29,4 @@ export const deferred_actions = new Deferred()
 
 export const shared = new Shared()
 
-export const VERSION = "7.4"
+
