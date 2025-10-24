@@ -8,7 +8,9 @@ import { Logger, node_is_live, get_real_node, get_connection } from "./use_every
 export function display_name(node) { 
     if (node?.title) return node.title;
     if (node?.type) return node.type;
-    if (node?.properties['Node name for S&R']) return node.properties['Node name for S&R'];
+    if (node?.properties?.['Node name for S&R']) return node.properties['Node name for S&R'];
+    if (node?.id==-20) return "subgraph output node";
+    if (node?.id==-10) return "subgraph input node";
     return "un-nameable node";
 }
 
@@ -96,7 +98,7 @@ class UseEverywhere {
         if (this.output[0] == node.id) return false;
         if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;
         const input_label = input.label || input.localized_name || input.name;
-        const node_label = node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type);
+        const node_label = display_name(node) // node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type);
         if (this.title_regex) {
             if ( this.title_regex.regex.test(node_label) == this.title_regex.invert ) return false;
         }
@@ -129,8 +131,14 @@ class UseEverywhere {
         return true;
     }
     note_sending_to(node, input) {
-        const input_index = node.inputs.findIndex((n) => n.name==input.name);
-        this.sending_to.push({node:node, input:input, input_index:input_index})
+        var input_index
+        if (node.inputs) input_index = node.inputs.findIndex((n) => n.name==input.name);
+        else if (node.slots) input_index = node.slots.findIndex((n) => n.name==input.name);
+        if (input_index===undefined) {
+            Logger.log_problem(`UseEverywhere.note_sending_to could not find input index for node ${node.id} input ${input.name}`);
+        } else {
+            this.sending_to.push({node:node, input:input, input_index:input_index})
+        }
     }
     describe_sending(){
         var description = "  Linked to:";

@@ -187,7 +187,7 @@ export class LinkRenderController extends Pausable {
                         Logger.log_error(e);
                     }
                 } else {
-                    Logger.log_problem(`In disable_all_connected_widgets, couldn't find downstream node ${uel.downstream}`)
+                    if (uel.downstream >= 0) Logger.log_problem(`In disable_all_connected_widgets, couldn't find downstream node ${uel.downstream}`)
                 }
             })   
         } else {
@@ -409,7 +409,7 @@ export class LinkRenderController extends Pausable {
             }
 
         } catch (e) {
-            Logger.log_problem(`Couldn't render UE link ${ue_connection}. That's ok if something just got deleted.`);
+            Logger.log_error(e, `Couldn't render UE link ${ue_connection}. That's ok if something just got deleted.`);
         }
     }
 
