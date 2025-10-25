@@ -65,6 +65,9 @@ class GraphAnalyser extends Pausable {
 
         /* work around known bug in ComfyUI front end that doesn't clean up the linkIds
         https://github.com/Comfy-Org/ComfyUI_frontend/issues/5673#issuecomment-3314310014
+
+        Maybe fixed? Or maybe just for the input links?
+        https://github.com/Comfy-Org/ComfyUI_frontend/pull/6258 
         */
         if (graph.inputNode) {
             graph.inputNode.slots.forEach((slot)=>{

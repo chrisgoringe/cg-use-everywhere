@@ -1,5 +1,5 @@
 import { app } from "../../scripts/app.js";
-import { convert_to_links, remove_removable_ues } from "./use_everywhere_apply.js";
+import { convert_to_links } from "./use_everywhere_apply.js";
 import { Logger } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
@@ -197,7 +197,7 @@ function node_menu_settings(options, node) {
             callback: edit_restrictions,
         }        
     )
-    if (is_UEnode(node, false)) {
+    if (is_UEnode(node, true)) {
         options.push(
             {
                 content: "Convert to real links",
@@ -208,7 +208,11 @@ function node_menu_settings(options, node) {
                         alert("Convert failed - press f12 to see the console log")
                     } else {
                         convert_to_links(ues, node);
-                        visible_graph().remove(node);
+                        if (is_UEnode(node)) {
+                            visible_graph().remove(node);
+                        } else { 
+                            node.properties.ue_convert = false
+                        }
                     }
                 }
             }
@@ -244,6 +248,9 @@ function non_ue_menu_settings(options, node) {
     )
 }
 
+function remove_ue_nodes(graph) {
+    graph._nodes.filter((node)=>is_UEnode(node, false)).forEach((node)=>{graph.remove(node)})
+}
 
 export function canvas_menu_settings(options) {
     options.push(null); // divider
@@ -264,7 +271,7 @@ export function canvas_menu_settings(options) {
                     try {
                         const graph = visible_graph()
                         shared.graphAnalyser.modify_graph( graph )
-                        remove_removable_ues( graph )
+                        remove_ue_nodes( graph )
                     } finally {
                         app.graph.change();
                         shared.linkRenderController.unpause()
@@ -279,7 +286,7 @@ export function canvas_menu_settings(options) {
                     shared.linkRenderController.pause("convert");
                     try {
                         for_all_graphs(shared.graphAnalyser.modify_graph.bind(shared.graphAnalyser))
-                        for_all_graphs(remove_removable_ues)
+                        for_all_graphs(remove_ue_nodes)
                     } finally {
                         app.graph.change();
                         shared.linkRenderController.unpause()

@@ -304,9 +304,9 @@ export class UseEverywhereList {
             the_possibles.forEach((possible, i) => {
                 const connection = connection_finder(node, i);
                 if (connection.link) {
-                    const input_regex = (node.properties.ue_properties.prompt_regexes) ? prompt_regex(node,i) : undefined
+                    const input_regex = undefined
                     var additional_requirement = null
-                    if (duplicated_broadcasted_types.has(connection.type) && !node.properties.ue_properties.prompt_regexes) {
+                    if (duplicated_broadcasted_types.has(connection.type)) {
                         const input_name = possible.label || possible.name
                         const rule = node.properties.ue_properties?.repeated_type_rule || 0
                         if (rule == 0) { // 0 is exact match of input name

@@ -46,8 +46,10 @@ export function input_changed(node, slot, connect, link_info) {
         } else {
             if (in_slot.transient_label) {
                 in_slot.label = in_slot.transient_label
+                Logger.log("Restoring transient label")
             } else if (in_slot.label && in_slot.label != i18n('anything')) {
                 // leave custom label alone
+                Logger.log("Leaving custom label")
             } else if (app.ui.settings.getSettingValue("Use Everywhere.Options.use_output_name") && link_info) {
                 const out_slot = (link_info.origin_id==-10) ? 
                                     graph.inputNode?.allSlots[link_info.origin_slot] : 
@@ -61,9 +63,11 @@ export function input_changed(node, slot, connect, link_info) {
         }
     } else {
         in_slot.transient_label = in_slot.label
-        in_slot.label = i18n('anything');
-        in_slot.color_on = undefined;       
-        in_slot.type = '*'
+        if (is_removable(node, in_slot, slot)) {
+            in_slot.label = i18n('anything');
+            in_slot.color_on = undefined;       
+            in_slot.type = '*'
+        }
         setTimeout(()=>{in_slot.transient_label=null}, 100)
     }
 
@@ -86,7 +90,7 @@ function add_new_input(node) {
 }
 
 function remove_excess_input(node) {
-    const idx = node.inputs.findIndex((inputslot)=>(inputslot.type=='*'))
+    const idx = node.inputs.findIndex((inputslot, i)=>(is_removable(node,inputslot,i)))
     if (idx>=0) {
         try {
             Logger.log_info(`Removing excess anything input from node ${node.id} (${fix_call_message})`)
@@ -97,17 +101,24 @@ function remove_excess_input(node) {
     return false
 }
 
-/*
-This is called in various places (node load, creation, link change) to ensure there is exactly one empty input 
-*/
-
 var fix_call_message;
 
-function fix_star_inputs(node) {
-    node.inputs.filter((input)=>(!input.link)).forEach((input)=>{
+function to_keep(node, i) {
+    return (node.properties.ue_properties?.keep_inputs && node.properties.ue_properties?.keep_inputs.includes(i))
+}
+
+function is_removable(node, inputslot, i) {
+    return (inputslot.type=='*' && !to_keep(node,i))
+}
+
+function fix_unconnected_inputs(node) {
+    node.inputs.filter((input, i)=>(!input.link && !to_keep(node,i))).forEach((input)=>{
         input.type = '*'
-        input.label = i18n('anything');
+        input.label = i18n('anything')
     })
+}
+
+function fix_star_inputs(node) {
     node.inputs.filter((input)=>(input.type=='*' && input.link)).forEach((input)=>{
         const llink = node.graph.links[input.link]
         if (llink.type) input.type = llink.type
@@ -120,15 +131,16 @@ export function fix_inputs(node, message) {
     if (shared.graph_being_configured) return
     if (node.properties.ue_properties.fixed_inputs) return
 
+    fix_unconnected_inputs(node)
     fix_star_inputs(node)
 
-    const empty_inputs = node.inputs.filter((inputslot)=>(inputslot.type=='*'))
-    var excess_inputs = empty_inputs.length - 1
+    const empty_removable_inputs = node.inputs.filter((inputslot, i)=>(is_removable(node, inputslot, i)))
+    var excess_inputs = empty_removable_inputs.length - 1
     
     if (excess_inputs<0) {
-        if (add_new_input(node)) fix_inputs(node)
+        if (add_new_input(node)) fix_inputs(node, message)
     } else if (excess_inputs>0) {
-        if (remove_excess_input(node)) fix_inputs(node)
+        if (remove_excess_input(node)) fix_inputs(node, message)
     }
 
 }

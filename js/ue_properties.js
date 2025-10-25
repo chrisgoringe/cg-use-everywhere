@@ -133,14 +133,18 @@ function convert_node_types(node) {
         if (node.title=="Anything Everywhere3") node.title = "Anything Everywhere"
         node.type = "Anything Everywhere"        
     } else if (node.type=="Seed Everywhere") {
+        if (node.title=="Anything Everywhere3") node.title = "PrimitiveInt"
         node.type = "PrimitiveInt"
         node.properties.ue_convert = true
         node.properties.ue_properties.fixed_inputs = true
         node.properties.ue_properties.seed_inputs  = true
         node.properties.ue_properties.input_regex  = node.properties.ue_properties.input_regex || i18n_functional('seed_input_regex')   
     } else if (node.type=="Prompts Everywhere") {
-        node.properties.ue_properties.fixed_inputs   = true
-        node.properties.ue_properties.prompt_regexes = true
+        if (node.title=="Prompts Everywhere") node.title = "Anything Everywhere"
+        node.properties.ue_properties.fixed_inputs   = false
+        node.inputs[0].label = i18n_functional('positive')
+        node.inputs[1].label = i18n_functional('negative')
+        node.properties.ue_properties['keep_inputs'] = [0,1]
     }
 
     ALL_REGEXES.forEach((r)=>{
