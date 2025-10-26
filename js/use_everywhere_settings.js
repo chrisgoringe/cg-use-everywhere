@@ -217,7 +217,8 @@ function node_menu_settings(options, node) {
                 }
             }
         )
-    } else {
+    }
+    if (!is_UEnode(node, false)) {
         non_ue_menu_settings(options, node)
     }
 }
