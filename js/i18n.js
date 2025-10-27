@@ -51,7 +51,7 @@ function get_functional() {
     const nd = LiteGraph.createNode('KSampler')
     if (nd) {
         _FUNCTIONAL = {
-            seed_input_regex : `seed|${nd.inputs.find((i)=>(i.name=='positive')).localized_name}`,
+            seed_input_regex : `seed|${nd.inputs.find((i)=>(i.name=='seed')).localized_name}`,
             prompt_regex     : `(_|\\b)pos(itive|_|\\b)|${nd.inputs.find((i)=>(i.name=='positive')).localized_name}`,
             negative_regex   : `(_|\\b)neg(ative|_|\\b)|${nd.inputs.find((i)=>(i.name=='negative')).localized_name}`,
         }

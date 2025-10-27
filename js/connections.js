@@ -4,6 +4,7 @@ import { app } from "../../scripts/app.js";
 import { i18n } from "./i18n.js";
 import { shared } from "./shared.js";
 import { reset_comboclone_on_load, is_combo_clone } from "./combo_clone.js";
+import { ue_callbacks } from "./recursive_callbacks.js";
 
 function get_type(graph, link_info) {
     var type = null
@@ -32,6 +33,7 @@ Called by onConnectionsChange for a UE_Node when side == 1 (input).
 
 export function input_changed(node, slot, connect, link_info) {
     if (shared.graph_being_configured) return 
+    if (node.id==-1) return // this node isn't in the graph yet
     if (!node?.inputs) return Logger.log_problem(`input_changed called but node.inputs not retrievable`)
     const in_slot = node.inputs[slot]
     if (!in_slot) return Logger.log_problem(`input_changed called for node #${node.id} slot ${slot} but that wasn't found`)
@@ -39,18 +41,24 @@ export function input_changed(node, slot, connect, link_info) {
 
     if (connect) {
         const type = get_type(graph, link_info)
-        if (in_slot.transient_label) {
-            in_slot.label = in_slot.transient_label
-        } else if (app.ui.settings.getSettingValue("Use Everywhere.Options.use_output_name") && link_info) {
-            const out_slot = (link_info.origin_id==-10) ? 
-                                graph.inputNode?.allSlots[link_info.origin_slot] : 
-                                graph.getNodeById(link_info.origin_id)?.outputs[link_info.origin_slot]
-            in_slot.label = out_slot?.label || out_slot?.localized_name || out_slot?.name || i18n(type);
+        if (type=='*') {
+            // no real idea what to do
         } else {
-            in_slot.label = i18n(type);
+            if (in_slot.transient_label) {
+                in_slot.label = in_slot.transient_label
+            } else if (in_slot.label && in_slot.label != i18n('anything')) {
+                // leave custom label alone
+            } else if (app.ui.settings.getSettingValue("Use Everywhere.Options.use_output_name") && link_info) {
+                const out_slot = (link_info.origin_id==-10) ? 
+                                    graph.inputNode?.allSlots[link_info.origin_slot] : 
+                                    graph.getNodeById(link_info.origin_id)?.outputs[link_info.origin_slot]
+                in_slot.label = out_slot?.label || out_slot?.localized_name || out_slot?.name || i18n(type);
+            } else {
+                in_slot.label = i18n(type);
+            }
+            in_slot.color_on = app.canvas.default_connection_color_byType[type];
+            in_slot.type = type
         }
-        in_slot.color_on = app.canvas.default_connection_color_byType[type];
-        in_slot.type = type
     } else {
         in_slot.transient_label = in_slot.label
         in_slot.label = i18n('anything');
@@ -61,14 +69,11 @@ export function input_changed(node, slot, connect, link_info) {
 
 }
 
-
-export function post_configure_fixes(graph) {
-    graph.nodes.forEach((node) => {
-        if (is_combo_clone(node)) reset_comboclone_on_load(node)
-        if (is_UEnode(node))      fix_inputs(node, "post_configure_fixes")
-        if (node.subgraph) post_configure_fixes(node.subgraph)
-    })
+function post_configure_fixes(node) {
+    if (is_combo_clone(node)) reset_comboclone_on_load(node)
+    if (is_UEnode(node, false)) fix_inputs(node, "post_configure_fixes")
 }
+ue_callbacks.register_allnode_callback('afterConfigureGraph', post_configure_fixes)
 
 function add_new_input(node) {
     Logger.log_info(`Adding new anything input to node ${node.id} (${fix_call_message})`)
@@ -101,6 +106,7 @@ var fix_call_message;
 function fix_star_inputs(node) {
     node.inputs.filter((input)=>(!input.link)).forEach((input)=>{
         input.type = '*'
+        input.label = i18n('anything');
     })
     node.inputs.filter((input)=>(input.type=='*' && input.link)).forEach((input)=>{
         const llink = node.graph.links[input.link]

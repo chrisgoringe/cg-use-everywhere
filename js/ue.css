@@ -52,10 +52,34 @@
         content: ':';
     }
 
+    .ue_editor_body td {
+        select {
+            width: 100%;
+        }
+    }
+
     .ue_editor_footer {
         margin: 8px;
         border: thin solid white;
         padding: 2px 30px;
         background-color: rgba(0, 0, 0, 0.75);
     }
+
+    .regex_input_container {
+        display: flex;
+        width: 250px;
+        justify-content: space-between;
+        input {
+            flex-grow: 1;
+        }
+        span {
+            padding: 4px 8px 0px 0px;
+            font-size: 60%;
+        }
+        .checkbox {
+            flex-grow: 0;
+            margin-left: 0px;
+        }
+    }
+
 }

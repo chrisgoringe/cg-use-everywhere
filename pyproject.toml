@@ -1,7 +1,7 @@
 [project]
 name = "cg-use-everywhere"
 description = "A set of nodes that allow data to be 'broadcast' to some or all unconnected inputs. Greatly reduces link spaghetti."
-version = "7.3"
+version = "7.4"
 license = { file = "LICENSE" }
 dependencies = [
     "comfyui-frontend-package>=1.25.0"

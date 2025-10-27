@@ -2,6 +2,7 @@ import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { link_is_from_subgraph_input, visible_graph, wrap_input } from "./use_everywhere_subgraph_utils.js";
 import { i18n } from "./i18n.js";
+import { ue_callbacks } from "./recursive_callbacks.js";
 
 export function create( tag, clss, parent, properties ) {
     const nd = document.createElement(tag);
@@ -58,14 +59,15 @@ export class Logger {
         console.error(message)
     }
 
-    static log(message, foreachable, limited) {    
-        if (limited && Logger.check_limited()) return
+    static log(message, foreachable, limited) {
+        if (limited && Logger.check_limited()) return false
         console.log(message);
-        try {
-            foreachable?.forEach((x)=>{console.log(x)})
-        } catch {
-            let a;
-        }
+        foreachable?.forEach((x)=>{console.log(x)})
+        return true
+    }
+
+    static log_with_trace() { 
+        if (Logger.log(arguments)) console.trace()
     }
 
     static check_limited() {
@@ -81,7 +83,7 @@ export class Logger {
         Logger.level = new_level    
         Logger.log_detail  = (Logger.level>=3) ? Logger.log : Logger.null
         Logger.log_info    = (Logger.level>=2) ? Logger.log : Logger.null
-        Logger.log_problem = (Logger.level>=1) ? Logger.log : Logger.null
+        Logger.log_problem = (Logger.level>=1) ? Logger.log_with_trace : Logger.null
     }
 
     static log_detail(){}
@@ -172,7 +174,7 @@ class GraphConverter {
         if (node.properties?.ue_properties?.widget_ue_connectable) return
         if (node.properties?.widget_ue_connectable) return  // pre 7.0 node which will be converted
 
-        if (node.IS_UE) {
+        if (is_UEnode(node, false)) {
             if (node.properties?.ue_properties?.version) return
             this.clean_ue_node(node)
         }
@@ -197,16 +199,15 @@ class GraphConverter {
         }
     }
 
-    remove_saved_ue_links_recursively(graph) {
+    remove_saved_ue_links(graph) {
         if (graph.extra?.links_added_by_ue) {
             graph.extra.links_added_by_ue.forEach((link_id) => { app.graph.links.delete(link_id); })
         }
-        graph.nodes.filter((node)=>(node.subgraph)).forEach((node) => {this.remove_saved_ue_links_recursively(node.subgraph);});
     }
-
 }
 
 export const graphConverter = GraphConverter.instance();
+ue_callbacks.register_allgraph_callback('afterConfigureGraph', graphConverter.remove_saved_ue_links)
 
 /*
 Is a node alive (ie not bypassed or set to never)
@@ -264,7 +265,8 @@ export function is_connected(input, treat_bypassed_as_live, graph) {
 /*
 Is this a UE node?
 */
-export function is_UEnode(node_or_nodeType) {
+export function is_UEnode(node_or_nodeType, include_converts) {
+    if (include_converts && node_or_nodeType.properties?.ue_convert) return true;
     const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
     return ((title) && (title.startsWith("Anything Everywhere") || title==="Seed Everywhere" || title==="Prompts Everywhere"))
 }
@@ -344,7 +346,7 @@ export function get_connection(node, i) {
         var llink = graph.links[in_link]
         llink = handle_bypass(llink, llink.type, graph)
         if (!llink) {
-            Logger.log_problem(`handle_bypass failing - subgraph issue?`)
+            Logger.log(`handle_bypass failing - subgraph issue?`, null, true)
             llink = graph.links[in_link]
         }
         return { link:llink, type:llink.type }

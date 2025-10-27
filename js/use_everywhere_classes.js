@@ -1,6 +1,6 @@
 import { i18n_functional, i18n_functional_regex } from "./i18n.js";
 import { default_priority } from "./ue_properties.js";
-import { visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { connection_from_output_as_input, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
 import { Logger, node_is_live, get_real_node, get_connection } from "./use_everywhere_utilities.js";
 
@@ -15,11 +15,22 @@ export function display_name(node) {
 function regex_for(node, k) {
     try {
         const w0 = node.properties.ue_properties[`${k}_regex`]
-        return (w0 && w0!='.*') ? new RegExp(w0) : null;
+        return (w0 && w0!='.*') ? {regex:new RegExp(w0), invert:!!node.properties.ue_properties[`${k}_regex_invert`]} : null;
     } catch (e) {
         return null
     }
 }
+
+
+const P_REGEXES = ['prompt', 'negative']
+const PROMPT_REGEXES = [new RegExp(i18n_functional('prompt_regex')), new RegExp(i18n_functional('negative_regex'))]
+
+function prompt_regex(node, i) {
+    const reg = node.properties.ue_properties[`${P_REGEXES[i]}_regex`]
+    if (reg) return {regex:new RegExp(reg), invert:node.properties.ue_properties[`${P_REGEXES[i]}_regex_invert`]}
+    else return {regex:i18n_functional_regex(`${P_REGEXES[i]}_regex`), invert:!!node.properties.ue_properties[`${P_REGEXES[i]}_regex_invert`]}
+}
+
 
 /*
 The UseEverywhere object represents a single 'broadcast'. It generally contains
@@ -44,23 +55,23 @@ class UseEverywhere {
         try {
             if (this.output[0]==-10) {
                 this.description = `source subgraph input slot ${this?.output[1]} ` +
-                                `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index].name} (${this?.controller.id}.${this?.control_node_input_index}) ` +
+                                `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index]?.name} (${this?.controller?.id}.${this?.control_node_input_index}) ` +
                                 `"${this.type}" <-  (priority ${this.priority})`;
             }
             else if (this.control_node_input_index>=0) {
-                this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]].name} (${this?.output[0]}.${this?.output[1]}) ` +
-                                `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index].name} (${this?.controller.id}.${this?.control_node_input_index}) ` +
+                this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]]?.name} (${this?.output[0]}.${this?.output[1]}) ` +
+                                `-> control "${display_name(to_node)}", ${to_node.inputs[this?.control_node_input_index]?.name} (${this?.controller.id}.${this?.control_node_input_index}) ` +
                                 `"${this.type}" <-  (priority ${this.priority})`;
             } else {
-                this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]].name} (${this?.output[0]}.${this?.output[1]}) ` +
+                this.description = `source "${display_name(from_node)}", ${from_node.outputs[this?.output[1]]?.name} (${this?.output[0]}.${this?.output[1]}) ` +
                                 `"${this.type}" <-  (priority ${this.priority})`;
             }                
         } catch (e) {
             // for breakpointing
             throw e;
         }
-        if (this.title_regex) this.description += ` - node title regex '${this.title_regex.source}'`;
-        if (this.input_regex) this.description += ` - input name regex '${this.input_regex.source}'`;
+        if (this.title_regex) this.description += ` - node title regex '${this.title_regex.regex?.source} ${(this.title_regex.invert) ? "(inverted)" : ""}'`;
+        if (this.input_regex) this.description += ` - input name regex '${this.input_regex.regex?.source} ${(this.input_regex.invert) ? "(inverted)" : ""}''`;
     }
 
     sending_differs_from(another_ue) {
@@ -87,9 +98,9 @@ class UseEverywhere {
         const input_label = input.label || input.localized_name || input.name;
         const node_label = node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type);
         if (this.title_regex) {
-            if (!(this.title_regex.test(node_label))) return false;
+            if ( this.title_regex.regex.test(node_label) == this.title_regex.invert ) return false;
         }
-        if (node.type=="Highway" && typeof this.input_regex==='string') { // Highway nodes - broken if there are two matches...
+        /*if (node.type=="Highway" && typeof this.input_regex==='string') { // Highway nodes - broken if there are two matches...
             const input_label_split = input_label.split(':');
             if (input_label_split.length==1) {
                 if (input_label==this.input_regex) {
@@ -102,7 +113,7 @@ class UseEverywhere {
                 if ((input_label_split[0]==this.input_regex) && input_label_split[1]==input.type) return true;
                 return false;
             }
-        }
+        }*/
         if (this.type != input.type) {
             if (this.type=="STRING" && 
                 input.type=="COMBO" && 
@@ -112,8 +123,8 @@ class UseEverywhere {
                 return false
             }
         } 
-        if (this.input_regex && typeof this.input_regex==='string') return false; // input_regex started '+', which targets Highway nodes only
-        if (this.input_regex && !this.input_regex.test(input_label)) return false;
+        //if (this.input_regex && typeof this.input_regex==='string') return false; // input_regex started '+', which targets Highway nodes only
+        if (this.input_regex && ( this.input_regex.regex.test(input_label)==this.input_regex.invert )) return false;
         
         return true;
     }
@@ -140,6 +151,10 @@ function validity_errors(params) {
 
 export class UseEverywhereList {
     constructor() { this.ues = []; this.unmatched_inputs = []; }
+
+    node_sending_anywhere(node) {
+        return this.ues.find((ue)=>(ue.controller?.id==node.id && ue.sending_to?.length>0)) ? true : false;
+    }
 
     differs_from(another_uel) {
         if (!another_uel || !another_uel.ues || !this.ues) return true;
@@ -172,19 +187,20 @@ export class UseEverywhereList {
 
         if (params.group_regex) params.restrict_to = nodes_in_groups_matching(params.group_regex, params.restrict_to, graph);
         
-        var error = ""
+        var fail = ""
         var ue = null;
         try {
             ue = new UseEverywhere(params);
-            error = validity_errors(params);
+            fail = validity_errors(params);
         } catch (e) {
-            error = `Error creating UseEverywhere object: ${e}`;
+            Logger.log_problem(`Error creating UseEverywhere object from node ${node.id}: ${e}`);
+            Logger.log_error(e);
         }
-        if (error==="") { 
+        if (fail==="") { 
             this.ues.push(ue);
             Logger.log_detail(`Added ${ue.description}`)
         } else {
-            Logger.log_problem(`Rejected ${ue?.description} because ${error}`);
+            Logger.log_info(`Rejected ${ue?.description} because ${fail}`);
         }
     }
 
@@ -252,25 +268,38 @@ export class UseEverywhereList {
     }
 
     add_ue_from_node(node) {
-        const input_types = new Set()
-        const duplicated_input_types = new Set()
-        for (var i=0; i<node.inputs.length; i++) {
-            const connection = get_connection(node, i);
-            if (connection.link) {
-                if (input_types.has(connection.type)) duplicated_input_types.add(connection.type)
-                input_types.add(connection.type)
-            }
-        }
+
         if (node.properties.ue_properties.seed_inputs) {
-            this.add_ue(node, -1, "INT", [node.id.toString(),0], regex_for(node, 'input'));
+            this.add_ue(node, -1, "INT", [node.id.toString(),0], regex_for(node, 'input') );
         } else {
-            node.inputs.forEach((input, i) => {
-                const connection = get_connection(node, i);
+
+            var the_possibles
+            var connection_finder
+            if (node.properties.ue_convert) {
+                the_possibles = node.outputs
+                connection_finder = connection_from_output_as_input
+            } else {
+                the_possibles = node.inputs
+                connection_finder = get_connection  
+            }
+
+            const broadcasted_types = new Set()
+            const duplicated_broadcasted_types = new Set()
+            for (var i=0; i<the_possibles.length; i++) {
+                const connection = connection_finder(node, i);
+                if (connection.link) {
+                    if (broadcasted_types.has(connection.type)) duplicated_broadcasted_types.add(connection.type)
+                    broadcasted_types.add(connection.type)
+                }
+            }
+
+            the_possibles.forEach((possible, i) => {
+                const connection = connection_finder(node, i);
                 if (connection.link) {
                     const input_regex = (node.properties.ue_properties.prompt_regexes) ? prompt_regex(node,i) : undefined
                     var additional_requirement = null
-                    if (duplicated_input_types.has(connection.type) && !node.properties.ue_properties.prompt_regexes) {
-                        const input_name = input.label || input.name
+                    if (duplicated_broadcasted_types.has(connection.type) && !node.properties.ue_properties.prompt_regexes) {
+                        const input_name = possible.label || possible.name
                         const rule = node.properties.ue_properties?.repeated_type_rule || 0
                         if (rule == 0) { // 0 is exact match of input name
                             additional_requirement = (target_input) => { 
@@ -304,14 +333,5 @@ export class UseEverywhereList {
             })
         }
     }
-}
-
-const P_REGEXES = ['prompt', 'negative']
-const PROMPT_REGEXES = [new RegExp(i18n_functional('prompt_regex')), new RegExp(i18n_functional('negative_regex'))]
-
-function prompt_regex(node, i) {
-    const reg = node.properties.ue_properties[`${P_REGEXES[i]}_regex`]
-    if (reg) return new RegExp(reg)
-    else return i18n_functional_regex(`${P_REGEXES[i]}_regex`)
 }
 

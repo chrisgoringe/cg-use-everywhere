@@ -1,6 +1,5 @@
 import { app } from "../../scripts/app.js";
 import { display_name } from "./use_everywhere_classes.js";
-import { master_graph } from "./use_everywhere_subgraph_utils.js";
 import { is_UEnode, get_real_node, Logger } from "./use_everywhere_utilities.js";
 
 
@@ -38,13 +37,16 @@ export function convert_to_links(ues, control_node, graph) {
         if (!graph) graph = control_node.graph
         return _convert_graph_to_links(graph, ues, control_node.id );
     } else {
-        if (!graph) graph = master_graph();
+        if (!graph) graph = app.graph;
         return _convert_graph_to_links(graph, ues, undefined);
     }
 }
 
 function _convert_graph_to_links(graph, ues, control_node_id) {
-    if (!ues?.ues) return {restorer:function(){}, added_links:[]}
+    if (!ues?.ues) {
+        Logger.log_detail('no ues in _convert_graph_to_links')
+        return {restorer:function(){}, added_links:[]}
+    }
     const added_links = []
     const removed_links = []
     ues.ues.forEach((ue)=> {
@@ -120,13 +122,17 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
     return {restorer:restorer, added_links:added_links}
 }
 
-function remove_this(node, keep_seed_everywhere) {
-    return  (is_UEnode(node) && !(keep_seed_everywhere && node.comfyClass=="Seed Everywhere") ) 
+function is_removable_ue(node) {
+    return  (is_UEnode(node, false) && !(node.comfyClass=="Seed Everywhere") ) 
 }
 
 export function remove_all_ues(keep_seed_everywhere, graph, recurse) {
-    graph._nodes.filter((node)=>remove_this(node, keep_seed_everywhere)).forEach((node)=>{graph.remove(node)})
+    graph._nodes.filter((node)=>is_removable_ue(node, keep_seed_everywhere)).forEach((node)=>{graph.remove(node)})
     if (recurse) {
         graph._nodes.filter((node)=>(node.subgraph)).forEach((node)=>{remove_all_ues(keep_seed_everywhere, node.subgraph, recurse)})
     }
+}
+
+export function remove_removable_ues(graph) {
+    graph._nodes.filter((node)=>is_removable_ue(node, keep_seed_everywhere)).forEach((node)=>{graph.remove(node)})
 }

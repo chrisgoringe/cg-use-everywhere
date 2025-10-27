@@ -1,18 +1,15 @@
-from .use_everywhere import SeedEverywhere, AnythingEverywherePrompts
-from typing import Any
+from comfy_api.latest import ComfyExtension, io
+from .use_everywhere import SeedEverywhere, AnythingEverywhere, AnythingSomewhere, AnythingEverywhereTriplet, SimpleString, ComboClone, AnythingEverywherePrompts
 
-UE_VERSION = "7.3"
-
-NODE_CLASS_MAPPINGS:dict[str,Any] = { "Seed Everywhere": SeedEverywhere }
-
-from .use_everywhere import AnythingEverywhere, AnythingSomewhere, AnythingEverywhereTriplet, SimpleString, ComboClone
-NODE_CLASS_MAPPINGS["Anything Everywhere"] = AnythingEverywhere
-NODE_CLASS_MAPPINGS["Anything Everywhere3"] = AnythingEverywhereTriplet
-NODE_CLASS_MAPPINGS["Anything Everywhere?"] = AnythingSomewhere
-NODE_CLASS_MAPPINGS["Prompts Everywhere"] = AnythingEverywherePrompts
-NODE_CLASS_MAPPINGS["Simple String"] = SimpleString
-NODE_CLASS_MAPPINGS["Combo Clone"] = ComboClone
-
-
+UE_VERSION = "7.4"
 WEB_DIRECTORY = "./js"
-__all__ = ["NODE_CLASS_MAPPINGS", "WEB_DIRECTORY"]
+__all__ = [ "WEB_DIRECTORY"]
+
+async def comfy_entrypoint() -> ComfyExtension:
+    class UseEverywhereExtension(ComfyExtension):
+        async def get_node_list(self) -> list[type[io.ComfyNode]]:
+            return [
+                AnythingEverywhere, AnythingSomewhere, AnythingEverywhereTriplet, SimpleString, ComboClone, SeedEverywhere, AnythingEverywherePrompts
+            ]
+        
+    return UseEverywhereExtension()

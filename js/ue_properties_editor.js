@@ -3,11 +3,19 @@ import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPT
 import { app } from "../../scripts/app.js";
 import { default_priority } from "./ue_properties.js";
 import { edit_window } from "./floating_window.js";
+import { shared } from "./shared.js";
 
 const REGEXES = ['title', 'input', 'group']
 const P_REGEXES = ['prompt', 'negative']
 
-export function edit_restrictions(a,b,c,d, node) {
+function create_element(tag, parent, options={}) {
+    const elem = document.createElement(tag)
+    if (parent) parent.appendChild(elem)
+    Object.assign(elem, options)
+    return elem
+}
+
+export function edit_restrictions(a,b,c,d, node) { // a,b,c,d parameters are ignored - called from menu system
     edit_window.set_body(create_editor_html(node))
     edit_window.set_title(`Restrictions for node #${node.id}`)
     edit_window.maybe_move_to(app.canvas.mouse[0]+10, app.canvas.mouse[1]+10)
@@ -47,7 +55,7 @@ function changed(node, property, value) {
     const elem = document.getElementById(`${property}_value`)
     if (elem) elem.style.opacity = (value) ? "1" : "0.5"
 
-    LinkRenderController.instance().mark_link_list_outdated()
+    shared.linkRenderController.mark_link_list_outdated()
     app.canvas.setDirty(true,true)
 }
 
@@ -60,23 +68,41 @@ function create_editor_html(node) {
             for (var j=0; j<2; j++) {
                 const name = P_REGEXES[j]
                 const row = add_row(table, `${i18n(name)} regex`)
-                const input = document.createElement('input')
-                input.type = "text"
-                input.value = node.properties.ue_properties[`${name}_regex`] || i18n_functional(`${name}_regex`)
+
+                const input_props = {
+                    type:'text', 
+                    id:`${name}_regex_value`,
+                    value: node.properties.ue_properties[`${name}_regex`] || i18n_functional(`${name}_regex`),
+                }
+
+                const input = create_element('input', contents, input_props).
+                    addEventListener('input', (e)=>{ changed(node, `${name}_regex`, e.target.value)}) 
+ 
                 if (!node.properties.ue_properties[`${name}_regex`]) input.style.opacity = 0.5
-                input.id = `${name}_regex_value`
-                input.style.width = '250px'
-                input.addEventListener('input', ()=>{ changed(node, `${name}_regex`, input.value)})
+
                 add_cell(row,input)                
             }
         } else {
             const name = REGEXES[i]
             const row = add_row(table, `${i18n(name)} regex`)
-            const input = document.createElement('input')
-            input.type = "text"
-            input.value = node.properties.ue_properties[`${name}_regex`] || ''
-            input.addEventListener('input', ()=>{ changed(node, `${name}_regex`, input.value)})
-            add_cell(row,input)
+
+            const contents = create_element('span', null, {'className':'regex_input_container'})
+
+            const checkbox_props = {
+                type:'checkbox', 
+                id:`${name}_regex_invert`, 
+                checked: (node.properties.ue_properties[`${name}_regex_invert`]) ? true : undefined,
+                className: 'checkbox'
+            }
+            create_element('input', contents, checkbox_props).
+                addEventListener('input', (e)=>{ changed(node, `${name}_regex_invert`, e.target.checked); } )
+
+            create_element('span', contents, {innerText:i18n('Invert'), className:'regex_checkbox_label'})
+
+            create_element('input', contents, {type:'text', value:node.properties.ue_properties[`${name}_regex`] || ''}). 
+                addEventListener('input', (e)=>{ changed(node, `${name}_regex`, e.target.value)})
+
+            add_cell(row,contents)
         }
     }
 

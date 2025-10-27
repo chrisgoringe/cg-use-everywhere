@@ -1,11 +1,13 @@
-import { Logger, get_real_node, Pausable } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, Pausable, is_UEnode } from "./use_everywhere_utilities.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { in_visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { in_visible_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { maybe_show_tooltip } from "./tooltip_window.js";
 import { is_connectable } from "./use_everywhere_settings.js";
+import { shared } from "./shared.js";
+import { any_restrictions } from "./ue_properties.js";
 
-function nodes_in_my_group(node) {
+export function nodes_in_my_group(node) {
     const nodes_in = new Set();
     node.graph._groups.forEach((group) => {
         if (!app.canvas.selected_group_moving) group.recomputeInsideNodes();
@@ -16,7 +18,7 @@ function nodes_in_my_group(node) {
     return [...nodes_in];
 }
 
-function nodes_not_in_my_group(node) {
+export function nodes_not_in_my_group(node) {
     const nid = nodes_in_my_group(node);
     const nodes_not_in = [];
     node.graph._nodes.forEach((nd) => {
@@ -25,10 +27,10 @@ function nodes_not_in_my_group(node) {
     return nodes_not_in;
 }
 
-function nodes_in_groups_matching(regex, already_limited_to) {
+export function nodes_in_groups_matching(regex, already_limited_to) {
     const nodes_in = new Set();
     app.graph._groups.forEach((group) => {
-        if (regex.test(group.title)) {
+        if (regex.regex.test(group.title) != regex.invert) {
             if (!app.canvas.selected_group_moving) group.recomputeInsideNodes();
             /* 
             Note for optimisation - it would be more efficient to calculate what nodes are in what groups
@@ -45,7 +47,7 @@ function nodes_in_groups_matching(regex, already_limited_to) {
 }
 
 
-function nodes_my_color(node, already_limited_to) {
+export function nodes_my_color(node, already_limited_to) {
     const nodes_in = new Set();
     const color = node.color;
     if (already_limited_to) {
@@ -60,7 +62,7 @@ function nodes_my_color(node, already_limited_to) {
     return [...nodes_in];
 }
 
-function nodes_not_my_color(node, already_limited_to) {
+export function nodes_not_my_color(node, already_limited_to) {
     const nodes_in = new Set();
     const color = get_real_node(node.id).color;
     if (already_limited_to) {
@@ -75,26 +77,28 @@ function nodes_not_my_color(node, already_limited_to) {
     return [...nodes_in];
 }
 
-function indicate_restriction(ctx, title_height) {
-    ctx.save();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#6F6";
-    ctx.beginPath();
-    ctx.roundRect(5,5-title_height,20,20,8);
-    ctx.stroke();
-    ctx.restore();
+export function title_bar_additions(node, ctx, title_height) {
+    if (is_UEnode(node, true)) {
+        const restricted = any_restrictions(node);
+        const sending    = shared.linkRenderController.node_sending_anywhere(node);
+
+        const color = restricted ? ( sending ? "rgba(255, 72, 72, 1)" : "rgba(255, 72, 72, 0.35)" ) :
+                                   ( sending ? "rgba(72, 255, 72, 1)" : "rgba(72, 255, 72, 0.35)" );
+
+        ctx.save();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(5,5-title_height,20,20,8);
+        ctx.stroke();
+        ctx.restore();
+    }
 }
 
-class LinkRenderController extends Pausable {
-    static _instance;
-    static instance(tga) {
-        if (!this._instance) this._instance = new LinkRenderController();
-        if (tga && !this._instance.the_graph_analyser) this._instance.the_graph_analyser = tga;
-        return this._instance
-    }
+export class LinkRenderController extends Pausable {
+
     constructor() {
         super('LinkRenderController')
-        this.the_graph_analyser = null;
         this.ue_list            = undefined; // the most current ue list - set to undefined if we know it is out of date
         this.last_used_ue_list  = undefined; // the last ue list we actually used to generate graphics
         this.link_list_outdated = false;
@@ -143,7 +147,7 @@ class LinkRenderController extends Pausable {
 
     _request_link_list_update() {
         try {
-            const ues = this.the_graph_analyser.analyse_visible_graph()
+            const ues = shared.graphAnalyser.analyse_graph(visible_graph())
             if (ues==null) return false // graph analyser was paused
             this.ue_list = ues;
             if (this.ue_list.differs_from(this.last_used_ue_list)) app.graph.change();
@@ -263,12 +267,17 @@ class LinkRenderController extends Pausable {
     }
 
     _list_ready() {
-        if (!this.the_graph_analyser) return false; // we don't have the analyser yet (still loading)
+        if (!shared.graphAnalyser) return false; // we don't have the analyser yet (still loading)
         if (!this.ue_list) {
             this.mark_link_list_outdated();
             return false;
         }
         return true;
+    }
+
+    node_sending_anywhere(node) {
+        if (!this._list_ready()) return false;
+        return this.ue_list.node_sending_anywhere(node);
     }
 
     node_in_ueconnection(ue_connection, id) {
@@ -350,22 +359,29 @@ class LinkRenderController extends Pausable {
             /* this is the end node; get the position of the input */
             var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
 
-            /* get the position of the *input* that is being echoed - except for the Seed Anywhere node, 
-            which is displayed with an output: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...) */
-            const input_source = (ue_connection.control_node_input_index >= 0); 
-            const source_index = input_source ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
-            const pos1 = graph._nodes_by_id[ue_connection.control_node.id]?.getConnectionPos(input_source, source_index, this.slot_pos2);    
-
-            if (!pos1) {
+            const control_node = graph._nodes_by_id[ue_connection.control_node.id]
+            if (!control_node) {
                 Logger.problem(`Couldn't find position for UE link ${ue_connection}.`,null,true)
                 return;
             }
+
+
+            /* 
+                get the position of the *input* that is being echoed except for:
+                - the Seed Anywhere node: the class records control_node_input_index as -ve (-1 => 0, -2 => 1...)
+                - subgraph converts
+                those link to outputs
+            */
+            const input_source = (ue_connection.control_node_input_index >= 0 && !control_node.properties.ue_convert); 
+            const source_index = (ue_connection.control_node_input_index >= 0 ) ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
+            const pos1 = control_node.getConnectionPos(input_source, source_index, this.slot_pos2);    
+
 
             /* get the direction that we start and end */
             const delta_x = pos2[0] - pos1[0];
             const delta_y = pos2[1] - pos1[1];
             const end_direction = LiteGraph.LEFT; // always end going into an input
-            const sta_direction = ((Math.abs(delta_y) > Math.abs(delta_x))) ? 
+            const sta_direction = ((Math.abs(delta_y) > Math.abs(delta_x)) && input_source) ? 
                                         ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
                                         ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
 
@@ -411,8 +427,3 @@ function modify(c) {
     if (c.length==7) return c + "66"
     return c
 }
-
-
-
-export {/*update_input_label,*/ nodes_in_my_group, nodes_not_in_my_group, nodes_in_groups_matching, nodes_my_color, nodes_not_my_color, indicate_restriction}
-export{ LinkRenderController}

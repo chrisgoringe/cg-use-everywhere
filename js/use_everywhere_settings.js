@@ -1,14 +1,13 @@
 import { app } from "../../scripts/app.js";
-import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
-import { LinkRenderController } from "./use_everywhere_ui.js";
-import { convert_to_links, remove_all_ues } from "./use_everywhere_apply.js";
+import { convert_to_links, remove_removable_ues } from "./use_everywhere_apply.js";
 import { Logger } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { visible_graph, master_graph } from "./use_everywhere_subgraph_utils.js";
+import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { is_UEnode } from "./use_everywhere_utilities.js";
 import { i18ify_settings } from "./i18n.js";
-import { VERSION } from "./shared.js";
+import { VERSION, shared } from "./shared.js";
+import { for_all_graphs } from "./recursive_callbacks.js";
 
 const _SETTINGS = [
     {
@@ -164,7 +163,7 @@ function widget_ue_submenu(value, options, e, menu, node) {
         { event: e, callback: function (label) { 
             const name = label_to_name[label];
             toggle_connectable(node, name);
-            LinkRenderController.instance().mark_link_list_outdated();
+            shared.linkRenderController.mark_link_list_outdated();
             show_connectable(this.parentElement, node)
             return true; // keep open
         },
@@ -178,18 +177,48 @@ export function add_extra_menu_items(node_or_node_type, ioio) {
     const getExtraMenuOptions = node_or_node_type.getExtraMenuOptions;
     node_or_node_type.getExtraMenuOptions = function(_, options) {
         getExtraMenuOptions?.apply(this, arguments);
-        if (is_UEnode(this)) {
+        options.push(null);
+        if (is_UEnode(this, true)) {
             node_menu_settings(options, this);
         } else {
             non_ue_menu_settings(options, this);
         }
+        options.push(null);
         ioio(options,'callback',`menu option on ${this.id}`);
     }
     node_or_node_type.ue_extra_menu_items_added = true
 }
 
-export function non_ue_menu_settings(options, node) {
-    options.push(null);
+
+function node_menu_settings(options, node) {
+    options.push(
+        {
+            content: "Edit restrictions",
+            callback: edit_restrictions,
+        }        
+    )
+    if (is_UEnode(node, false)) {
+        options.push(
+            {
+                content: "Convert to real links",
+                callback: async () => {
+                    const ues = shared.graphAnalyser.analyse_graph(visible_graph());
+                    if (ues===null) {
+                        Logger.log_problem("Convert to real links failed to get ues")
+                        alert("Convert failed - press f12 to see the console log")
+                    } else {
+                        convert_to_links(ues, node);
+                        visible_graph().remove(node);
+                    }
+                }
+            }
+        )
+    } else {
+        non_ue_menu_settings(options, node)
+    }
+}
+
+function non_ue_menu_settings(options, node) {
     options.push(
         {
             content: node.properties.rejects_ue_links ? "Allow UE Links" : "Reject UE Links",
@@ -206,29 +235,15 @@ export function non_ue_menu_settings(options, node) {
             }            
         )
     }
-    options.push(null);
-}
-
-export function node_menu_settings(options, node) {
-    options.push(null);
     options.push(
         {
-            content: "Edit restrictions",
-            callback: edit_restrictions,
-        }        
-    )
-    options.push(
-        {
-            content: "Convert to real links",
-            callback: async () => {
-                const ues = GraphAnalyser.instance().wait_to_analyse_visible_graph();
-                convert_to_links(ues, node);
-                visible_graph().remove(node);
-            }
+            content: node.properties.ue_convert ? "Remove UE broadcasting" : "Add UE broadcasting",
+            has_submenu: false,
+            callback: () => { node.properties.ue_convert = !!!node.properties.ue_convert  },                
         }
     )
-    options.push(null);
 }
+
 
 export function canvas_menu_settings(options) {
     options.push(null); // divider
@@ -245,16 +260,15 @@ export function canvas_menu_settings(options) {
             content: "Convert all UEs (in this graph/subgraph) to real links",
             callback: async () => {
                 if (window.confirm("This will convert all links (in this graph/subgraph) created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
-                    const ues = GraphAnalyser.instance().wait_to_analyse_visible_graph();
-                    LinkRenderController.instance().pause("convert");
+                    shared.linkRenderController.pause("convert");
                     try {
-                        convert_to_links(ues, visible_graph());
-                        remove_all_ues(true, visible_graph());
+                        const graph = visible_graph()
+                        shared.graphAnalyser.modify_graph( graph )
+                        remove_removable_ues( graph )
                     } finally {
                         app.graph.change();
-                        LinkRenderController.instance().unpause()
+                        shared.linkRenderController.unpause()
                     }
-                    
                 }
             }
         },
@@ -262,24 +276,24 @@ export function canvas_menu_settings(options) {
             content: "Convert all UEs to real links",
             callback: async () => {
                 if (window.confirm("This will convert all links created by Use Everywhere to real links, and delete all the Use Everywhere nodes. Is that what you want?")) {
-                    LinkRenderController.instance().pause("convert");
+                    shared.linkRenderController.pause("convert");
                     try {
-                        GraphAnalyser.instance().modify_graphs_recursively(master_graph())
-                        remove_all_ues(true, master_graph(), true);
+                        for_all_graphs(shared.graphAnalyser.modify_graph.bind(shared.graphAnalyser))
+                        for_all_graphs(remove_removable_ues)
                     } finally {
                         app.graph.change();
-                        LinkRenderController.instance().unpause()
+                        shared.linkRenderController.unpause()
                     }
                     
                 }
             }
         },
     );
-    if (GraphAnalyser.instance().ambiguity_messages.length) {
+    if (shared.graphAnalyser.ambiguity_messages.length) {
         options.push({
             content: "Show UE broadcast clashes",
             callback: async () => { 
-                alert(GraphAnalyser.instance().ambiguity_messages.join("\n")) 
+                alert(shared.graphAnalyser.ambiguity_messages.join("\n")) 
             }
         })
     }
