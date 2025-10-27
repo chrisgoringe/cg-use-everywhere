@@ -15,6 +15,10 @@ If upgrading from before version 7, see the end of this document for the major c
 <details>
 <summary>Changes since 7.0</summary>
 
+## 7.5
+
+- Added per-output granularity to any-node broadcasting
+
 ## 7.4
 
 - Added broadcasting from [any node](#any-node-broadcasting)
@@ -84,6 +88,11 @@ When broadcasting, the node acts like all its outputs were connected to a single
 |This...|...does the same as this|
 |-|-|
 |![with](docs/broadcaston.png)|![without](docs/broadcastoff.png)|
+
+From `7.5`, the outputs that will broadcast can also be set (like inputs):
+
+![output_set](docs/output_set.png)
+
 </details>
 
 # Where will the data be sent?
@@ -180,7 +189,7 @@ and connections, it is muted.
 </details>
 
 <details>
-<summary>Inputs have a subtle visual clue</summary>
+<summary>Inputs and outputs have a subtle visual clue</summary>
 
 The state of inputs is also represented visually: a black ring and a glow on the input dot indicates it is connectable. 
 In the image below, `positive` has been set to not accept UE inputs, `steps` has been set to accept them, and `model` has a UE connection.
@@ -190,6 +199,12 @@ In the image below, `positive` has been set to not accept UE inputs, `steps` has
 If a widget is getting data from a UE connection, it is grayed out, like `steps` below:
 
 ![uec](docs/connectable3.png)
+
+Similarly, if a node has had broadcasting added to it, the outputs that can broadcast are shown: 
+here `merged` can broadcast, but isn't, `x` can broadcast and is, and `y` is set to not broadcast.
+
+![outputs](docs/outputs.png)
+
 </details>
 
 # Special Case Nodes

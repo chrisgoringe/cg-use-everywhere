@@ -3,7 +3,7 @@ import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { maybe_show_tooltip } from "./tooltip_window.js";
-import { is_connectable } from "./use_everywhere_settings.js";
+import { is_able_to_broadcast, is_connectable } from "./use_everywhere_settings.js";
 import { shared } from "./shared.js";
 import { any_restrictions } from "./ue_properties.js";
 
@@ -204,6 +204,8 @@ export class LinkRenderController extends Pausable {
             this.pause('highlight_ue_connections')
             if (!this._list_ready()) return;
 
+            // get all the inputs that can be connected and aren't
+            // connected with a 'real' link
             const unconnected_connectable_names = new Set(node.inputs
                 .filter((input)=>is_connectable(node,input.name))
                 .filter((input)=>(!input.link))
@@ -216,54 +218,47 @@ export class LinkRenderController extends Pausable {
  
                     const name_sent_to = node.inputs[ue_connection.input_index].name;
                     unconnected_connectable_names.delete(name_sent_to); // remove the name from the list of connectables
-                    var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
-                    pos2[0] -= node.pos[0];
-                    pos2[1] -= node.pos[1];
-                    ctx.save();
-                    ctx.lineWidth = 1;
-                    var radius=5
-                    ctx.strokeStyle = LGraphCanvas.link_type_colors[ue_connection.type];
-                    ctx.shadowColor = "white"; 
-                    ctx.shadowBlur = 10;
-                    ctx.shadowOffsetX = 0;
-                    ctx.shadowOffsetY = 0;
-                    ctx.beginPath();
-                    ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
-                    ctx.stroke();
-                    ctx.shadowBlur = 0;
-                    ctx.beginPath();
-                    ctx.strokeStyle = "black";
-                    ctx.shadowBlur = 0;
-                    radius = radius - 1;
-                    ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
-                    ctx.stroke();
+                    const pos2 = this._relative_connection_pos(node, true, ue_connection.input_index);
 
-                    ctx.restore();
+                    circle(ctx, pos2, {...CONNECTED_1, strokeStyle:LGraphCanvas.link_type_colors[ue_connection.type]})
+                    circle(ctx, pos2, {...CONNECTED_2})
                 });
             }
             
             unconnected_connectable_names.forEach((name) => {
                 const index = node.inputs.findIndex((i) => i.name == name);
-                var pos2 = node.getConnectionPos(true, index, this.slot_pos1);
-                pos2[0] -= node.pos[0];
-                pos2[1] -= node.pos[1];
-                ctx.save();
-                ctx.strokeStyle = "black"; 
-                ctx.shadowColor = "green"; 
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
-                var radius = 3;
-                ctx.beginPath();
-                ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
-                ctx.stroke();
-                ctx.restore();
+                const pos2 = this._relative_connection_pos(node, true, index);
+                circle(ctx, pos2, {...UNCONNECTED_CONNECTABLE})
             })
+
+            if (node.properties.ue_convert) {
+                const sending_slots = this.ue_list.all_sending_slots(node)
+
+                node.outputs.forEach((output,i) => {
+                    if (is_able_to_broadcast(node, output.name)) {
+                        const pos2 = this._relative_connection_pos(node, false, i);
+                        if (sending_slots.has(i)) {
+                            circle(ctx, pos2, {...CONNECTED_1, strokeStyle:LGraphCanvas.link_type_colors[node.outputs[i].type]})
+                            circle(ctx, pos2, {...CONNECTED_2})
+                        } else {
+                            circle(ctx, pos2, {...UNCONNECTED_CONNECTABLE})
+                        }
+             
+                    }
+                })
+            }
         } catch (e) {
             Logger.log_error(e);
         } finally {
             this.unpause()
         }
+    }
+
+    _relative_connection_pos(node, input, slot) {
+        var pos2 = node.getConnectionPos(input, slot, this.slot_pos1);
+        pos2[0] -= node.pos[0];
+        pos2[1] -= node.pos[1];
+        return pos2
     }
 
     _list_ready() {
@@ -420,6 +415,49 @@ export class LinkRenderController extends Pausable {
         const step = Math.ceil(f*2*max_blur) % (2*max_blur);
         ctx.shadowBlur = (step<max_blur) ? step + 4 : 3 + 2*max_blur - step;
     }
+}
+
+const UNCONNECTED_CONNECTABLE = {
+    radius        : 3,
+    strokeStyle   : "black",
+    shadowColor   : "green", 
+    shadowBlur    : 10,
+    shadowOffsetX : 0,
+    shadowOffsetY : 0,
+}
+
+const CONNECTED_1 = {
+    radius:5,
+    first_last:"first",
+    lineWidth:1, 
+    shadowColor : "white",
+    shadowBlur : 10,
+    shadowOffsetX : 0,
+    shadowOffsetY : 0,                        
+}
+
+const CONNECTED_2 = {
+    radius:4,
+    first_last:"last",
+    shadowBlur : 0,
+    strokeStyle : "black",
+}
+
+function circle(ctx, position, properties) {
+    const p = {...properties}
+
+    const radius     = p.radius
+    const first_last = p.first_last
+    delete p.radius
+    delete p.first_last
+
+    if (!first_last || first_last=='first') ctx.save()
+    Object.assign(ctx, p)
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(position[0]-radius,position[1]-radius,2*radius,2*radius,radius);
+    ctx.stroke();
+    if (!first_last || first_last=='last') ctx.restore()
 }
 
 function modify(c) {

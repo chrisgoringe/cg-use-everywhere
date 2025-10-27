@@ -127,7 +127,7 @@ function show_connectable(submenu_root, node) {
 export function is_connectable(node, input_name){
     const input = node.inputs.find(i => i.name==input_name);
     if (!input) {
-        Logger.log_error(`Can't find input ${label} on node ${node.title}`);
+        Logger.log_error(`Can't find input ${input_name} on node ${node.title}`);
         return false;
     }
     if (input.widget) {
@@ -171,6 +171,50 @@ function widget_ue_submenu(value, options, e, menu, node) {
     )
     show_connectable(submenu.root, node)
 }
+
+function show_broadcasting(submenu_root, node) {
+    node.outputs.forEach((input, i) => {
+        const current_element = submenu_root?.querySelector(`:nth-child(${i+1})`);
+        if (current_element) current_element.style.borderLeft = (is_able_to_broadcast(node,input.name)) ? "2px solid #484" : "";
+    })
+}
+
+export function is_able_to_broadcast(node, output_name) {
+    if (!node.properties.ue_convert) return false
+    const output = node.outputs.find(i => i.name==output_name);
+    if (!output) {
+        Logger.log_error(`Can't find output ${output_name} on node ${node.title}`);
+        return false;
+    }
+    return ! (node.properties?.ue_properties?.output_not_broadcasting?.[output_name])
+}
+
+function toggle_broadcasting(node, output_name){
+    const p = node.properties.ue_properties
+    p.output_not_broadcasting[output_name] = !!!p.output_not_broadcasting[output_name]
+}
+
+function output_ue_submenu(value, options, e, menu, node) {
+    if (!(node.properties.ue_properties)) node.properties.ue_properties = {}
+    if (!(node.properties.ue_properties.output_not_broadcasting)) node.properties.ue_properties.output_not_broadcasting = {};
+    
+    const label_to_name = {}
+    node.outputs.forEach((output) => {label_to_name[output.label || output.name] = output.name})
+    const submenu = new LiteGraph.ContextMenu(
+        Object.keys(label_to_name),
+        { event: e, callback: function (label) { 
+            const name = label_to_name[label];
+            toggle_broadcasting(node, name);
+            shared.linkRenderController.mark_link_list_outdated();
+            show_broadcasting(this.parentElement, node)
+            return true; // keep open
+        },
+        parentMenu: menu, node:node}
+    )
+    show_broadcasting(submenu.root, node)
+}
+
+
 
 export function add_extra_menu_items(node_or_node_type, ioio) {
     if (node_or_node_type.ue_extra_menu_items_added) return
@@ -244,9 +288,18 @@ function non_ue_menu_settings(options, node) {
         {
             content: node.properties.ue_convert ? "Remove UE broadcasting" : "Add UE broadcasting",
             has_submenu: false,
-            callback: () => { node.properties.ue_convert = !!!node.properties.ue_convert  },                
+            callback: () => { node.properties.ue_convert = !!!node.properties.ue_convert },                
         }
     )
+    if (node.properties.ue_convert) {
+        options.push(
+                {
+                    content: "Broadcasting Outputs",
+                    has_submenu: true,
+                    callback: output_ue_submenu,                
+                }
+            )
+    }
 }
 
 function remove_ue_nodes(graph) {

@@ -3,7 +3,6 @@ import { node_is_live, is_connected, is_UEnode, Logger, Pausable } from "./use_e
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { is_connectable } from "./use_everywhere_settings.js";
 import { for_all_graphs } from "./recursive_callbacks.js";
 
