@@ -266,11 +266,17 @@ export function is_connected(input, treat_bypassed_as_live, graph) {
 /*
 Is this a UE node?
 */
-export function is_UEnode(node_or_nodeType, include_converts) {
-    if (include_converts && node_or_nodeType.properties?.ue_convert) return true;
-    const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
-    return ((title) && (title.startsWith("Anything Everywhere") || title==="Seed Everywhere" || title==="Prompts Everywhere"))
+export function is_UEnode(node_or_nodeType) {
+    const type = node_or_nodeType.type || node_or_nodeType.comfyClass;
+    return ((type) && (type.startsWith("Anything Everywhere") || type==="Seed Everywhere" || type==="Prompts Everywhere"))
 }
+
+export function node_can_broadcast(node_or_nodeType) {
+    if (node_or_nodeType.properties?.ue_convert) return true;
+    return is_UEnode(node_or_nodeType)
+}
+
+
 
 /*
 Inject a call into a method on object with name methodname.

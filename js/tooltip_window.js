@@ -1,7 +1,7 @@
 
 import { any_restrictions, describe_restrictions } from "./ue_properties.js";
 import { app } from "../../scripts/app.js";
-import { create, is_UEnode } from "./use_everywhere_utilities.js";
+import { create } from "./use_everywhere_utilities.js";
 import { edit_window } from "./floating_window.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 

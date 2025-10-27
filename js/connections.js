@@ -75,7 +75,7 @@ export function input_changed(node, slot, connect, link_info) {
 
 function post_configure_fixes(node) {
     if (is_combo_clone(node)) reset_comboclone_on_load(node)
-    if (is_UEnode(node, false)) fix_inputs(node, "post_configure_fixes")
+    if (is_UEnode(node)) fix_inputs(node, "post_configure_fixes")
 }
 ue_callbacks.register_allnode_callback('afterConfigureGraph', post_configure_fixes)
 

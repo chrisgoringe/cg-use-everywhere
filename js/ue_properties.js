@@ -93,7 +93,7 @@ Convert node properties when loaded.
 export function setup_ue_properties_onload(node) {
     if (!node.properties?.ue_properties) node.properties.ue_properties = {}
     if ( !version_at_least(node.properties?.ue_properties?.version, "7.0") ) {
-        if (is_UEnode(node, false)) {
+        if (is_UEnode(node)) {
         // convert a pre 7.0 UE node
             node.properties.ue_properties = {
                 version               : VERSION,
@@ -123,7 +123,7 @@ export function setup_ue_properties_onload(node) {
 }
 
 function convert_node_types(node) {
-    if (!is_UEnode(node, false)) return
+    if (!is_UEnode(node)) return
 
     if (node.type=="Anything Everywhere?") {
         node.widgets.forEach((w)=>{w.hidden=true})

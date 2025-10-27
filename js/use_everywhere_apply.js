@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { display_name } from "./use_everywhere_classes.js";
-import { is_UEnode, get_real_node, Logger } from "./use_everywhere_utilities.js";
+import { get_real_node, Logger } from "./use_everywhere_utilities.js";
 
 
 function _convert_to_links(ue, added_links, removed_links) {

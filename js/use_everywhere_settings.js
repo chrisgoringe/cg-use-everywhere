@@ -1,10 +1,9 @@
 import { app } from "../../scripts/app.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
-import { Logger } from "./use_everywhere_utilities.js";
+import { Logger, is_UEnode, node_can_broadcast } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
-import { is_UEnode } from "./use_everywhere_utilities.js";
 import { i18ify_settings } from "./i18n.js";
 import { VERSION, shared } from "./shared.js";
 import { for_all_graphs } from "./recursive_callbacks.js";
@@ -222,10 +221,11 @@ export function add_extra_menu_items(node_or_node_type, ioio) {
     node_or_node_type.getExtraMenuOptions = function(_, options) {
         getExtraMenuOptions?.apply(this, arguments);
         options.push(null);
-        if (is_UEnode(this, true)) {
-            node_menu_settings(options, this);
-        } else {
-            non_ue_menu_settings(options, this);
+        if (node_can_broadcast(this)) {
+            add_restrictions_and_convert(options, this);
+        }
+        if (!is_UEnode(node)) {
+            add_input_and_output_settings(options, node)
         }
         options.push(null);
         ioio(options,'callback',`menu option on ${this.id}`);
@@ -234,76 +234,78 @@ export function add_extra_menu_items(node_or_node_type, ioio) {
 }
 
 
-function node_menu_settings(options, node) {
+function add_restrictions_and_convert(options, node) {
     options.push(
         {
             content: "Edit restrictions",
             callback: edit_restrictions,
         }        
     )
-    if (is_UEnode(node, true)) {
-        options.push(
-            {
-                content: "Convert to real links",
-                callback: async () => {
-                    const ues = shared.graphAnalyser.analyse_graph(visible_graph());
-                    if (ues===null) {
-                        Logger.log_problem("Convert to real links failed to get ues")
-                        alert("Convert failed - press f12 to see the console log")
-                    } else {
-                        convert_to_links(ues, node);
-                        if (is_UEnode(node)) {
-                            visible_graph().remove(node);
-                        } else { 
-                            node.properties.ue_convert = false
-                        }
+
+    options.push(
+        {
+            content: "Convert to real links",
+            callback: async () => {
+                const ues = shared.graphAnalyser.analyse_graph(visible_graph());
+                if (ues===null) {
+                    Logger.log_problem("Convert to real links failed to get ues")
+                    alert("Convert failed - press f12 to see the console log")
+                } else {
+                    convert_to_links(ues, node);
+                    if (is_UEnode(node)) {
+                        visible_graph().remove(node);
+                    } else { 
+                        node.properties.ue_convert = false
                     }
                 }
             }
-        )
-    }
-    if (!is_UEnode(node, false)) {
-        non_ue_menu_settings(options, node)
-    }
+        }
+    )
 }
 
-function non_ue_menu_settings(options, node) {
-    options.push(
-        {
-            content: node.properties.rejects_ue_links ? "Allow UE Links" : "Reject UE Links",
-            has_submenu: false,
-            callback: () => { node.properties.rejects_ue_links = !!!node.properties.rejects_ue_links  },
-        }
-    )
-    if (node.widgets?.length) {
+function add_input_and_output_settings(options, node) {
+    if (node.inputs?.length) {
         options.push(
             {
-                content: "UE Connectable Inputs",
-                has_submenu: true,
-                callback: widget_ue_submenu,
-            }            
+                content: node.properties.rejects_ue_links ? "Allow UE Links" : "Reject UE Links",
+                has_submenu: false,
+                callback: () => { node.properties.rejects_ue_links = !!!node.properties.rejects_ue_links  },
+            }
         )
-    }
-    options.push(
-        {
-            content: node.properties.ue_convert ? "Remove UE broadcasting" : "Add UE broadcasting",
-            has_submenu: false,
-            callback: () => { node.properties.ue_convert = !!!node.properties.ue_convert },                
-        }
-    )
-    if (node.properties.ue_convert) {
-        options.push(
+
+        if (!node.properties.rejects_ue_links) {
+            options.push(
                 {
-                    content: "Broadcasting Outputs",
+                    content: "UE Connectable Inputs",
                     has_submenu: true,
-                    callback: output_ue_submenu,                
-                }
+                    callback: widget_ue_submenu,
+                }            
             )
+        }
+    }
+
+    if (node.outputs.length) {
+        options.push(
+            {
+                content: node.properties.ue_convert ? "Remove UE broadcasting" : "Add UE broadcasting",
+                has_submenu: false,
+                callback: () => { node.properties.ue_convert = !!!node.properties.ue_convert },                
+            }
+        )
+        if (node.properties.ue_convert) {
+            options.push(
+                    {
+                        content: "Broadcasting Outputs",
+                        has_submenu: true,
+                        callback: output_ue_submenu,                
+                    }
+                )
+        }
     }
 }
 
 function remove_ue_nodes(graph) {
-    graph._nodes.filter((node)=>is_UEnode(node, false)).forEach((node)=>{graph.remove(node)})
+    graph._nodes.filter((node)=>is_UEnode(node)).forEach((node)=>{graph.remove(node)})
 }
 
 export function canvas_menu_settings(options) {

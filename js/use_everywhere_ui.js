@@ -1,4 +1,4 @@
-import { Logger, get_real_node, Pausable, is_UEnode } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, Pausable, node_can_broadcast } from "./use_everywhere_utilities.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
@@ -78,7 +78,7 @@ export function nodes_not_my_color(node, already_limited_to) {
 }
 
 export function title_bar_additions(node, ctx, title_height) {
-    if (is_UEnode(node, true)) {
+    if (node_can_broadcast(node)) {
         const restricted = any_restrictions(node);
         const sending    = shared.linkRenderController.node_sending_anywhere(node);
 
