@@ -18,11 +18,15 @@ If upgrading from before version 7, see the end of this document for the major c
 ## 7.5
 
 - Added per-output granularity to any-node broadcasting
+- Prompt Everywhere node deprecated and auto-replaced
+- Convert to real links now works for any-node broadcasting
+- Anything Everywhere nodes in a subgraph can broadcast to its output
 
 ## 7.4
 
 - Added broadcasting from [any node](#any-node-broadcasting)
 - Added negative regex option
+- Seed Everywhere node deprecated and auto-replaced
 
 ## 7.3
 
