@@ -3,7 +3,7 @@ import { api } from "../../scripts/api.js";
 
 import { shared, deferred_actions } from "./shared.js";
 
-import { is_UEnode, inject, Logger, defineProperty, graphConverter, create } from "./use_everywhere_utilities.js";
+import { is_UEnode, inject, Logger, defineProperty, graphConverter, create, node_can_broadcast } from "./use_everywhere_utilities.js";
 import { title_bar_additions, LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_everywhere_settings.js";
@@ -65,7 +65,7 @@ app.registerExtension({
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {     
             if (is_combo_clone(this) && !shared.prompt_being_queued) comboclone_on_connection(this, link_info, connect)
-            if (is_UEnode(this, false) && side==1) { // side 1 is input
+            if (is_UEnode(this) && side==1) { // side 1 is input
                 input_changed(this, slot, connect, link_info)
                 
                 if (!shared.graph_being_configured) {
@@ -81,41 +81,38 @@ app.registerExtension({
         if (nodeData.name=="Combo Clone") {
             const onConnectOutput = nodeType.prototype.onConnectOutput
             nodeType.prototype.onConnectOutput = function(outputIndex, type, input, inputNode, inputIndex) {
-                if  (!(type=="COMBO" || is_UEnode(inputNode, false))) return false;
+                if  (!(type=="COMBO" || is_UEnode(inputNode))) return false;
                 return onConnectOutput?.apply(this,arguments)
             }
         }
 
-        if (is_UEnode(nodeType)) {
-            const onNodeCreated = nodeType.prototype.onNodeCreated;
-            nodeType.prototype.onNodeCreated = function () {
-                const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
-                Logger.log_detail(`Node ${this.id} created`)
-                setup_ue_properties_oncreate(this)
-                return r;
-            }
-        }
     },
 
     async nodeCreated(node) { // the node isn't part of the graph yet, so can't do anything involving id or links.
         add_methods_to_all_nodes(node)
 
-        if (!node.properties.ue_properties && !is_UEnode(node, false) && !shared.graph_being_configured) {
-            node.properties.ue_properties = { widget_ue_connectable : {}, input_ue_unconnectable : {} }
-        }
+        if (shared.graph_being_configured) return
 
+        if (is_UEnode(node)) {
+            setup_ue_properties_oncreate(node)
+        } else if (!node.properties.ue_properties) {
+            node.properties.ue_properties = { 
+                widget_ue_connectable : {}, 
+                input_ue_unconnectable : {} 
+            }
+        }
     }, 
 
     // When a graph node is loaded convert it if needed
     loadedGraphNode(node) { 
-        if (graphConverter.running_116_plus()) { 
+        //if (graphConverter.running_116_plus()) { 
             graphConverter.convert_if_pre_116(node);
-            if (node.isSubgraphNode?.()) {
-                node.subgraph.nodes.forEach((n) => {
-                    graphConverter.convert_if_pre_116(n);
-                })
-            }
-        }
+            //if (node.isSubgraphNode?.()) {
+            //    node.subgraph.nodes.forEach((n) => {
+            //        graphConverter.convert_if_pre_116(n);
+            //    })
+            //}
+        //}
         setup_ue_properties_onload(node)
     },
 
@@ -129,7 +126,7 @@ app.registerExtension({
         });
 
         /* if we are on version 1.16 or later, stash input data to convert nodes when they are loaded */
-        if (graphConverter.running_116_plus()) {
+        //if (graphConverter.running_116_plus()) {
             const original_loadGraphData = app.loadGraphData;
             app.loadGraphData = async function (data) {
                 try {
@@ -143,7 +140,7 @@ app.registerExtension({
                 app.ui.settings.setSettingValue("Comfy.Validation.Workflows", cvw_was);
                 //return v;
             }
-        }
+        //}
         
         /* 
         When we draw a node, render the virtual connection points
@@ -170,14 +167,15 @@ app.registerExtension({
         */
         const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
         LGraphCanvas.prototype.drawFrontCanvas = function() {
+            var widgets_disabled = []
             try {
-                shared.linkRenderController.disable_all_connected_widgets(true)
+                widgets_disabled = shared.linkRenderController.disable_all_connected_widgets()
                 return original_drawFrontCanvas.apply(this, arguments);
             }  catch (e) {
                 Logger.log_error(e)
             } finally {
                 try {
-                    shared.linkRenderController.disable_all_connected_widgets(false)
+                    widgets_disabled.forEach((w)=>w.disabled=false)
                 } catch (e) {
                     Logger.log_error(e)
                 } 
@@ -219,7 +217,7 @@ app.registerExtension({
 
         TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
         TODO: Or better maybe to retire this.
-        */
+        
         LGraphNode.prototype._getWidgetByName = function(nm) {
             if (this._widgetNameMap === undefined || !this._widgetNameMap[nm]) {
                 this._widgetNameMap = {}
@@ -229,7 +227,7 @@ app.registerExtension({
                 let breakpoint_be_here; // someone is asking for a widget that doesn't exist
             }
             return this._widgetNameMap[nm]
-        }
+        }*/
 	},
 
     init() {
@@ -286,7 +284,7 @@ app.registerExtension({
         app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
             if (e?.detail?.subType=='node-double-click') {
                 const node = e.detail.node
-                if (is_UEnode(node, true)) {
+                if (node_can_broadcast(node)) {
                     if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
                     edit_restrictions(null, null, null, null, node)
                 }

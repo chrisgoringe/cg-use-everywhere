@@ -141,9 +141,9 @@ function toggle_connectable(node, input_name){
     const input = node.inputs.find(i => i.name==input_name);
     const p = node.properties.ue_properties
     if (input.widget) {
-        p.widget_ue_connectable[input_name]  = !!!p.widget_ue_connectable[input_name];
+        p.widget_ue_connectable[input_name]  = !!!p.widget_ue_connectable?.[input_name];
     } else {
-        p.input_ue_unconnectable[input_name] = !!!p.input_ue_unconnectable[input_name];
+        p.input_ue_unconnectable[input_name] = !!!p.input_ue_unconnectable?.[input_name];
     }  
 }
 

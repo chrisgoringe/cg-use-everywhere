@@ -108,10 +108,10 @@ class GraphConverter {
         this.did_conversion = false;
      }
 
-    running_116_plus() {
-        const version = __COMFYUI_FRONTEND_VERSION__.split('.')
-        return (parseInt(version[0])>=1 && (parseInt(version[0])>1 || parseInt(version[1])>=16))
-    }
+    //running_116_plus() {
+    //    const version = __COMFYUI_FRONTEND_VERSION__.split('.')
+    //    return (parseInt(version[0])>=1 && (parseInt(version[0])>1 || parseInt(version[1])>=16))
+    //}
 
     store_node_input_map(data) { 
         this.node_input_map = {};
@@ -175,7 +175,7 @@ class GraphConverter {
         if (node.properties?.ue_properties?.widget_ue_connectable) return
         if (node.properties?.widget_ue_connectable) return  // pre 7.0 node which will be converted
 
-        if (is_UEnode(node, false)) {
+        if (is_UEnode(node)) {
             if (node.properties?.ue_properties?.version) return
             this.clean_ue_node(node)
         }
@@ -266,14 +266,14 @@ export function is_connected(input, treat_bypassed_as_live, graph) {
 /*
 Is this a UE node?
 */
-export function is_UEnode(node_or_nodeType) {
-    const type = node_or_nodeType.type || node_or_nodeType.comfyClass;
+export function is_UEnode(node) {
+    const type = node.comfyClass;
+    if (type == "Anything Everywhere") return true;
     return ((type) && (type.startsWith("Anything Everywhere") || type==="Seed Everywhere" || type==="Prompts Everywhere"))
 }
 
-export function node_can_broadcast(node_or_nodeType) {
-    if (node_or_nodeType.properties?.ue_convert) return true;
-    return is_UEnode(node_or_nodeType)
+export function node_can_broadcast(node) {
+    return (node.properties?.ue_convert || is_UEnode(node))
 }
 
 

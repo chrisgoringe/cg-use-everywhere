@@ -158,42 +158,29 @@ export class LinkRenderController extends Pausable {
         } 
     }
 
-    disable_all_connected_widgets( disable ) {
-        const graph = app.canvas.graph
-        if (disable) {
-            graph.extra['ue_links']?.forEach((uel) => {
-                const node = graph._nodes_by_id[uel.downstream]
-                if (node) {
-                    try {
-                        const name = node.inputs[uel.downstream_slot]?.name;
-                        if (name) {
-                            const widget = node._getWidgetByName(name) 
-                            if (widget) {
-                                if (!widget.disabled) {
-                                    this.widgets_disabled.push(widget)
-                                    widget.disabled = true;
-                                }
-                                widget.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
-                                    this.widgets_disabled.push(w)
-                                    w.disabled = true;
-                                })
-                            } else {
-                                // it's an input not a widget, so ignore
-                            }
-                        } else {
-                            Logger.log_problem(`In disable_all_connected_widgets, for downstream node ${node.id}, slot ${uel.downstream_slot} did not return a name`)
+    disable_all_connected_widgets( ) {
+        const widgets_disabled = []
+
+        app.canvas.graph.extra['ue_links']?.forEach((uel) => {
+            const node = app.canvas.graph._nodes_by_id[uel.downstream]
+            if (node) {
+                const name = node.inputs[uel.downstream_slot]?.name;
+                if (name) {
+                    const widget = node.widgets?.find((w)=>(w.name==name)) //  _getWidgetByName(name) 
+                    if (widget) {
+                        if (!widget.disabled) {
+                            widgets_disabled.push(widget)
+                            widget.disabled = true;
                         }
-                    } catch(e) {
-                        Logger.log_error(e);
-                    }
-                } else {
-                    if (uel.downstream >= 0) Logger.log_problem(`In disable_all_connected_widgets, couldn't find downstream node ${uel.downstream}`)
-                }
-            })   
-        } else {
-            this.widgets_disabled.forEach((w)=>w.disabled=false)
-            this.widgets_disabled = []
-        }     
+                        widget.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
+                            widgets_disabled.push(w)
+                            w.disabled = true;
+                        })
+                    } 
+                } 
+            } 
+        })   
+        return widgets_disabled
     }
 
     highlight_ue_connections(node, ctx) {        

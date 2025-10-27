@@ -87,7 +87,7 @@ class GraphAnalyser extends Pausable {
 
         // List all unconnected inputs on non-UE nodes which are connectable
         const connectable = []
-        live_nodes.filter((node) => !is_UEnode(node, false)).forEach(node => {
+        live_nodes.filter((node) => !is_UEnode(node)).forEach(node => {
             if (node && !node.properties.rejects_ue_links) {
                 //if (!real_node._widget_name_map) real_node._widget_name_map =  real_node.widgets?.map(w => w.name) || [];
                 node.inputs?.forEach((input,index) => {
