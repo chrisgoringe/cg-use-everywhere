@@ -303,7 +303,7 @@ export class UseEverywhereList {
             } else {
                 the_possibles = node.inputs
                 connection_finder = get_connection  
-                check_if_able_to_broadcast = ()=>{true}
+                check_if_able_to_broadcast = ()=>(true)
             }
 
             const broadcasted_types = new Set()

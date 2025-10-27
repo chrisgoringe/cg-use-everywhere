@@ -124,6 +124,7 @@ function show_connectable(submenu_root, node) {
 }
 
 export function is_connectable(node, input_name){
+    if (node.properties.rejects_ue_links) return false
     const input = node.inputs.find(i => i.name==input_name);
     if (!input) {
         Logger.log_error(`Can't find input ${input_name} on node ${node.title}`);
@@ -215,10 +216,10 @@ function output_ue_submenu(value, options, e, menu, node) {
 
 
 
-export function add_extra_menu_items(node_or_node_type, ioio) {
-    if (node_or_node_type.ue_extra_menu_items_added) return
-    const getExtraMenuOptions = node_or_node_type.getExtraMenuOptions;
-    node_or_node_type.getExtraMenuOptions = function(_, options) {
+export function add_extra_menu_items(node, ioio) {
+    if (node.ue_extra_menu_items_added) return
+    const getExtraMenuOptions = node.getExtraMenuOptions;
+    node.getExtraMenuOptions = function(_, options) {
         getExtraMenuOptions?.apply(this, arguments);
         options.push(null);
         if (node_can_broadcast(this)) {
@@ -230,7 +231,7 @@ export function add_extra_menu_items(node_or_node_type, ioio) {
         options.push(null);
         ioio(options,'callback',`menu option on ${this.id}`);
     }
-    node_or_node_type.ue_extra_menu_items_added = true
+    node.ue_extra_menu_items_added = true
 }
 
 
