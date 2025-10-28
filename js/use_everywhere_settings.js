@@ -353,11 +353,11 @@ export function canvas_menu_settings(options) {
             }
         },
     );
-    if (shared.graphAnalyser.ambiguity_messages.length) {
+    if (shared.graphAnalyser.ambiguities.length) {
         options.push({
             content: "Show UE broadcast clashes",
             callback: async () => { 
-                alert(shared.graphAnalyser.ambiguity_messages.join("\n")) 
+                alert(shared.graphAnalyser.ambiguities.join("\n")) 
             }
         })
     }

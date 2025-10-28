@@ -11,7 +11,7 @@ class GraphAnalyser extends Pausable {
     constructor() {
         super('GraphAnalyser')
         this.original_graphToPrompt = app.graphToPrompt;
-        this.ambiguity_messages = [];
+        this.ambiguities = [];
         this.latest_ues = null
         this.mods = []
     }
@@ -77,7 +77,7 @@ class GraphAnalyser extends Pausable {
             })
         }
 
-        this.ambiguity_messages = [];
+        this.ambiguities = [];
         const treat_bypassed_as_live = settingsCache.getSettingValue("Use Everywhere.Options.connect_to_bypassed") || this.connect_to_bypassed
         const live_nodes = graph.nodes.filter((node) => node_is_live(node, treat_bypassed_as_live))
                 
@@ -108,7 +108,7 @@ class GraphAnalyser extends Pausable {
         // see if we can connect them
         const links_added = new Set();
         connectable.forEach(({node, input, index}) => {
-            var ue = ues.find_best_match(node, input, this.ambiguity_messages);
+            var ue = ues.find_best_match(node, input, this.ambiguities);
             if (ue) {
                 links_added.add({
                     "downstream":node.id, "downstream_slot":index,
@@ -121,7 +121,7 @@ class GraphAnalyser extends Pausable {
 
         graph.extra['ue_links'] = Array.from(links_added)
     
-        if (this.ambiguity_messages.length) Logger.log_info("Ambiguous connections", this.ambiguity_messages, true);
+        if (this.ambiguities.length) Logger.log_info("Ambiguous connections", this.ambiguities, true);
  
         this.latest_ues = ues;
         return this.latest_ues;

@@ -28,13 +28,6 @@ function regex_for(node, k) {
 const P_REGEXES = ['prompt', 'negative']
 const PROMPT_REGEXES = [new RegExp(i18n_functional('prompt_regex')), new RegExp(i18n_functional('negative_regex'))]
 
-function prompt_regex(node, i) {
-    const reg = node.properties.ue_properties[`${P_REGEXES[i]}_regex`]
-    if (reg) return {regex:new RegExp(reg), invert:node.properties.ue_properties[`${P_REGEXES[i]}_regex_invert`]}
-    else return {regex:i18n_functional_regex(`${P_REGEXES[i]}_regex`), invert:!!node.properties.ue_properties[`${P_REGEXES[i]}_regex_invert`]}
-}
-
-
 /*
 The UseEverywhere object represents a single 'broadcast'. It generally contains
     controller                  - the UE node that controls the broadcase
@@ -158,6 +151,29 @@ function validity_errors(params) {
     return "";
 }
 
+export class Ambiguity {
+/*
+    name    : display_name of node
+    id      : node.id
+    input   : input.name
+    matches : [
+        {
+            type  : m[i].controller.type,
+            id    : m[i].controller.id,
+            index : m[i].control_node_input_index
+        }
+    ]
+*/
+    toString() {
+        var m = `Node ${this.name} (${this.id}) input ${this.input} matches ${this.matches.length} sources:`
+        this.matches.forEach((match)=>{
+            m += `\n - ${match.type} (${match.id}) slot ${match.index}`
+        })
+        return m
+    }
+
+}
+
 export class UseEverywhereList {
     constructor() { this.ues = []; this.unmatched_inputs = []; }
 
@@ -209,7 +225,7 @@ export class UseEverywhereList {
         }
     }
 
-    find_best_match(node, input, _ambiguity_messages) {
+    find_best_match(node, input, _ambiguities) {
         this.unmatched_inputs.push({"node":node, "input":input});
         var matches = this.ues.filter((candidate) => (  
             candidate.matches(node, input)
@@ -221,14 +237,18 @@ export class UseEverywhereList {
         if (matches.length>1) {
             matches.sort((a,b) => b.priority-a.priority);
             if(matches[0].priority == matches[1].priority) {
-                const msg = `'${display_name(node)}' (${node.id}) input '${input.name}' matches multiple Use Everwhere sources:`;
-                _ambiguity_messages.push(msg);
-                for (var i=0; i<matches.length; i++) {
-                    if (matches[0].priority == matches[i].priority) {
-                        const inner_msg = ` - ${matches[i].controller.type} (${matches[i].controller.id}) input ${matches[i].control_node_input_index}`;
-                        _ambiguity_messages.push(inner_msg);
-                    }
-                }
+                const msg = new Ambiguity()
+                Object.assign(msg, { name:display_name(node), id:node.id, input:input.name, matches:[] })
+
+                matches.filter((m)=>(m.priority == matches[0].priority)).forEach((m)=>{
+                    msg.matches.push( {
+                        type  : m.controller.type,
+                        id    : m.controller.id,
+                        index : m.control_node_input_index
+                    })
+                })
+
+                _ambiguities.push(msg);
                 return undefined;
             }
         }

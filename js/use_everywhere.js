@@ -3,11 +3,10 @@ import { api } from "../../scripts/api.js";
 
 import { shared, deferred_actions } from "./shared.js";
 
-import { is_UEnode, inject, Logger, defineProperty, graphConverter, create, node_can_broadcast } from "./use_everywhere_utilities.js";
+import { is_UEnode, inject, Logger, graphConverter, create, node_can_broadcast } from "./use_everywhere_utilities.js";
 import { title_bar_additions, LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_everywhere_settings.js";
-import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { visible_graph, fix_new_subgraph_node } from "./use_everywhere_subgraph_utils.js";
@@ -32,6 +31,19 @@ function add_methods_to_all_nodes(node) {
             if (original_onDrawTitleBar) original_onDrawTitleBar.apply(this, arguments);
             title_bar_additions(node, ctx, title_height)
         }
+
+        const original_onMouseEnter = node.onMouseEnter;
+        node.onMouseEnter = function(e) {
+            if (original_onMouseEnter) original_onMouseEnter(e)
+            shared.linkRenderController.node_over_changed()
+        }
+
+        const original_onMouseLeave = node.onMouseLeave;
+        node.onMouseEnter = function(e) {
+            if (original_onMouseLeave) original_onMouseLeave(e)
+            shared.linkRenderController.node_over_changed()
+        }
+
         node.ue_methods_added = true;
     } catch (e) {
         Logger.log_error(e);
@@ -105,14 +117,7 @@ app.registerExtension({
 
     // When a graph node is loaded convert it if needed
     loadedGraphNode(node) { 
-        //if (graphConverter.running_116_plus()) { 
-            graphConverter.convert_if_pre_116(node);
-            //if (node.isSubgraphNode?.()) {
-            //    node.subgraph.nodes.forEach((n) => {
-            //        graphConverter.convert_if_pre_116(n);
-            //    })
-            //}
-        //}
+        graphConverter.convert_if_pre_116(node);
         setup_ue_properties_onload(node)
     },
 
@@ -211,23 +216,6 @@ app.registerExtension({
             return options;
         }
 
-        /*
-        Finding a widget by it's name is something done a lot of times in rendering, 
-        so add a method that caches the names that can be used deep in the rendering code.
-
-        TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
-        TODO: Or better maybe to retire this.
-        
-        LGraphNode.prototype._getWidgetByName = function(nm) {
-            if (this._widgetNameMap === undefined || !this._widgetNameMap[nm]) {
-                this._widgetNameMap = {}
-                this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
-            }
-            if (!this._widgetNameMap[nm]) {
-                let breakpoint_be_here; // someone is asking for a widget that doesn't exist
-            }
-            return this._widgetNameMap[nm]
-        }*/
 	},
 
     init() {
@@ -269,12 +257,6 @@ app.registerExtension({
                 shared.prompt_being_queued = false;
             }
         }
-        
-        app.canvas.__node_over = app.canvas.node_over;
-        defineProperty(app.canvas, 'node_over', {
-            get: ( )=>{return app.canvas.__node_over },
-            set: (v)=>{app.canvas.__node_over = v; shared.linkRenderController.node_over_changed(v)}   
-        } )
 
         app.canvas.canvas.addEventListener('litegraph:set-graph', ()=>{
             shared.linkRenderController.mark_link_list_outdated()
@@ -290,9 +272,6 @@ app.registerExtension({
                 }
             }
         })
-
-        if (false) add_debug();
-
 
         const original_subgraph = app.graph.convertToSubgraph
         app.graph.convertToSubgraph = function () {

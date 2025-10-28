@@ -113,7 +113,7 @@ export class LinkRenderController extends Pausable {
 
     //on_unpause() {app.graph.change();}
 
-    node_over_changed(v) {
+    node_over_changed() {
         const mode = settingsCache.getSettingValue('Use Everywhere.Graphics.showlinks');
         if (mode==2 || mode==3) app.canvas.setDirty(true,true)
     }
@@ -207,15 +207,15 @@ export class LinkRenderController extends Pausable {
                     unconnected_connectable_names.delete(name_sent_to); // remove the name from the list of connectables
                     const pos2 = this._relative_connection_pos(node, true, ue_connection.input_index);
 
-                    circle(ctx, pos2, {...CONNECTED_1, strokeStyle:LGraphCanvas.link_type_colors[ue_connection.type]})
-                    circle(ctx, pos2, {...CONNECTED_2})
+                    drawcircle(ctx, pos2, {...CONNECTED_1, strokeStyle:LGraphCanvas.link_type_colors[ue_connection.type]})
+                    drawcircle(ctx, pos2, {...CONNECTED_2})
                 });
             }
             
             unconnected_connectable_names.forEach((name) => {
                 const index = node.inputs.findIndex((i) => i.name == name);
                 const pos2 = this._relative_connection_pos(node, true, index);
-                circle(ctx, pos2, {...UNCONNECTED_CONNECTABLE})
+                drawcircle(ctx, pos2, {...UNCONNECTED_CONNECTABLE})
             })
 
             if (node.properties.ue_convert) {
@@ -225,15 +225,35 @@ export class LinkRenderController extends Pausable {
                     if (is_able_to_broadcast(node, output.name)) {
                         const pos2 = this._relative_connection_pos(node, false, i);
                         if (sending_slots.has(i)) {
-                            circle(ctx, pos2, {...CONNECTED_1, strokeStyle:LGraphCanvas.link_type_colors[node.outputs[i].type]})
-                            circle(ctx, pos2, {...CONNECTED_2})
+                            drawcircle(ctx, pos2, {...CONNECTED_1, strokeStyle:LGraphCanvas.link_type_colors[node.outputs[i].type]})
+                            drawcircle(ctx, pos2, {...CONNECTED_2})
                         } else {
-                            circle(ctx, pos2, {...UNCONNECTED_CONNECTABLE})
+                            drawcircle(ctx, pos2, {...UNCONNECTED_CONNECTABLE})
                         }
              
                     }
                 })
             }
+/*
+    name    : display_name of node
+    id      : node.id
+    input   : input.name
+    matches : [
+        {
+            type  : m[i].controller.type,
+            id    : m[i].controller.id,
+            index : m[i].control_node_input_index
+        }
+    ]
+*/
+            shared.graphAnalyser.ambiguities.filter((ambiguity)=>(ambiguity.id==node.id)).forEach((ambiguity)=>{
+                const index = node.inputs.findIndex((input)=>(input.name==ambiguity.input))
+                if (index>=0) {
+                    const pos2 = this._relative_connection_pos(node, true, index);
+                    drawcross(ctx, pos2, {...AMBIGUITY})
+                }
+            })
+
         } catch (e) {
             Logger.log_error(e);
         } finally {
@@ -405,6 +425,7 @@ export class LinkRenderController extends Pausable {
 }
 
 const UNCONNECTED_CONNECTABLE = {
+    lineWidth     : 1, 
     radius        : 3,
     strokeStyle   : "black",
     shadowColor   : "green", 
@@ -414,23 +435,30 @@ const UNCONNECTED_CONNECTABLE = {
 }
 
 const CONNECTED_1 = {
-    radius:5,
-    first_last:"first",
-    lineWidth:1, 
-    shadowColor : "white",
-    shadowBlur : 10,
+    radius        : 5,
+    first_last    : "first",
+    lineWidth     : 1, 
+    shadowColor   : "white",
+    shadowBlur    : 10,
     shadowOffsetX : 0,
     shadowOffsetY : 0,                        
 }
 
 const CONNECTED_2 = {
-    radius:4,
-    first_last:"last",
-    shadowBlur : 0,
-    strokeStyle : "black",
+    lineWidth     : 1, 
+    radius        : 4,
+    first_last    : "last",
+    shadowBlur    : 0,
+    strokeStyle   : "black",
 }
 
-function circle(ctx, position, properties) {
+const AMBIGUITY = {
+    lineWidth     : 1, 
+    radius        : 7,   
+    strokeStyle   : "red",
+}
+
+function drawcircle(ctx, position, properties) {
     const p = {...properties}
 
     const radius     = p.radius
@@ -440,9 +468,27 @@ function circle(ctx, position, properties) {
 
     if (!first_last || first_last=='first') ctx.save()
     Object.assign(ctx, p)
-    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(position[0]-radius,position[1]-radius,2*radius,2*radius,radius);
+    ctx.stroke();
+    if (!first_last || first_last=='last') ctx.restore()
+}
+
+function drawcross(ctx, position, properties) {
+    const p = {...properties}
+
+    const radius     = p.radius
+    const first_last = p.first_last
+    delete p.radius
+    delete p.first_last
+
+    if (!first_last || first_last=='first') ctx.save()
+    Object.assign(ctx, p)
+    ctx.beginPath();
+    ctx.moveTo(position[0]-radius,position[1]-radius)
+    ctx.lineTo(position[0]+radius,position[1]+radius)
+    ctx.moveTo(position[0]-radius,position[1]+radius)
+    ctx.lineTo(position[0]+radius,position[1]-radius)
     ctx.stroke();
     if (!first_last || first_last=='last') ctx.restore()
 }
