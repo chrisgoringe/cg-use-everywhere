@@ -254,6 +254,10 @@ app.registerExtension({
                 return await shared.graphAnalyser.graph_to_prompt( );
             } else {
                 Logger.log_problem("graphToPrompt called when !prompt_being_queued - why?")
+                if (app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
+                    Logger.log_info("always_modify_graph is set, so doing so anyway")
+                    return await shared.graphAnalyser.graph_to_prompt( );
+                }
                 return await original_graphToPrompt.apply(app, arguments);
             }
         }

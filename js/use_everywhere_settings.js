@@ -94,6 +94,14 @@ const _SETTINGS = [
         onChange: settingsCache.onSettingChange,
     },
     {
+        id: "Use Everywhere.Options.always_modify_graph",
+        name: "Always modify graph",
+        type: "boolean",
+        defaultValue: false,
+        tooltip: "If turned on, the UE modifications will apply even if the trigger is unknown. This will enable API exports, but may cause incompatibility with other nodes.",
+        onChange: settingsCache.onSettingChange,
+    },
+    {
         id: "Use Everywhere.Options.use_output_name",
         name: "When connecting, use the output slot's name as the input name",
         type: "boolean",

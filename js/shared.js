@@ -28,4 +28,4 @@ export const deferred_actions = new Deferred()
 
 export const shared = new Shared()
 
-export const VERSION = "7.4"
+export const VERSION = "7.4.1"
