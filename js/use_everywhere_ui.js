@@ -183,6 +183,15 @@ export class LinkRenderController extends Pausable {
         return widgets_disabled
     }
 
+    highlight_subgraph_node_connections(subgraph, ctx) {
+        if (!settingsCache.getSettingValue('Use Everywhere.Graphics.highlight')) return;
+        this.ue_list.all_connected_inputs(subgraph.outputNode).forEach((ue_connection)=>{
+            const pos2 = subgraph.outputNode.slots[ue_connection.input_index].pos;
+            drawcircle(ctx, pos2, CONNECTED_1, 5, "first", {strokeStyle:LGraphCanvas.link_type_colors[ue_connection.type]})
+            drawcircle(ctx, pos2, CONNECTED_2, 4, "last")
+        })
+    }
+
     highlight_ue_connections(node, ctx) {        
         if (!settingsCache.getSettingValue('Use Everywhere.Graphics.highlight')) return;
         if (!node.inputs) return;
@@ -207,8 +216,8 @@ export class LinkRenderController extends Pausable {
                     unconnected_connectable_names.delete(name_sent_to); // remove the name from the list of connectables
                     const pos2 = this._relative_connection_pos(node, true, ue_connection.input_index);
 
-                    drawcircle(ctx, pos2, {...CONNECTED_1, strokeStyle:LGraphCanvas.link_type_colors[ue_connection.type]}, 5, "first" )
-                    drawcircle(ctx, pos2, {...CONNECTED_2}, 4, "last" )
+                    drawcircle(ctx, pos2, CONNECTED_1, 6, "first", {strokeStyle:LGraphCanvas.link_type_colors[ue_connection.type]} )
+                    drawcircle(ctx, pos2, CONNECTED_2, 5, "last" )
                 });
             }
             
@@ -225,8 +234,8 @@ export class LinkRenderController extends Pausable {
                     if (is_able_to_broadcast(node, output.name)) {
                         const pos2 = this._relative_connection_pos(node, false, i);
                         if (sending_slots.has(i)) {
-                            drawcircle(ctx, pos2, CONNECTED_1, 5, "first", {strokeStyle:LGraphCanvas.link_type_colors[node.outputs[i].type]})
-                            drawcircle(ctx, pos2, CONNECTED_2, 4, "last")
+                            drawcircle(ctx, pos2, CONNECTED_1, 6, "first", {strokeStyle:LGraphCanvas.link_type_colors[node.outputs[i].type]})
+                            drawcircle(ctx, pos2, CONNECTED_2, 5, "last")
                         } else {
                             drawcircle(ctx, pos2, UNCONNECTED_CONNECTABLE, 3)
                         }
@@ -251,7 +260,7 @@ export class LinkRenderController extends Pausable {
     }
 
     _relative_connection_pos(node, input, slot) {
-        var pos2 = node.getConnectionPos(input, slot, this.slot_pos1);
+        var pos2 = node.getConnectionPos?.(input, slot, this.slot_pos1) || node.slots[slot].pos;
         pos2[0] -= node.pos[0];
         pos2[1] -= node.pos[1];
         return pos2
@@ -387,8 +396,6 @@ export class LinkRenderController extends Pausable {
                     app.canvas.render_connections_border = false
                     ctx.shadowColor = color;
                     ctx.shadowBlur = 6;
-                    ctx.shadowOffsetX = 0;
-                    ctx.shadowOffsetY = 0;      
                     skip_border = true         
                 }
                 app.canvas.renderLink(ctx, pos1, pos2, undefined, skip_border, animate%2, modify(color), sta_direction, end_direction, undefined);
@@ -417,17 +424,14 @@ const UNCONNECTED_CONNECTABLE = {
     lineWidth     : 1, 
     strokeStyle   : "black",
     shadowColor   : "green", 
-    shadowBlur    : 10,
-    shadowOffsetX : 0,
-    shadowOffsetY : 0,
+    shadowBlur    : 4,
 }
 
 const CONNECTED_1 = {
     lineWidth     : 1, 
     shadowColor   : "white",
-    shadowBlur    : 10,
-    shadowOffsetX : 0,
-    shadowOffsetY : 0,                        
+    strokeStyle   : "white",
+    shadowBlur    : 4,                      
 }
 
 const CONNECTED_2 = {
@@ -441,13 +445,19 @@ const AMBIGUITY = {
     strokeStyle   : "red",
 }
 
+const DEFAULTS = {
+    shadowOffsetX : 0,
+    shadowOffsetY : 0,
+}
+
 const PROPS = ["lineWidth", "strokeStyle", "shadowColor", "shadowBlur", "shadowOffsetX", "shadowOffsetY"]
 
 function drawcircle(ctx, position, properties, radius, first_last, additional) {
     if (!first_last || first_last=='first') ctx.save()
     PROPS.forEach((k)=>{
-        if (properties.k) ctx.k = properties.k
-        if (additional?.k) ctx.k = additional.skip_border
+        if (DEFAULTS[k]!==undefined) ctx[k] = DEFAULTS[k]
+        if (properties[k]!==undefined) ctx[k] = properties[k]
+        if (additional && additional[k]!==undefined) ctx[k] = additional[k]
     })
     ctx.beginPath();
     ctx.roundRect(position[0]-radius,position[1]-radius,2*radius,2*radius,radius);
@@ -457,6 +467,9 @@ function drawcircle(ctx, position, properties, radius, first_last, additional) {
 
 function drawcross(ctx, position, properties, radius) {
     ctx.save()
+    PROPS.forEach((k)=>{
+        if (DEFAULTS[k]) ctx[k] = DEFAULTS[k]
+    })
     ctx.lineWidth = properties.lineWidth
     ctx.strokeStyle = properties.strokeStyle
     ctx.beginPath();

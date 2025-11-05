@@ -277,6 +277,16 @@ app.registerExtension({
             }
         })
 
+        /*
+        At the end of the canvas draw, do subgraph nodes
+        */
+        const original_onDrawForeground = app.canvas.onDrawForeground
+        app.canvas.onDrawForeground = function(ctx, visible_area) {
+            if (original_onDrawForeground) original_onDrawForeground.apply(this, arguments)
+            if (this.subgraph) shared.linkRenderController.highlight_subgraph_node_connections.bind(shared.linkRenderController)(this.subgraph, ctx)
+        }
+        
+
         const original_subgraph = app.graph.convertToSubgraph
         app.graph.convertToSubgraph = function () {
             const ctb_was = shared.graphAnalyser.connect_to_bypassed
