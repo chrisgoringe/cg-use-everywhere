@@ -5,6 +5,7 @@ import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { is_connectable } from "./use_everywhere_settings.js";
 import { for_all_graphs } from "./recursive_callbacks.js";
+import { shared } from "./shared.js";
 
 class GraphAnalyser extends Pausable {
 
@@ -38,6 +39,7 @@ class GraphAnalyser extends Pausable {
         this.mods = []
         try { 
             for_all_graphs(this.modify_graph.bind(this))
+            shared.graph_currently_modified = true
             // Now create the prompt using the ComfyUI original functionality and the patched graph
             p = await this.original_graphToPrompt.apply(app);
         } catch (e) { 
@@ -47,6 +49,7 @@ class GraphAnalyser extends Pausable {
                 this.mods.forEach((mod)=>{mod.restorer()})
                 this.mods = []
             } finally {
+                shared.graph_currently_modified = false
                 this.unpause()
             }
         }

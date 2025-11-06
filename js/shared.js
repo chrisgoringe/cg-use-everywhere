@@ -4,6 +4,7 @@ class Shared {
     graph_being_configured = false
     prompt_being_queued    = false
     in_midst_of_change     = false
+    graph_currently_modified = false
     graphAnalyser          = undefined
     linkRenderController   = undefined
 }
