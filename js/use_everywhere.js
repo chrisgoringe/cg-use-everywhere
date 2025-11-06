@@ -222,6 +222,12 @@ app.registerExtension({
         shared.graphAnalyser        = new GraphAnalyser();
         shared.linkRenderController = new LinkRenderController();
 
+        /*
+        Modifications to the graph:
+        - track start and end of the graph being changed
+        # - trace the use of serialize (debug)
+        - catch convertToSubgraph to try to fix UE links
+        */
         const original_beforeChange = app.graph.beforeChange
         app.graph.beforeChange = function () {
             shared.in_midst_of_change = true
@@ -234,59 +240,13 @@ app.registerExtension({
             shared.in_midst_of_change = false
         }
 
-        const original_graphToPrompt = app.graphToPrompt;
-        app.graphToPrompt = async function () {
-            if (shared.prompt_being_queued) {
-                return await shared.graphAnalyser.graph_to_prompt( );
-            } else {
-                Logger.log_problem("graphToPrompt called when !prompt_being_queued - why?")
-                if (app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
-                    Logger.log_info("always_modify_graph is set, so doing so anyway")
-                    return await shared.graphAnalyser.graph_to_prompt( );
-                }
-                return await original_graphToPrompt.apply(app, arguments);
-            }
-        }
+        //const original_serialize = app.graph.serialize
+        //app.graph.serialize = function () {
+        //    Logger.log_with_trace(`app.graph.serialize called with shared.prompt_being_queued = ${shared.prompt_being_queued} and shared.graph_currently_modified = ${shared.graph_currently_modified}`)
+        //    return original_serialize.bind(app.graph)()
+        //}
+
         
-        app.ue_modified_prompt = async function () { // API function
-            return await shared.graphAnalyser.graph_to_prompt();
-        }
-
-        const original_queuePrompt = app.queuePrompt;
-        app.queuePrompt = async function () {
-            try {
-                shared.prompt_being_queued = true;
-                return await original_queuePrompt.apply(app, arguments);
-            } finally {
-                shared.prompt_being_queued = false;
-            }
-        }
-
-        app.canvas.canvas.addEventListener('litegraph:set-graph', ()=>{
-            shared.linkRenderController.mark_link_list_outdated()
-            setTimeout(()=>{app.canvas.setDirty(true,true)},200)
-        })
-
-        app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
-            if (e?.detail?.subType=='node-double-click') {
-                const node = e.detail.node
-                if (node_can_broadcast(node)) {
-                    if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
-                    edit_restrictions(null, null, null, null, node)
-                }
-            }
-        })
-
-        /*
-        At the end of the canvas draw, do subgraph nodes
-        */
-        const original_onDrawForeground = app.canvas.onDrawForeground
-        app.canvas.onDrawForeground = function(ctx, visible_area) {
-            if (original_onDrawForeground) original_onDrawForeground.apply(this, arguments)
-            if (this.subgraph) shared.linkRenderController.highlight_subgraph_node_connections.bind(shared.linkRenderController)(this.subgraph, ctx)
-        }
-        
-
         const original_subgraph = app.graph.convertToSubgraph
         app.graph.convertToSubgraph = function () {
             const ctb_was = shared.graphAnalyser.connect_to_bypassed
@@ -304,7 +264,72 @@ app.registerExtension({
             }
         }
 
-        /* catch changes in language (and read initial value) */
+        /*
+        Modifications to app
+        - intercept graphToPrompt to insert the UE links
+        - intercept queuePrompt to note that we are in the process of queueing the prompt
+        - provide API
+        */
+        const original_graphToPrompt = app.graphToPrompt;
+        app.graphToPrompt = async function () {
+            if (shared.prompt_being_queued) {
+                return await shared.graphAnalyser.graph_to_prompt( );
+            } else {
+                Logger.log_problem("graphToPrompt called when !prompt_being_queued - why?")
+                if (app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
+                    Logger.log_info("always_modify_graph is set, so doing so anyway")
+                    return await shared.graphAnalyser.graph_to_prompt( );
+                }
+                return await original_graphToPrompt.apply(app, arguments);
+            }
+        }
+        
+        const original_queuePrompt = app.queuePrompt;
+        app.queuePrompt = async function () {
+            try {
+                shared.prompt_being_queued = true;
+                return await original_queuePrompt.apply(app, arguments);
+            } finally {
+                shared.prompt_being_queued = false;
+            }
+        }
+
+        app.ue_modified_prompt = async function () { // API function
+            return await shared.graphAnalyser.graph_to_prompt();
+        }
+
+        /*
+        Modifications to the canvas
+        - listen for set-graph to mark the link list as out of date (TODO: why?)
+        - catch node-double-click to open the restrictions dialog
+        - onDrawForeground to highlight subgraph output links
+        */
+
+        app.canvas.canvas.addEventListener('litegraph:set-graph', ()=>{
+            shared.linkRenderController.mark_link_list_outdated()
+            setTimeout(()=>{app.canvas.setDirty(true,true)},200)
+        })
+
+        app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
+            if (e?.detail?.subType=='node-double-click') {
+                const node = e.detail.node
+                if (node_can_broadcast(node)) {
+                    if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
+                    edit_restrictions(null, null, null, null, node)
+                }
+            }
+        })
+
+        const original_onDrawForeground = app.canvas.onDrawForeground
+        app.canvas.onDrawForeground = function(ctx, visible_area) {
+            if (original_onDrawForeground) original_onDrawForeground.apply(this, arguments)
+            if (this.subgraph) shared.linkRenderController.highlight_subgraph_node_connections.bind(shared.linkRenderController)(this.subgraph, ctx)
+        }
+        
+        /* 
+        Midifications to app.ui.settings
+        - catch changes in language (and read initial value) for i18n
+        */
         const locale_onChange = app.ui.settings.settingsLookup['Comfy.Locale'].onChange
         app.ui.settings.settingsLookup['Comfy.Locale'].onChange = function(is_now, was_before) {
             language_changed(is_now, was_before)
@@ -312,6 +337,7 @@ app.registerExtension({
         }
         language_changed(app.ui.settings.getSettingValue('Comfy.Locale'), null)
     },
+
 
     beforeConfigureGraph() {
         shared.linkRenderController.pause("before configure", 1000)
