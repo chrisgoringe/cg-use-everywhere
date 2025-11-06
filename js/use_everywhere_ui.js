@@ -186,9 +186,11 @@ export class LinkRenderController extends Pausable {
     highlight_subgraph_node_connections(subgraph, ctx) {
         if (!settingsCache.getSettingValue('Use Everywhere.Graphics.highlight')) return;
         this.ue_list.all_connected_inputs(subgraph.outputNode).forEach((ue_connection)=>{
-            const pos2 = subgraph.outputNode.slots[ue_connection.input_index].pos;
-            drawcircle(ctx, pos2, CONNECTED_1, 5, "first", {strokeStyle:LGraphCanvas.link_type_colors[ue_connection.type]})
-            drawcircle(ctx, pos2, CONNECTED_2, 4, "last")
+            const pos2 = subgraph?.outputNode?.slots[ue_connection.input_index]?.pos;
+            if (pos2) {
+                drawcircle(ctx, pos2, CONNECTED_1, 5, "first", {strokeStyle:LGraphCanvas.link_type_colors[ue_connection.type]})
+                drawcircle(ctx, pos2, CONNECTED_2, 4, "last")
+            }
         })
     }
 
