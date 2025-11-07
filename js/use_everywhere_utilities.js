@@ -4,7 +4,6 @@ import { link_is_from_subgraph_input, visible_graph, wrap_input, connection_from
 import { i18n } from "./i18n.js";
 import { ue_callbacks } from "./recursive_callbacks.js";
 import { shared } from "./shared.js";
-import { is_able_to_broadcast } from "./use_everywhere_settings.js";
 
 export function create( tag, clss, parent, properties ) {
     const nd = document.createElement(tag);
@@ -348,6 +347,16 @@ export function get_connection(node, i) {
     } else {
         return { link:undefined, type:undefined }
     }
+}
+
+export function is_able_to_broadcast(node, output_name) {
+    if (!node.properties.ue_convert) return false
+    const output = node.outputs.find(i => i.name==output_name);
+    if (!output) {
+        Logger.log_error(`Can't find output ${output_name} on node ${node.title}`);
+        return false;
+    }
+    return ! (node.properties?.ue_properties?.output_not_broadcasting?.[output_name])
 }
 
 export function find_duplicate_broadcasted_types(node) {

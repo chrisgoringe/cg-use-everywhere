@@ -1,9 +1,9 @@
-import { Logger, get_real_node, Pausable, node_can_broadcast } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, Pausable, node_can_broadcast, is_able_to_broadcast } from "./use_everywhere_utilities.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { maybe_show_tooltip } from "./tooltip_window.js";
-import { is_able_to_broadcast, is_connectable } from "./use_everywhere_settings.js";
+import { is_connectable } from "./use_everywhere_settings.js";
 import { shared } from "./shared.js";
 import { any_restrictions } from "./ue_properties.js";
 

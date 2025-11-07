@@ -1,9 +1,8 @@
 import { i18n_functional } from "./i18n.js";
 import { default_priority } from "./ue_properties.js";
-import { is_able_to_broadcast } from "./use_everywhere_settings.js";
 import { connection_from_output_as_input, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
-import { Logger, node_is_live, get_real_node, get_connection, find_duplicate_broadcasted_types } from "./use_everywhere_utilities.js";
+import { Logger, node_is_live, get_real_node, get_connection, find_duplicate_broadcasted_types, is_able_to_broadcast } from "./use_everywhere_utilities.js";
 
 
 export function display_name(node) { 

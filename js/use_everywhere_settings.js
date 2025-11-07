@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
-import { Logger, is_UEnode, node_can_broadcast } from "./use_everywhere_utilities.js";
+import { Logger, is_UEnode, node_can_broadcast, is_able_to_broadcast } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
@@ -185,16 +185,6 @@ function show_broadcasting(submenu_root, node) {
         const current_element = submenu_root?.querySelector(`:nth-child(${i+1})`);
         if (current_element) current_element.style.borderLeft = (is_able_to_broadcast(node,input.name)) ? "2px solid #484" : "";
     })
-}
-
-export function is_able_to_broadcast(node, output_name) {
-    if (!node.properties.ue_convert) return false
-    const output = node.outputs.find(i => i.name==output_name);
-    if (!output) {
-        Logger.log_error(`Can't find output ${output_name} on node ${node.title}`);
-        return false;
-    }
-    return ! (node.properties?.ue_properties?.output_not_broadcasting?.[output_name])
 }
 
 function toggle_broadcasting(node, output_name){

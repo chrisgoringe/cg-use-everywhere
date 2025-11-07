@@ -58,14 +58,14 @@ class GraphAnalyser extends Pausable {
         return result
     }
 
-    /*
+    
     clean_slots(links, slots) {
         slots?.forEach((slot)=>{
             if (slot.linkIds.find((lid)=>(!links[lid]))) {
                 slot.linkIds = slot.linkIds.filter((lid)=>{ return links[lid] !== undefined })
             }
         })
-    }*/
+    }
 
     analyse_graph(graph, ignore_pause) {
         if (this.paused() && !ignore_pause) return null
@@ -73,12 +73,12 @@ class GraphAnalyser extends Pausable {
         /* work around known bug in ComfyUI front end that doesn't clean up the linkIds
         https://github.com/Comfy-Org/ComfyUI_frontend/issues/5673#issuecomment-3314310014
 
-        Fixed
-        https://github.com/Comfy-Org/ComfyUI_frontend/pull/6258 
-     
+        Fixed? Doesn't seems to be.
+        https://github.com/Comfy-Org/ComfyUI_frontend/pull/6258 */
+        
 
         this.clean_slots(graph.links, graph.inputNode?.slots)
-        this.clean_slots(graph.links, graph.outputNode?.slots)   */
+        this.clean_slots(graph.links, graph.outputNode?.slots)  
 
         this.ambiguities = [];
         const treat_bypassed_as_live = settingsCache.getSettingValue("Use Everywhere.Options.connect_to_bypassed") || this.connect_to_bypassed
