@@ -33,7 +33,7 @@ class GraphAnalyser extends Pausable {
         for_all_graphs(this.modify_graph.bind(this))
     }
 
-    call_function_with_modified_graph( func, args ) {
+    async call_function_with_modified_graph( func, args ) {
         var result
         this.mods = []
         try {
@@ -41,7 +41,7 @@ class GraphAnalyser extends Pausable {
             Logger.log_info("Modifying graphs")
             this.modify_all_graphs()
             shared.graph_currently_modified += 1
-            result = args ? func(...args) : func()
+            result = await (args ? func(...args) : func())
         } catch (e) {
             Logger.log_error(e)
         }

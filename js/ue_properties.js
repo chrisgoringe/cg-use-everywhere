@@ -1,4 +1,4 @@
-import { version_at_least, create, is_UEnode, find_duplicate_types } from "./use_everywhere_utilities.js"
+import { version_at_least, create, is_UEnode, find_duplicate_broadcasted_types } from "./use_everywhere_utilities.js"
 import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
 import { shared } from "./shared.js";
 import { fix_inputs } from "./connections.js";
@@ -51,7 +51,7 @@ export function describe_restrictions(node) {
 export function default_priority(node) {
     var p = 10
     if (node.type === "Seed Everywhere" || node.type === "Prompts Everywhere") p += 10
-    if (any_regex_restrictions(node) || find_duplicate_types(node.inputs).size)  p += 20
+    if (any_regex_restrictions(node) || find_duplicate_broadcasted_types(node).size)  p += 20
     if (node.properties.ue_properties.group_restricted > 0) p += 3
     if (node.properties.ue_properties.color_restricted > 0) p += 6
     return p

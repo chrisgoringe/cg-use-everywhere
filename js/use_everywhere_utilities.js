@@ -1,9 +1,10 @@
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { link_is_from_subgraph_input, visible_graph, wrap_input } from "./use_everywhere_subgraph_utils.js";
+import { link_is_from_subgraph_input, visible_graph, wrap_input, connection_from_output_as_input } from "./use_everywhere_subgraph_utils.js";
 import { i18n } from "./i18n.js";
 import { ue_callbacks } from "./recursive_callbacks.js";
 import { shared } from "./shared.js";
+import { is_able_to_broadcast } from "./use_everywhere_settings.js";
 
 export function create( tag, clss, parent, properties ) {
     const nd = document.createElement(tag);
@@ -349,10 +350,27 @@ export function get_connection(node, i) {
     }
 }
 
-export function find_duplicate_types(inputs) {
+export function find_duplicate_broadcasted_types(node) {
+    var the_possibles
+    var connection_finder
+    var check_if_able_to_broadcast
+
+    if (node.properties.ue_convert) {
+        the_possibles = node.outputs
+        connection_finder = connection_from_output_as_input
+        check_if_able_to_broadcast = (node, i) => {
+            const name = node.outputs[i].name
+            return is_able_to_broadcast(node, name)
+        } 
+    } else {
+        check_if_able_to_broadcast = ()=>(true)
+        the_possibles = node.inputs
+        connection_finder = get_connection
+    }
+
     const broadcasted_types = new Set()
     const duplicated_broadcasted_types = new Set()
-    for (var i=0; i<inputs.length; i++) {
+    for (var i=0; i<the_possibles.length; i++) {
         const connection = connection_finder(node, i);
         if (connection.link && check_if_able_to_broadcast(node,i)) {
             if (broadcasted_types.has(connection.type)) duplicated_broadcasted_types.add(connection.type)

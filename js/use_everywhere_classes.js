@@ -3,7 +3,7 @@ import { default_priority } from "./ue_properties.js";
 import { is_able_to_broadcast } from "./use_everywhere_settings.js";
 import { connection_from_output_as_input, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
-import { Logger, node_is_live, get_real_node, get_connection, find_duplicate_types } from "./use_everywhere_utilities.js";
+import { Logger, node_is_live, get_real_node, get_connection, find_duplicate_broadcasted_types } from "./use_everywhere_utilities.js";
 
 
 export function display_name(node) { 
@@ -309,24 +309,23 @@ export class UseEverywhereList {
         if (node.properties.ue_properties.seed_inputs) {
             this.add_ue(node, -1, "INT", [node.id.toString(),0], regex_for(node, 'input') );
         } else {
-
+            var check_if_able_to_broadcast
             var the_possibles
             var connection_finder
-            var check_if_able_to_broadcast
             if (node.properties.ue_convert) {
-                the_possibles = node.outputs
                 connection_finder = connection_from_output_as_input
+                the_possibles = node.outputs
                 check_if_able_to_broadcast = (node, i) => {
                     const name = node.outputs[i].name
                     return is_able_to_broadcast(node, name)
                 }
             } else {
+                connection_finder = get_connection
                 the_possibles = node.inputs
-                connection_finder = get_connection  
                 check_if_able_to_broadcast = ()=>(true)
             }
 
-            const duplicated_broadcasted_types = find_duplicate_types(the_possibles)
+            const duplicated_broadcasted_types = find_duplicate_broadcasted_types(node)
 
             the_possibles.forEach((possible, i) => {
                 const connection = connection_finder(node, i);
