@@ -3,6 +3,7 @@ import { settingsCache } from "./use_everywhere_cache.js";
 import { link_is_from_subgraph_input, visible_graph, wrap_input } from "./use_everywhere_subgraph_utils.js";
 import { i18n } from "./i18n.js";
 import { ue_callbacks } from "./recursive_callbacks.js";
+import { shared } from "./shared.js";
 
 export function create( tag, clss, parent, properties ) {
     const nd = document.createElement(tag);
@@ -54,6 +55,19 @@ export class Logger {
     static LIMITED_LOG_BLOCKED = false;
     static LIMITED_LOG_MS      = 5000;
     static level;  // 0 for errors only, 1 activates 'log_problem', 2 activates 'log_info', 3 activates 'log_detail'
+
+    static log_shared(message, trace, limited) {
+        if (limited && Logger.check_limited()) return false
+        console.log(message)
+        if (trace) console.trace()
+        shared.report_keys.forEach((key)=>{
+            console.log( `${key.padStart(40,' ')} = ${shared[key]}` )
+        })
+    }
+
+    static log_arguments(a) {
+        Object.keys(arguments).forEach((k)=>{console.log(arguments[k])})
+    }
 
     static log_error(message, more) { 
         if (more) console.log(more)

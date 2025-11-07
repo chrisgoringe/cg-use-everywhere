@@ -76,7 +76,7 @@ app.registerExtension({
         */
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {     
-            if (is_combo_clone(this) && !shared.prompt_being_queued) comboclone_on_connection(this, link_info, connect)
+            if (is_combo_clone(this) && !shared.in_queuePrompt) comboclone_on_connection(this, link_info, connect)
             if (is_UEnode(this) && side==1) { // side 1 is input
                 input_changed(this, slot, connect, link_info)
                 
@@ -225,27 +225,19 @@ app.registerExtension({
         /*
         Modifications to the graph:
         - track start and end of the graph being changed
-        # - trace the use of serialize (debug)
         - catch convertToSubgraph to try to fix UE links
         */
         const original_beforeChange = app.graph.beforeChange
         app.graph.beforeChange = function () {
-            shared.in_midst_of_change = true
+            shared.in_midst_of_change += 1
             original_beforeChange?.apply(this, arguments)
         }
 
         const original_afterChange = app.graph.afterChange
         app.graph.afterChange = function () {
             original_afterChange?.apply(this, arguments)
-            shared.in_midst_of_change = false
+            shared.in_midst_of_change = Math.max(0, shared.in_midst_of_change-1)  // afterChange gets called without a beforeChange sometimes
         }
-
-        //const original_serialize = app.graph.serialize
-        //app.graph.serialize = function () {
-        //    Logger.log_with_trace(`app.graph.serialize called with shared.prompt_being_queued = ${shared.prompt_being_queued} and shared.graph_currently_modified = ${shared.graph_currently_modified}`)
-        //    return original_serialize.bind(app.graph)()
-        //}
-
         
         const original_subgraph = app.graph.convertToSubgraph
         app.graph.convertToSubgraph = function () {
@@ -266,41 +258,42 @@ app.registerExtension({
 
         /*
         Modifications to app
-        - intercept graphToPrompt to insert the UE links
-        - intercept queuePrompt to note that we are in the process of queueing the prompt
+        - intercept graphToPrompt and queuePrompt so we know where we are
         - provide API
         */
         const original_graphToPrompt = app.graphToPrompt;
         app.graphToPrompt = async function () {
-            if (shared.prompt_being_queued) {
-                return await shared.graphAnalyser.graph_to_prompt( );
-            } else {
-                Logger.log_problem("graphToPrompt called when !prompt_being_queued - why?")
-                if (app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
-                    Logger.log_info("always_modify_graph is set, so doing so anyway")
-                    return await shared.graphAnalyser.graph_to_prompt( );
+            try {
+                shared.in_graphToPrompt += 1
+                if (shared.in_queuePrompt || app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
+                    //Logger.log_shared('In graphToPrompt (going to modify graph):')
+                    return await shared.graphAnalyser.call_function_with_modified_graph( original_graphToPrompt, arguments )
+                } else {
+                    //Logger.log_shared('In graphToPrompt (not going to modify graph):')
+                    return await original_graphToPrompt.apply(this, arguments)
                 }
-                return await original_graphToPrompt.apply(app, arguments);
+            } finally {
+                shared.in_graphToPrompt -= 1
             }
         }
         
         const original_queuePrompt = app.queuePrompt;
         app.queuePrompt = async function () {
             try {
-                shared.prompt_being_queued = true;
+                shared.in_queuePrompt += 1;
                 return await original_queuePrompt.apply(app, arguments);
             } finally {
-                shared.prompt_being_queued = false;
+                shared.in_queuePrompt -= 1;
             }
         }
 
         app.ue_modified_prompt = async function () { // API function
-            return await shared.graphAnalyser.graph_to_prompt();
+            return await shared.graphAnalyser.call_function_with_modified_graph( original_queuePrompt ) 
         }
 
         /*
         Modifications to the canvas
-        - listen for set-graph to mark the link list as out of date (TODO: why?)
+        - listen for set-graph to mark the link list as out of date when we open or close a subgraph
         - catch node-double-click to open the restrictions dialog
         - onDrawForeground to highlight subgraph output links
         */
@@ -342,11 +335,11 @@ app.registerExtension({
     beforeConfigureGraph() {
         shared.linkRenderController.pause("before configure", 1000)
         shared.graphAnalyser.pause("before configure", 1000)
-        shared.graph_being_configured = true
+        shared.graph_being_configured += 1
     },
 
     afterConfigureGraph() {
-        shared.graph_being_configured = false
+        shared.graph_being_configured -= 1
         ue_callbacks.dispatch('afterConfigureGraph')
     }
 

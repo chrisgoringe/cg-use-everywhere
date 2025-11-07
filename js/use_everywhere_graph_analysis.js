@@ -33,34 +33,39 @@ class GraphAnalyser extends Pausable {
         for_all_graphs(this.modify_graph.bind(this))
     }
 
-    async graph_to_prompt() {
-        var p;
-        this.pause('graph_to_prompt')
+    call_function_with_modified_graph( func, args ) {
+        var result
         this.mods = []
-        try { 
-            for_all_graphs(this.modify_graph.bind(this))
-            shared.graph_currently_modified = true
-            // Now create the prompt using the ComfyUI original functionality and the patched graph
-            p = await this.original_graphToPrompt.apply(app);
-        } catch (e) { 
+        try {
+            this.pause('call_function_with_modified_graph')
+            Logger.log_info("Modifying graphs")
+            this.modify_all_graphs()
+            shared.graph_currently_modified += 1
+            result = args ? func(...args) : func()
+        } catch (e) {
             Logger.log_error(e)
-        } finally { 
-            try {
-                this.mods.forEach((mod)=>{mod.restorer()})
-                this.mods = []
-            } finally {
-                shared.graph_currently_modified = false
-                this.unpause()
-            }
         }
 
-        if (!p) {
-            Logger.log_problem("graph_to_prompt_fallback")
-            p = await this.original_graphToPrompt.apply(app);
-        }
-        
-        return p;
+        Logger.log_info("Unmodifying graphs")
+        this.mods.forEach((mod)=>{
+            try {mod.restorer()}
+            catch (e) {Logger.log_error(e)}
+        })
+        this.mods = []
+        shared.graph_currently_modified -= 1
+        this.unpause()
+
+        return result
     }
+
+    /*
+    clean_slots(links, slots) {
+        slots?.forEach((slot)=>{
+            if (slot.linkIds.find((lid)=>(!links[lid]))) {
+                slot.linkIds = slot.linkIds.filter((lid)=>{ return links[lid] !== undefined })
+            }
+        })
+    }*/
 
     analyse_graph(graph, ignore_pause) {
         if (this.paused() && !ignore_pause) return null
@@ -68,17 +73,12 @@ class GraphAnalyser extends Pausable {
         /* work around known bug in ComfyUI front end that doesn't clean up the linkIds
         https://github.com/Comfy-Org/ComfyUI_frontend/issues/5673#issuecomment-3314310014
 
-        Maybe fixed? Or maybe just for the input links?
+        Fixed
         https://github.com/Comfy-Org/ComfyUI_frontend/pull/6258 
-        */
-        if (graph.inputNode) {
-            graph.inputNode.slots.forEach((slot)=>{
-                slot.linkIds = slot.linkIds.filter((lid)=>{ return graph.links[lid] !== undefined })
-            })
-            graph.outputNode.slots.forEach((slot)=>{
-                slot.linkIds = slot.linkIds.filter((lid)=>{ return graph.links[lid] !== undefined })
-            })
-        }
+     
+
+        this.clean_slots(graph.links, graph.inputNode?.slots)
+        this.clean_slots(graph.links, graph.outputNode?.slots)   */
 
         this.ambiguities = [];
         const treat_bypassed_as_live = settingsCache.getSettingValue("Use Everywhere.Options.connect_to_bypassed") || this.connect_to_bypassed
