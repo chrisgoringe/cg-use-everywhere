@@ -348,3 +348,16 @@ export function get_connection(node, i) {
         return { link:undefined, type:undefined }
     }
 }
+
+export function find_duplicate_types(inputs) {
+    const broadcasted_types = new Set()
+    const duplicated_broadcasted_types = new Set()
+    for (var i=0; i<inputs.length; i++) {
+        const connection = connection_finder(node, i);
+        if (connection.link && check_if_able_to_broadcast(node,i)) {
+            if (broadcasted_types.has(connection.type)) duplicated_broadcasted_types.add(connection.type)
+            broadcasted_types.add(connection.type)
+        }
+    }
+    return duplicated_broadcasted_types
+}

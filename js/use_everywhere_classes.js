@@ -1,9 +1,9 @@
-import { i18n_functional, i18n_functional_regex } from "./i18n.js";
+import { i18n_functional } from "./i18n.js";
 import { default_priority } from "./ue_properties.js";
 import { is_able_to_broadcast } from "./use_everywhere_settings.js";
 import { connection_from_output_as_input, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
-import { Logger, node_is_live, get_real_node, get_connection } from "./use_everywhere_utilities.js";
+import { Logger, node_is_live, get_real_node, get_connection, find_duplicate_types } from "./use_everywhere_utilities.js";
 
 
 export function display_name(node) { 
@@ -326,15 +326,7 @@ export class UseEverywhereList {
                 check_if_able_to_broadcast = ()=>(true)
             }
 
-            const broadcasted_types = new Set()
-            const duplicated_broadcasted_types = new Set()
-            for (var i=0; i<the_possibles.length; i++) {
-                const connection = connection_finder(node, i);
-                if (connection.link && check_if_able_to_broadcast(node,i)) {
-                    if (broadcasted_types.has(connection.type)) duplicated_broadcasted_types.add(connection.type)
-                    broadcasted_types.add(connection.type)
-                }
-            }
+            const duplicated_broadcasted_types = find_duplicate_types(the_possibles)
 
             the_possibles.forEach((possible, i) => {
                 const connection = connection_finder(node, i);
