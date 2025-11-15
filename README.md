@@ -21,6 +21,8 @@ If upgrading from before version 7, see the end of this document for the major c
 - Prompt Everywhere node deprecated and auto-replaced
 - Convert to real links now works for any-node broadcasting
 - Anything Everywhere nodes in a subgraph can broadcast to its output
+- Inputs which have a clash of two more possible UE sources are marked with a red cross
+- Couple of bug fixes, including one significant performance issue
 
 ## 7.4
 
