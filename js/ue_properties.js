@@ -1,4 +1,4 @@
-import { version_at_least, create, is_UEnode } from "./use_everywhere_utilities.js"
+import { version_at_least, create, is_UEnode, find_duplicate_broadcasted_types } from "./use_everywhere_utilities.js"
 import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS } from "./i18n.js";
 import { shared } from "./shared.js";
 import { fix_inputs } from "./connections.js";
@@ -51,7 +51,7 @@ export function describe_restrictions(node) {
 export function default_priority(node) {
     var p = 10
     if (node.type === "Seed Everywhere" || node.type === "Prompts Everywhere") p += 10
-    if (any_regex_restrictions(node))  p += 20
+    if (any_regex_restrictions(node) || find_duplicate_broadcasted_types(node).size)  p += 20
     if (node.properties.ue_properties.group_restricted > 0) p += 3
     if (node.properties.ue_properties.color_restricted > 0) p += 6
     return p
@@ -93,7 +93,7 @@ Convert node properties when loaded.
 export function setup_ue_properties_onload(node) {
     if (!node.properties?.ue_properties) node.properties.ue_properties = {}
     if ( !version_at_least(node.properties?.ue_properties?.version, "7.0") ) {
-        if (is_UEnode(node, false)) {
+        if (is_UEnode(node)) {
         // convert a pre 7.0 UE node
             node.properties.ue_properties = {
                 version               : VERSION,
@@ -123,7 +123,7 @@ export function setup_ue_properties_onload(node) {
 }
 
 function convert_node_types(node) {
-    if (!is_UEnode(node, false)) return
+    if (!is_UEnode(node)) return
 
     if (node.type=="Anything Everywhere?") {
         node.widgets.forEach((w)=>{w.hidden=true})
@@ -133,14 +133,18 @@ function convert_node_types(node) {
         if (node.title=="Anything Everywhere3") node.title = "Anything Everywhere"
         node.type = "Anything Everywhere"        
     } else if (node.type=="Seed Everywhere") {
+        if (node.title=="Anything Everywhere3") node.title = "PrimitiveInt"
         node.type = "PrimitiveInt"
         node.properties.ue_convert = true
         node.properties.ue_properties.fixed_inputs = true
         node.properties.ue_properties.seed_inputs  = true
         node.properties.ue_properties.input_regex  = node.properties.ue_properties.input_regex || i18n_functional('seed_input_regex')   
     } else if (node.type=="Prompts Everywhere") {
-        node.properties.ue_properties.fixed_inputs   = true
-        node.properties.ue_properties.prompt_regexes = true
+        if (node.title=="Prompts Everywhere") node.title = "Anything Everywhere"
+        node.properties.ue_properties.fixed_inputs   = false
+        node.inputs[0].label = i18n_functional('positive')
+        node.inputs[1].label = i18n_functional('negative')
+        node.properties.ue_properties['keep_inputs'] = [0,1]
     }
 
     ALL_REGEXES.forEach((r)=>{

@@ -1,10 +1,16 @@
+export const VERSION = "7.5"
 
 class Shared {
-    graph_being_configured = false
-    prompt_being_queued    = false
-    in_midst_of_change     = false
-    graphAnalyser          = undefined
-    linkRenderController   = undefined
+    constructor() {
+        this.graph_being_configured   = 0
+        this.in_queuePrompt           = 0
+        this.in_graphToPrompt         = 0
+        this.in_midst_of_change       = 0
+        this.graph_currently_modified = 0
+        this.graphAnalyser            = undefined
+        this.linkRenderController     = undefined
+        this.report_keys = [ 'graph_being_configured', 'in_queuePrompt', 'in_graphToPrompt', 'in_midst_of_change', 'graph_currently_modified' ]
+    }
 }
 
 class Deferred {
@@ -28,4 +34,3 @@ export const deferred_actions = new Deferred()
 
 export const shared = new Shared()
 
-export const VERSION = "7.4.1"

@@ -1,7 +1,7 @@
 
 import { any_restrictions, describe_restrictions } from "./ue_properties.js";
 import { app } from "../../scripts/app.js";
-import { create, is_UEnode } from "./use_everywhere_utilities.js";
+import { create } from "./use_everywhere_utilities.js";
 import { edit_window } from "./floating_window.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 
@@ -31,18 +31,14 @@ function show_on_hover() {
 }
 
 function hide_tooltip() {
-    var ue_tooltip_element = document.getElementById('ue_tooltip')
-    if (ue_tooltip_element) {
-        ue_tooltip_element.style.display = "none"
-        ue_tooltip_element.showing = false
-    }
+    ue_tooltip_element.style.display = "none"
+    ue_tooltip_element.showing = false
 }
 
 function tooltipable() {
     if (
         (!app.canvas?.node_over)                                             ||
         ( edit_window.showing)                                               ||
-        ( ue_tooltip_element.showing)                                        ||
         (!settingsCache.getSettingValue('Use Everywhere.Graphics.tooltips')) ||
         (!any_restrictions(app.canvas.node_over))
     ) return false

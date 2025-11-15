@@ -15,10 +15,20 @@ If upgrading from before version 7, see the end of this document for the major c
 <details>
 <summary>Changes since 7.0</summary>
 
+## 7.5
+
+- Added per-output granularity to any-node broadcasting
+- Prompt Everywhere node deprecated and auto-replaced
+- Convert to real links now works for any-node broadcasting
+- Anything Everywhere nodes in a subgraph can broadcast to its output
+- Inputs which have a clash of two more possible UE sources are marked with a red cross
+- Couple of bug fixes, including one significant performance issue
+
 ## 7.4
 
 - Added broadcasting from [any node](#any-node-broadcasting)
 - Added negative regex option
+- Seed Everywhere node deprecated and auto-replaced
 
 ## 7.3
 
@@ -84,6 +94,11 @@ When broadcasting, the node acts like all its outputs were connected to a single
 |This...|...does the same as this|
 |-|-|
 |![with](docs/broadcaston.png)|![without](docs/broadcastoff.png)|
+
+From `7.5`, the outputs that will broadcast can also be set (like inputs):
+
+![output_set](docs/output_set.png)
+
 </details>
 
 # Where will the data be sent?
@@ -180,7 +195,7 @@ and connections, it is muted.
 </details>
 
 <details>
-<summary>Inputs have a subtle visual clue</summary>
+<summary>Inputs and outputs have a subtle visual clue</summary>
 
 The state of inputs is also represented visually: a black ring and a glow on the input dot indicates it is connectable. 
 In the image below, `positive` has been set to not accept UE inputs, `steps` has been set to accept them, and `model` has a UE connection.
@@ -190,6 +205,12 @@ In the image below, `positive` has been set to not accept UE inputs, `steps` has
 If a widget is getting data from a UE connection, it is grayed out, like `steps` below:
 
 ![uec](docs/connectable3.png)
+
+Similarly, if a node has had broadcasting added to it, the outputs that can broadcast are shown: 
+here `merged` can broadcast, but isn't, `x` can broadcast and is, and `y` is set to not broadcast.
+
+![outputs](docs/outputs.png)
+
 </details>
 
 # Special Case Nodes
@@ -334,8 +355,7 @@ An Anything Everywhere node in your main graph can send to the input of a subgra
 you can also connect as Anything Everywhere node to one of the inputs inside a subgraph.
 
 You can connect an output of the subgraph node to an Anything Everywhere node (or set the subgraph node to broadcast), 
-but you can't broadcast data within the subgraph to its output panel (because of difficulties determining the type)
-although this may change [issue 405](https://github.com/chrisgoringe/cg-use-everywhere/issues/405).
+and you can broadcast from within the subgraph to the output panel of the subgraph.
 
 </details>
 

@@ -1,8 +1,9 @@
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
-import { link_is_from_subgraph_input, visible_graph, wrap_input } from "./use_everywhere_subgraph_utils.js";
+import { link_is_from_subgraph_input, visible_graph, wrap_input, connection_from_output_as_input } from "./use_everywhere_subgraph_utils.js";
 import { i18n } from "./i18n.js";
 import { ue_callbacks } from "./recursive_callbacks.js";
+import { shared } from "./shared.js";
 
 export function create( tag, clss, parent, properties ) {
     const nd = document.createElement(tag);
@@ -46,6 +47,7 @@ export function get_real_node(node_id, graph) {
     if (!graph) graph = visible_graph()
     const nid = node_id.toString();
     if (nid==-10) return wrap_input(graph.inputNode); // special case for subgraph input
+    if (nid==-20) return wrap_input(graph.outputNode); // special case for subgraph input
     return graph._nodes_by_id[nid];
 }
 
@@ -53,6 +55,19 @@ export class Logger {
     static LIMITED_LOG_BLOCKED = false;
     static LIMITED_LOG_MS      = 5000;
     static level;  // 0 for errors only, 1 activates 'log_problem', 2 activates 'log_info', 3 activates 'log_detail'
+
+    static log_shared(message, trace, limited) {
+        if (limited && Logger.check_limited()) return false
+        console.log(message)
+        if (trace) console.trace()
+        shared.report_keys.forEach((key)=>{
+            console.log( `${key.padStart(40,' ')} = ${shared[key]}` )
+        })
+    }
+
+    static log_arguments(a) {
+        Object.keys(arguments).forEach((k)=>{console.log(arguments[k])})
+    }
 
     static log_error(message, more) { 
         if (more) console.log(more)
@@ -107,10 +122,10 @@ class GraphConverter {
         this.did_conversion = false;
      }
 
-    running_116_plus() {
-        const version = __COMFYUI_FRONTEND_VERSION__.split('.')
-        return (parseInt(version[0])>=1 && (parseInt(version[0])>1 || parseInt(version[1])>=16))
-    }
+    //running_116_plus() {
+    //    const version = __COMFYUI_FRONTEND_VERSION__.split('.')
+    //    return (parseInt(version[0])>=1 && (parseInt(version[0])>1 || parseInt(version[1])>=16))
+    //}
 
     store_node_input_map(data) { 
         this.node_input_map = {};
@@ -174,7 +189,7 @@ class GraphConverter {
         if (node.properties?.ue_properties?.widget_ue_connectable) return
         if (node.properties?.widget_ue_connectable) return  // pre 7.0 node which will be converted
 
-        if (is_UEnode(node, false)) {
+        if (is_UEnode(node)) {
             if (node.properties?.ue_properties?.version) return
             this.clean_ue_node(node)
         }
@@ -265,11 +280,17 @@ export function is_connected(input, treat_bypassed_as_live, graph) {
 /*
 Is this a UE node?
 */
-export function is_UEnode(node_or_nodeType, include_converts) {
-    if (include_converts && node_or_nodeType.properties?.ue_convert) return true;
-    const title = node_or_nodeType.type || node_or_nodeType.comfyClass;
-    return ((title) && (title.startsWith("Anything Everywhere") || title==="Seed Everywhere" || title==="Prompts Everywhere"))
+export function is_UEnode(node) {
+    const type = node.comfyClass;
+    if (type == "Anything Everywhere") return true;
+    return ((type) && (type.startsWith("Anything Everywhere") || type==="Seed Everywhere" || type==="Prompts Everywhere"))
 }
+
+export function node_can_broadcast(node) {
+    return (node.properties?.ue_convert || is_UEnode(node))
+}
+
+
 
 /*
 Inject a call into a method on object with name methodname.
@@ -283,33 +304,6 @@ export function inject(object, methodname, tracetext, injection, injectionthis, 
         injection.apply(injectionthis, injectionarguments);
     }
 }
-
-export function defineProperty(instance, property, desc) {
-    const existingDesc = Object.getOwnPropertyDescriptor(instance, property);
-    if (existingDesc?.configurable === false) {
-      throw new Error(`Error: Cannot define un-configurable property "${property}"`);
-    }
-    if (existingDesc?.get && desc.get) {
-      const descGet = desc.get;
-      desc.get = () => {
-        existingDesc.get.apply(instance, []);
-        return descGet.apply(instance, []);
-      };
-    }
-    if (existingDesc?.set && desc.set) {
-      const descSet = desc.set;
-      desc.set = (v) => {
-        existingDesc.set.apply(instance, [v]);
-        return descSet.apply(instance, [v]);
-      };
-    }
-    desc.enumerable = desc.enumerable ?? existingDesc?.enumerable ?? true;
-    desc.configurable = desc.configurable ?? existingDesc?.configurable ?? true;
-    if (!desc.get && !desc.set) {
-      desc.writable = desc.writable ?? existingDesc?.writable ?? true;
-    }
-    return Object.defineProperty(instance, property, desc);
-  }
 
 export class Pausable {
     constructor(name) {
@@ -353,4 +347,44 @@ export function get_connection(node, i) {
     } else {
         return { link:undefined, type:undefined }
     }
+}
+
+export function is_able_to_broadcast(node, output_name) {
+    if (!node.properties.ue_convert) return false
+    const output = node.outputs.find(i => i.name==output_name);
+    if (!output) {
+        Logger.log_error(`Can't find output ${output_name} on node ${node.title}`);
+        return false;
+    }
+    return ! (node.properties?.ue_properties?.output_not_broadcasting?.[output_name])
+}
+
+export function find_duplicate_broadcasted_types(node) {
+    var the_possibles
+    var connection_finder
+    var check_if_able_to_broadcast
+
+    if (node.properties.ue_convert) {
+        the_possibles = node.outputs
+        connection_finder = connection_from_output_as_input
+        check_if_able_to_broadcast = (node, i) => {
+            const name = node.outputs[i].name
+            return is_able_to_broadcast(node, name)
+        } 
+    } else {
+        check_if_able_to_broadcast = ()=>(true)
+        the_possibles = node.inputs
+        connection_finder = get_connection
+    }
+
+    const broadcasted_types = new Set()
+    const duplicated_broadcasted_types = new Set()
+    for (var i=0; i<the_possibles.length; i++) {
+        const connection = connection_finder(node, i);
+        if (connection.link && check_if_able_to_broadcast(node,i)) {
+            if (broadcasted_types.has(connection.type)) duplicated_broadcasted_types.add(connection.type)
+            broadcasted_types.add(connection.type)
+        }
+    }
+    return duplicated_broadcasted_types
 }

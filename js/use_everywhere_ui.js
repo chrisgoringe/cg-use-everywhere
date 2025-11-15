@@ -1,4 +1,4 @@
-import { Logger, get_real_node, Pausable, is_UEnode } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, Pausable, node_can_broadcast, is_able_to_broadcast } from "./use_everywhere_utilities.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
@@ -49,10 +49,10 @@ export function nodes_in_groups_matching(regex, already_limited_to) {
 
 export function nodes_my_color(node, already_limited_to) {
     const nodes_in = new Set();
-    const color = node.color;
+    const color = get_real_node(node.id)?.color
     if (already_limited_to) {
         already_limited_to.forEach((nid) => {
-            if (get_real_node(nid, node.graph).color==color) nodes_in.add(nid)
+            if (get_real_node(nid, node.graph)?.color==color) nodes_in.add(nid)
         })
     } else {
         node.graph._nodes.forEach((nd) => {
@@ -64,10 +64,10 @@ export function nodes_my_color(node, already_limited_to) {
 
 export function nodes_not_my_color(node, already_limited_to) {
     const nodes_in = new Set();
-    const color = get_real_node(node.id).color;
+    const color = get_real_node(node.id)?.color;
     if (already_limited_to) {
         already_limited_to.forEach((nid) => {
-            if (get_real_node(nid, node.graph).color!=color) nodes_in.add(nid)
+            if (get_real_node(nid, node.graph)?.color!=color) nodes_in.add(nid)
         })
     } else {
         node.graph._nodes.forEach((nd) => {
@@ -78,11 +78,11 @@ export function nodes_not_my_color(node, already_limited_to) {
 }
 
 export function title_bar_additions(node, ctx, title_height) {
-    if (is_UEnode(node, true)) {
+    if (node_can_broadcast(node)) {
         const restricted = any_restrictions(node);
         const sending    = shared.linkRenderController.node_sending_anywhere(node);
 
-        const color = restricted ? ( sending ? "rgba(255, 72, 72, 1)" : "rgba(255, 72, 72, 0.35)" ) :
+        const color = restricted ? ( sending ? "rgba(255, 255, 72, 1)" : "rgba(255, 255, 72, 0.35)" ) :
                                    ( sending ? "rgba(72, 255, 72, 1)" : "rgba(72, 255, 72, 0.35)" );
 
         ctx.save();
@@ -113,7 +113,7 @@ export class LinkRenderController extends Pausable {
 
     //on_unpause() {app.graph.change();}
 
-    node_over_changed(v) {
+    node_over_changed() {
         const mode = settingsCache.getSettingValue('Use Everywhere.Graphics.showlinks');
         if (mode==2 || mode==3) app.canvas.setDirty(true,true)
     }
@@ -158,42 +158,40 @@ export class LinkRenderController extends Pausable {
         } 
     }
 
-    disable_all_connected_widgets( disable ) {
-        const graph = app.canvas.graph
-        if (disable) {
-            graph.extra['ue_links']?.forEach((uel) => {
-                const node = graph._nodes_by_id[uel.downstream]
-                if (node) {
-                    try {
-                        const name = node.inputs[uel.downstream_slot]?.name;
-                        if (name) {
-                            const widget = node._getWidgetByName(name) 
-                            if (widget) {
-                                if (!widget.disabled) {
-                                    this.widgets_disabled.push(widget)
-                                    widget.disabled = true;
-                                }
-                                widget.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
-                                    this.widgets_disabled.push(w)
-                                    w.disabled = true;
-                                })
-                            } else {
-                                // it's an input not a widget, so ignore
-                            }
-                        } else {
-                            Logger.log_problem(`In disable_all_connected_widgets, for downstream node ${node.id}, slot ${uel.downstream_slot} did not return a name`)
+    disable_all_connected_widgets( ) {
+        const widgets_disabled = []
+
+        app.canvas.graph.extra['ue_links']?.forEach((uel) => {
+            const node = app.canvas.graph._nodes_by_id[uel.downstream]
+            if (node) {
+                const name = node.inputs[uel.downstream_slot]?.name;
+                if (name) {
+                    const widget = node.widgets?.find((w)=>(w.name==name)) //  _getWidgetByName(name) 
+                    if (widget) {
+                        if (!widget.disabled) {
+                            widgets_disabled.push(widget)
+                            widget.disabled = true;
                         }
-                    } catch(e) {
-                        Logger.log_error(e);
-                    }
-                } else {
-                    Logger.log_problem(`In disable_all_connected_widgets, couldn't find downstream node ${uel.downstream}`)
-                }
-            })   
-        } else {
-            this.widgets_disabled.forEach((w)=>w.disabled=false)
-            this.widgets_disabled = []
-        }     
+                        widget.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
+                            widgets_disabled.push(w)
+                            w.disabled = true;
+                        })
+                    } 
+                } 
+            } 
+        })   
+        return widgets_disabled
+    }
+
+    highlight_subgraph_node_connections(subgraph, ctx) {
+        if (!settingsCache.getSettingValue('Use Everywhere.Graphics.highlight')) return;
+        this.ue_list.all_connected_inputs(subgraph.outputNode).forEach((ue_connection)=>{
+            const pos2 = subgraph?.outputNode?.slots[ue_connection.input_index]?.pos;
+            if (pos2) {
+                drawcircle(ctx, pos2, CONNECTED_1, 5, "first", {strokeStyle:LGraphCanvas.link_type_colors[ue_connection.type]})
+                drawcircle(ctx, pos2, CONNECTED_2, 4, "last")
+            }
+        })
     }
 
     highlight_ue_connections(node, ctx) {        
@@ -204,6 +202,8 @@ export class LinkRenderController extends Pausable {
             this.pause('highlight_ue_connections')
             if (!this._list_ready()) return;
 
+            // get all the inputs that can be connected and aren't
+            // connected with a 'real' link
             const unconnected_connectable_names = new Set(node.inputs
                 .filter((input)=>is_connectable(node,input.name))
                 .filter((input)=>(!input.link))
@@ -216,54 +216,56 @@ export class LinkRenderController extends Pausable {
  
                     const name_sent_to = node.inputs[ue_connection.input_index].name;
                     unconnected_connectable_names.delete(name_sent_to); // remove the name from the list of connectables
-                    var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
-                    pos2[0] -= node.pos[0];
-                    pos2[1] -= node.pos[1];
-                    ctx.save();
-                    ctx.lineWidth = 1;
-                    var radius=5
-                    ctx.strokeStyle = LGraphCanvas.link_type_colors[ue_connection.type];
-                    ctx.shadowColor = "white"; 
-                    ctx.shadowBlur = 10;
-                    ctx.shadowOffsetX = 0;
-                    ctx.shadowOffsetY = 0;
-                    ctx.beginPath();
-                    ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
-                    ctx.stroke();
-                    ctx.shadowBlur = 0;
-                    ctx.beginPath();
-                    ctx.strokeStyle = "black";
-                    ctx.shadowBlur = 0;
-                    radius = radius - 1;
-                    ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
-                    ctx.stroke();
+                    const pos2 = this._relative_connection_pos(node, true, ue_connection.input_index);
 
-                    ctx.restore();
+                    drawcircle(ctx, pos2, CONNECTED_1, 6, "first", {strokeStyle:LGraphCanvas.link_type_colors[ue_connection.type]} )
+                    drawcircle(ctx, pos2, CONNECTED_2, 5, "last" )
                 });
             }
             
             unconnected_connectable_names.forEach((name) => {
                 const index = node.inputs.findIndex((i) => i.name == name);
-                var pos2 = node.getConnectionPos(true, index, this.slot_pos1);
-                pos2[0] -= node.pos[0];
-                pos2[1] -= node.pos[1];
-                ctx.save();
-                ctx.strokeStyle = "black"; 
-                ctx.shadowColor = "green"; 
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
-                var radius = 3;
-                ctx.beginPath();
-                ctx.roundRect(pos2[0]-radius,pos2[1]-radius,2*radius,2*radius,radius);
-                ctx.stroke();
-                ctx.restore();
+                const pos2 = this._relative_connection_pos(node, true, index);
+                drawcircle(ctx, pos2, {...UNCONNECTED_CONNECTABLE}, 3)
             })
+
+            if (node.properties.ue_convert) {
+                const sending_slots = this.ue_list.all_sending_slots(node)
+
+                node.outputs.forEach((output,i) => {
+                    if (is_able_to_broadcast(node, output.name)) {
+                        const pos2 = this._relative_connection_pos(node, false, i);
+                        if (sending_slots.has(i)) {
+                            drawcircle(ctx, pos2, CONNECTED_1, 6, "first", {strokeStyle:LGraphCanvas.link_type_colors[node.outputs[i].type]})
+                            drawcircle(ctx, pos2, CONNECTED_2, 5, "last")
+                        } else {
+                            drawcircle(ctx, pos2, UNCONNECTED_CONNECTABLE, 3)
+                        }
+             
+                    }
+                })
+            }
+
+            shared.graphAnalyser.ambiguities.filter((ambiguity)=>(ambiguity.id==node.id)).forEach((ambiguity)=>{
+                const index = node.inputs.findIndex((input)=>(input.name==ambiguity.input))
+                if (index>=0) {
+                    const pos2 = this._relative_connection_pos(node, true, index);
+                    drawcross(ctx, pos2, AMBIGUITY, 7)
+                }
+            })
+
         } catch (e) {
             Logger.log_error(e);
         } finally {
             this.unpause()
         }
+    }
+
+    _relative_connection_pos(node, input, slot) {
+        var pos2 = node.getConnectionPos?.(input, slot, this.slot_pos1) || node.slots[slot].pos;
+        pos2[0] -= node.pos[0];
+        pos2[1] -= node.pos[1];
+        return pos2
     }
 
     _list_ready() {
@@ -396,8 +398,6 @@ export class LinkRenderController extends Pausable {
                     app.canvas.render_connections_border = false
                     ctx.shadowColor = color;
                     ctx.shadowBlur = 6;
-                    ctx.shadowOffsetX = 0;
-                    ctx.shadowOffsetY = 0;      
                     skip_border = true         
                 }
                 app.canvas.renderLink(ctx, pos1, pos2, undefined, skip_border, animate%2, modify(color), sta_direction, end_direction, undefined);
@@ -409,7 +409,7 @@ export class LinkRenderController extends Pausable {
             }
 
         } catch (e) {
-            Logger.log_problem(`Couldn't render UE link ${ue_connection}. That's ok if something just got deleted.`);
+            Logger.log_error(e, `Couldn't render UE link ${ue_connection}. That's ok if something just got deleted.`);
         }
     }
 
@@ -420,6 +420,67 @@ export class LinkRenderController extends Pausable {
         const step = Math.ceil(f*2*max_blur) % (2*max_blur);
         ctx.shadowBlur = (step<max_blur) ? step + 4 : 3 + 2*max_blur - step;
     }
+}
+
+const UNCONNECTED_CONNECTABLE = {
+    lineWidth     : 1, 
+    strokeStyle   : "black",
+    shadowColor   : "green", 
+    shadowBlur    : 4,
+}
+
+const CONNECTED_1 = {
+    lineWidth     : 1, 
+    shadowColor   : "white",
+    strokeStyle   : "white",
+    shadowBlur    : 4,                      
+}
+
+const CONNECTED_2 = {
+    lineWidth     : 1, 
+    shadowBlur    : 0,
+    strokeStyle   : "black",
+}
+
+const AMBIGUITY = {
+    lineWidth     : 1,  
+    strokeStyle   : "red",
+}
+
+const DEFAULTS = {
+    shadowOffsetX : 0,
+    shadowOffsetY : 0,
+}
+
+const PROPS = ["lineWidth", "strokeStyle", "shadowColor", "shadowBlur", "shadowOffsetX", "shadowOffsetY"]
+
+function drawcircle(ctx, position, properties, radius, first_last, additional) {
+    if (!first_last || first_last=='first') ctx.save()
+    PROPS.forEach((k)=>{
+        if (DEFAULTS[k]!==undefined) ctx[k] = DEFAULTS[k]
+        if (properties[k]!==undefined) ctx[k] = properties[k]
+        if (additional && additional[k]!==undefined) ctx[k] = additional[k]
+    })
+    ctx.beginPath();
+    ctx.roundRect(position[0]-radius,position[1]-radius,2*radius,2*radius,radius);
+    ctx.stroke();
+    if (!first_last || first_last=='last') ctx.restore()
+}
+
+function drawcross(ctx, position, properties, radius) {
+    ctx.save()
+    PROPS.forEach((k)=>{
+        if (DEFAULTS[k]) ctx[k] = DEFAULTS[k]
+    })
+    ctx.lineWidth = properties.lineWidth
+    ctx.strokeStyle = properties.strokeStyle
+    ctx.beginPath();
+    ctx.moveTo(position[0]-radius,position[1]-radius)
+    ctx.lineTo(position[0]+radius,position[1]+radius)
+    ctx.moveTo(position[0]-radius,position[1]+radius)
+    ctx.lineTo(position[0]+radius,position[1]-radius)
+    ctx.stroke();
+    ctx.restore()
 }
 
 function modify(c) {

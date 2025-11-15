@@ -1,9 +1,9 @@
-import { LinkRenderController } from "./use_everywhere_ui.js";
 import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPTIONS, REPEATED_TYPE_OPTIONS } from "./i18n.js";
 import { app } from "../../scripts/app.js";
 import { default_priority } from "./ue_properties.js";
 import { edit_window } from "./floating_window.js";
 import { shared } from "./shared.js";
+import { Logger } from "./use_everywhere_utilities.js";
 
 const REGEXES = ['title', 'input', 'group']
 const P_REGEXES = ['prompt', 'negative']
@@ -44,14 +44,6 @@ function changed(node, property, value) {
         document.getElementById('priority_value').value = `${default_priority(node)}`
     }
 
-    if (node.properties.ue_properties.prompt_regexes) {
-        for (var i=0; i<2; i++) {
-            if (!node.properties.ue_properties[`${P_REGEXES[i]}_regex`]) {
-                document.getElementById(`${P_REGEXES[i]}_regex_value`).value = i18n_functional(`${P_REGEXES[i]}_regex`)
-            }
-        }
-    }
-
     const elem = document.getElementById(`${property}_value`)
     if (elem) elem.style.opacity = (value) ? "1" : "0.5"
 
@@ -63,47 +55,26 @@ function create_editor_html(node) {
     const table = document.createElement('table')
 
     for (var i=0; i<=2; i++) {
-        
-        if (i==1 && node.properties.ue_properties.prompt_regexes) {
-            for (var j=0; j<2; j++) {
-                const name = P_REGEXES[j]
-                const row = add_row(table, `${i18n(name)} regex`)
+        const name = REGEXES[i]
+        const row = add_row(table, `${i18n(name)} regex`)
 
-                const input_props = {
-                    type:'text', 
-                    id:`${name}_regex_value`,
-                    value: node.properties.ue_properties[`${name}_regex`] || i18n_functional(`${name}_regex`),
-                }
+        const contents = create_element('span', null, {'className':'regex_input_container'})
 
-                const input = create_element('input', contents, input_props).
-                    addEventListener('input', (e)=>{ changed(node, `${name}_regex`, e.target.value)}) 
- 
-                if (!node.properties.ue_properties[`${name}_regex`]) input.style.opacity = 0.5
-
-                add_cell(row,input)                
-            }
-        } else {
-            const name = REGEXES[i]
-            const row = add_row(table, `${i18n(name)} regex`)
-
-            const contents = create_element('span', null, {'className':'regex_input_container'})
-
-            const checkbox_props = {
-                type:'checkbox', 
-                id:`${name}_regex_invert`, 
-                checked: (node.properties.ue_properties[`${name}_regex_invert`]) ? true : undefined,
-                className: 'checkbox'
-            }
-            create_element('input', contents, checkbox_props).
-                addEventListener('input', (e)=>{ changed(node, `${name}_regex_invert`, e.target.checked); } )
-
-            create_element('span', contents, {innerText:i18n('Invert'), className:'regex_checkbox_label'})
-
-            create_element('input', contents, {type:'text', value:node.properties.ue_properties[`${name}_regex`] || ''}). 
-                addEventListener('input', (e)=>{ changed(node, `${name}_regex`, e.target.value)})
-
-            add_cell(row,contents)
+        const checkbox_props = {
+            type:'checkbox', 
+            id:`${name}_regex_invert`, 
+            checked: (node.properties.ue_properties[`${name}_regex_invert`]) ? true : undefined,
+            className: 'checkbox'
         }
+        create_element('input', contents, checkbox_props).
+            addEventListener('input', (e)=>{ changed(node, `${name}_regex_invert`, e.target.checked); } )
+
+        create_element('span', contents, {innerText:i18n('Invert'), className:'regex_checkbox_label'})
+
+        create_element('input', contents, {type:'text', value:node.properties.ue_properties[`${name}_regex`] || ''}). 
+            addEventListener('input', (e)=>{ changed(node, `${name}_regex`, e.target.value)})
+
+        add_cell(row,contents)
     }
 
     const gr_row    = add_row(table, i18n("Group"))
@@ -116,12 +87,11 @@ function create_editor_html(node) {
     add_cell(col_row,col_select)
     add_select_options(node, col_select, COLOR_RESTRICTION_OPTIONS, `color_restricted` )
 
-    if (!node.properties.ue_properties.prompt_regexes) {
-        const repeated_type_row = add_row(table, i18n("Repeated Types"))
-        const repeated_type_select = document.createElement('select')
-        add_cell(repeated_type_row,repeated_type_select)
-        add_select_options(node, repeated_type_select, REPEATED_TYPE_OPTIONS, `repeated_type_rule`)
-    }
+    const repeated_type_row = add_row(table, i18n("Repeated Types"))
+    const repeated_type_select = document.createElement('select')
+    add_cell(repeated_type_row,repeated_type_select)
+    add_select_options(node, repeated_type_select, REPEATED_TYPE_OPTIONS, `repeated_type_rule`)
+
 
     if (node.inputs.find((i)=>(i.type=="STRING"))) {
         const send_to_combos_row = add_row(table, i18n("String to Combos"))

@@ -7,7 +7,9 @@ export function visible_graph()    { return app.canvas.graph }
 
 export function in_visible_graph(node) { 
     try {
-        return node.graph.id == app.canvas.graph.id
+        if (node.graph) return node.graph.id == app.canvas.graph.id
+        else if (node.subgraph) return node.subgraph.id == app.canvas.graph.id
+        else Logger.log_problem(`in_visible_graph: ${node.id} has no graph or subgraph`)
     } catch (e) {
         Logger.log_error(e)
         return false
@@ -79,21 +81,29 @@ function fix_subgraph_widgets(node) {
 }
 ue_callbacks.register_allnode_callback('afterConfigureGraph', fix_subgraph_widgets, true )
 
-class WrappedInputNode {
-    constructor(subgraph_input_node) {
-        this.subgraph_input_node = subgraph_input_node;
-        this.graph = subgraph_input_node.subgraph;
+class WrappedIONode {
+    constructor(io_node) {
+        this.io_node = io_node;
+        this.graph = io_node.subgraph;
     }
 
     connect(output_index, input_node, input_index) {
         this.graph.last_link_id += 1
-        this.graph.links[this.graph.last_link_id] = new LLink(this.graph.last_link_id, this.subgraph_input_node.slots[output_index].type, -10, output_index, input_node.id, input_index) 
+        this.graph.links[this.graph.last_link_id] = new LLink(this.graph.last_link_id, this.io_node.slots[output_index].type, -10, output_index, input_node.id, input_index) 
         input_node.inputs[input_index].link = this.graph.last_link_id;
-        this.subgraph_input_node.slots[output_index].linkIds.push(this.graph.last_link_id)
+        this.io_node.slots[output_index].linkIds.push(this.graph.last_link_id)
         return this.graph.links[this.graph.last_link_id]
     }
 
+    getConnectionPos(is_input, slot_number) {
+        if (is_input) {
+            return [...this.io_node.slots[slot_number].pos]
+        } else {
+            Logger.log_problem("WrappedIONode.getConnectionPos called for output - not supported");
+        }
+    }
+
 }
-export function wrap_input(subgraph_input_node) {
-    return new WrappedInputNode(subgraph_input_node);
+export function wrap_input(io_node) {
+    return new WrappedIONode(io_node);
 }

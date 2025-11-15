@@ -1,14 +1,16 @@
-import { i18n_functional, i18n_functional_regex } from "./i18n.js";
+import { i18n_functional } from "./i18n.js";
 import { default_priority } from "./ue_properties.js";
 import { connection_from_output_as_input, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
-import { Logger, node_is_live, get_real_node, get_connection } from "./use_everywhere_utilities.js";
+import { Logger, node_is_live, get_real_node, get_connection, find_duplicate_broadcasted_types, is_able_to_broadcast } from "./use_everywhere_utilities.js";
 
 
 export function display_name(node) { 
     if (node?.title) return node.title;
     if (node?.type) return node.type;
-    if (node?.properties['Node name for S&R']) return node.properties['Node name for S&R'];
+    if (node?.properties?.['Node name for S&R']) return node.properties['Node name for S&R'];
+    if (node?.id==-20) return "subgraph output node";
+    if (node?.id==-10) return "subgraph input node";
     return "un-nameable node";
 }
 
@@ -24,13 +26,6 @@ function regex_for(node, k) {
 
 const P_REGEXES = ['prompt', 'negative']
 const PROMPT_REGEXES = [new RegExp(i18n_functional('prompt_regex')), new RegExp(i18n_functional('negative_regex'))]
-
-function prompt_regex(node, i) {
-    const reg = node.properties.ue_properties[`${P_REGEXES[i]}_regex`]
-    if (reg) return {regex:new RegExp(reg), invert:node.properties.ue_properties[`${P_REGEXES[i]}_regex_invert`]}
-    else return {regex:i18n_functional_regex(`${P_REGEXES[i]}_regex`), invert:!!node.properties.ue_properties[`${P_REGEXES[i]}_regex_invert`]}
-}
-
 
 /*
 The UseEverywhere object represents a single 'broadcast'. It generally contains
@@ -96,7 +91,7 @@ class UseEverywhere {
         if (this.output[0] == node.id) return false;
         if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;
         const input_label = input.label || input.localized_name || input.name;
-        const node_label = node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type);
+        const node_label = display_name(node) // node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type);
         if (this.title_regex) {
             if ( this.title_regex.regex.test(node_label) == this.title_regex.invert ) return false;
         }
@@ -129,8 +124,14 @@ class UseEverywhere {
         return true;
     }
     note_sending_to(node, input) {
-        const input_index = node.inputs.findIndex((n) => n.name==input.name);
-        this.sending_to.push({node:node, input:input, input_index:input_index})
+        var input_index
+        if (node.inputs) input_index = node.inputs.findIndex((n) => n.name==input.name);
+        else if (node.slots) input_index = node.slots.findIndex((n) => n.name==input.name);
+        if (input_index===undefined) {
+            Logger.log_problem(`UseEverywhere.note_sending_to could not find input index for node ${node.id} input ${input.name}`);
+        } else {
+            this.sending_to.push({node:node, input:input, input_index:input_index})
+        }
     }
     describe_sending(){
         var description = "  Linked to:";
@@ -149,12 +150,31 @@ function validity_errors(params) {
     return "";
 }
 
+export class Ambiguity {
+/*
+    name    : display_name of node
+    id      : node.id
+    input   : input.name
+    matches : [
+        {
+            type  : m[i].controller.type,
+            id    : m[i].controller.id,
+            index : m[i].control_node_input_index
+        }
+    ]
+*/
+    toString() {
+        var m = `Node ${this.name} (${this.id}) input ${this.input} matches ${this.matches.length} sources:`
+        this.matches.forEach((match)=>{
+            m += `\n - ${match.type} (${match.id}) slot ${match.index}`
+        })
+        return m
+    }
+
+}
+
 export class UseEverywhereList {
     constructor() { this.ues = []; this.unmatched_inputs = []; }
-
-    node_sending_anywhere(node) {
-        return this.ues.find((ue)=>(ue.controller?.id==node.id && ue.sending_to?.length>0)) ? true : false;
-    }
 
     differs_from(another_uel) {
         if (!another_uel || !another_uel.ues || !this.ues) return true;
@@ -204,7 +224,7 @@ export class UseEverywhereList {
         }
     }
 
-    find_best_match(node, input, _ambiguity_messages) {
+    find_best_match(node, input, _ambiguities) {
         this.unmatched_inputs.push({"node":node, "input":input});
         var matches = this.ues.filter((candidate) => (  
             candidate.matches(node, input)
@@ -216,14 +236,18 @@ export class UseEverywhereList {
         if (matches.length>1) {
             matches.sort((a,b) => b.priority-a.priority);
             if(matches[0].priority == matches[1].priority) {
-                const msg = `'${display_name(node)}' (${node.id}) input '${input.name}' matches multiple Use Everwhere sources:`;
-                _ambiguity_messages.push(msg);
-                for (var i=0; i<matches.length; i++) {
-                    if (matches[0].priority == matches[i].priority) {
-                        const inner_msg = ` - ${matches[i].controller.type} (${matches[i].controller.id}) input ${matches[i].control_node_input_index}`;
-                        _ambiguity_messages.push(inner_msg);
-                    }
-                }
+                const msg = new Ambiguity()
+                Object.assign(msg, { name:display_name(node), id:node.id, input:input.name, matches:[] })
+
+                matches.filter((m)=>(m.priority == matches[0].priority)).forEach((m)=>{
+                    msg.matches.push( {
+                        type  : m.controller.type,
+                        id    : m.controller.id,
+                        index : m.control_node_input_index
+                    })
+                })
+
+                _ambiguities.push(msg);
                 return undefined;
             }
         }
@@ -250,6 +274,18 @@ export class UseEverywhereList {
         return ue_connections;
     }
 
+    node_sending_anywhere(node) {
+        return this.ues.find((ue)=>(ue.controller?.id==node.id && ue.sending_to?.length>0)) ? true : false;
+    }
+
+    all_sending_slots(for_node) {
+        const sending_slots = new Set()
+        this.ues.filter((ue)=>(ue.controller.id == for_node.id) && (ue.sending_to.length>0)).forEach((ue) => { 
+            sending_slots.add(ue.control_node_input_index)
+        });
+        return sending_slots;        
+    }
+
     all_ue_connections() {
         const ue_connections = [];
         this.ues.forEach((ue) => { 
@@ -272,33 +308,30 @@ export class UseEverywhereList {
         if (node.properties.ue_properties.seed_inputs) {
             this.add_ue(node, -1, "INT", [node.id.toString(),0], regex_for(node, 'input') );
         } else {
-
+            var check_if_able_to_broadcast
             var the_possibles
             var connection_finder
             if (node.properties.ue_convert) {
-                the_possibles = node.outputs
                 connection_finder = connection_from_output_as_input
+                the_possibles = node.outputs
+                check_if_able_to_broadcast = (node, i) => {
+                    const name = node.outputs[i].name
+                    return is_able_to_broadcast(node, name)
+                }
             } else {
+                connection_finder = get_connection
                 the_possibles = node.inputs
-                connection_finder = get_connection  
+                check_if_able_to_broadcast = ()=>(true)
             }
 
-            const broadcasted_types = new Set()
-            const duplicated_broadcasted_types = new Set()
-            for (var i=0; i<the_possibles.length; i++) {
-                const connection = connection_finder(node, i);
-                if (connection.link) {
-                    if (broadcasted_types.has(connection.type)) duplicated_broadcasted_types.add(connection.type)
-                    broadcasted_types.add(connection.type)
-                }
-            }
+            const duplicated_broadcasted_types = find_duplicate_broadcasted_types(node)
 
             the_possibles.forEach((possible, i) => {
                 const connection = connection_finder(node, i);
-                if (connection.link) {
-                    const input_regex = (node.properties.ue_properties.prompt_regexes) ? prompt_regex(node,i) : undefined
+                if (connection.link && check_if_able_to_broadcast(node,i)) {
+                    const input_regex = undefined
                     var additional_requirement = null
-                    if (duplicated_broadcasted_types.has(connection.type) && !node.properties.ue_properties.prompt_regexes) {
+                    if (duplicated_broadcasted_types.has(connection.type)) {
                         const input_name = possible.label || possible.name
                         const rule = node.properties.ue_properties?.repeated_type_rule || 0
                         if (rule == 0) { // 0 is exact match of input name

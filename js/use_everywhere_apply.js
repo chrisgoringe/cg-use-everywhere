@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { display_name } from "./use_everywhere_classes.js";
-import { is_UEnode, get_real_node, Logger } from "./use_everywhere_utilities.js";
+import { get_real_node, Logger } from "./use_everywhere_utilities.js";
 
 
 function _convert_to_links(ue, added_links, removed_links) {
@@ -12,11 +12,17 @@ function _convert_to_links(ue, added_links, removed_links) {
         const input_node_id = st.node.id;
         const input_node = get_real_node(input_node_id, ue.graph);
         const input_index = st.input_index;
-        if (input_node.inputs[input_index].link) { // why would this be happening?
+        if (input_node.inputs?.[input_index].link) { // why would this be happening?
             const llink = ue.graph.links[input_node.inputs[input_index].link]
             if (llink) removed_links.push( {...llink} )
         }
-        const new_link = output_node.connect(output_index, input_node, input_index);
+        var new_link
+        if (input_node.io_node) {
+            new_link = input_node.io_node.slots[input_index].connect(output_node.outputs[output_index], output_node);
+        } else {
+            new_link = output_node.connect(output_index, input_node, input_index);
+        }
+
         if (!new_link)
             console.error("Failed to connect nodes: " +
                           `${output_node_id}[${output_index}] -> ` +
@@ -120,19 +126,4 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
     };
 
     return {restorer:restorer, added_links:added_links}
-}
-
-function is_removable_ue(node) {
-    return  (is_UEnode(node, false) && !(node.comfyClass=="Seed Everywhere") ) 
-}
-
-export function remove_all_ues(keep_seed_everywhere, graph, recurse) {
-    graph._nodes.filter((node)=>is_removable_ue(node, keep_seed_everywhere)).forEach((node)=>{graph.remove(node)})
-    if (recurse) {
-        graph._nodes.filter((node)=>(node.subgraph)).forEach((node)=>{remove_all_ues(keep_seed_everywhere, node.subgraph, recurse)})
-    }
-}
-
-export function remove_removable_ues(graph) {
-    graph._nodes.filter((node)=>is_removable_ue(node, keep_seed_everywhere)).forEach((node)=>{graph.remove(node)})
 }

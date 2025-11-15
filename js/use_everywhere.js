@@ -3,11 +3,10 @@ import { api } from "../../scripts/api.js";
 
 import { shared, deferred_actions } from "./shared.js";
 
-import { is_UEnode, inject, Logger, defineProperty, graphConverter, create } from "./use_everywhere_utilities.js";
+import { is_UEnode, inject, Logger, graphConverter, create, node_can_broadcast } from "./use_everywhere_utilities.js";
 import { title_bar_additions, LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_everywhere_settings.js";
-import { add_debug } from "./ue_debug.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { visible_graph, fix_new_subgraph_node } from "./use_everywhere_subgraph_utils.js";
@@ -32,6 +31,19 @@ function add_methods_to_all_nodes(node) {
             if (original_onDrawTitleBar) original_onDrawTitleBar.apply(this, arguments);
             title_bar_additions(node, ctx, title_height)
         }
+
+        const original_onMouseEnter = node.onMouseEnter;
+        node.onMouseEnter = function(e) {
+            if (original_onMouseEnter) original_onMouseEnter(e)
+            shared.linkRenderController.node_over_changed()
+        }
+
+        const original_onMouseLeave = node.onMouseLeave;
+        node.onMouseEnter = function(e) {
+            if (original_onMouseLeave) original_onMouseLeave(e)
+            shared.linkRenderController.node_over_changed()
+        }
+
         node.ue_methods_added = true;
     } catch (e) {
         Logger.log_error(e);
@@ -64,8 +76,8 @@ app.registerExtension({
         */
         const onConnectionsChange = nodeType.prototype.onConnectionsChange;
         nodeType.prototype.onConnectionsChange = function (side,slot,connect,link_info,output) {     
-            if (is_combo_clone(this) && !shared.prompt_being_queued) comboclone_on_connection(this, link_info, connect)
-            if (is_UEnode(this, false) && side==1) { // side 1 is input
+            if (is_combo_clone(this) && !shared.in_queuePrompt) comboclone_on_connection(this, link_info, connect)
+            if (is_UEnode(this) && side==1) { // side 1 is input
                 input_changed(this, slot, connect, link_info)
                 
                 if (!shared.graph_being_configured) {
@@ -81,41 +93,31 @@ app.registerExtension({
         if (nodeData.name=="Combo Clone") {
             const onConnectOutput = nodeType.prototype.onConnectOutput
             nodeType.prototype.onConnectOutput = function(outputIndex, type, input, inputNode, inputIndex) {
-                if  (!(type=="COMBO" || is_UEnode(inputNode, false))) return false;
+                if  (!(type=="COMBO" || is_UEnode(inputNode))) return false;
                 return onConnectOutput?.apply(this,arguments)
             }
         }
 
-        if (is_UEnode(nodeType)) {
-            const onNodeCreated = nodeType.prototype.onNodeCreated;
-            nodeType.prototype.onNodeCreated = function () {
-                const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
-                Logger.log_detail(`Node ${this.id} created`)
-                setup_ue_properties_oncreate(this)
-                return r;
-            }
-        }
     },
 
     async nodeCreated(node) { // the node isn't part of the graph yet, so can't do anything involving id or links.
         add_methods_to_all_nodes(node)
 
-        if (!node.properties.ue_properties && !is_UEnode(node, false) && !shared.graph_being_configured) {
-            node.properties.ue_properties = { widget_ue_connectable : {}, input_ue_unconnectable : {} }
-        }
+        if (shared.graph_being_configured) return
 
+        if (is_UEnode(node)) {
+            setup_ue_properties_oncreate(node)
+        } else if (!node.properties.ue_properties) {
+            node.properties.ue_properties = { 
+                widget_ue_connectable : {}, 
+                input_ue_unconnectable : {} 
+            }
+        }
     }, 
 
     // When a graph node is loaded convert it if needed
     loadedGraphNode(node) { 
-        if (graphConverter.running_116_plus()) { 
-            graphConverter.convert_if_pre_116(node);
-            if (node.isSubgraphNode?.()) {
-                node.subgraph.nodes.forEach((n) => {
-                    graphConverter.convert_if_pre_116(n);
-                })
-            }
-        }
+        graphConverter.convert_if_pre_116(node);
         setup_ue_properties_onload(node)
     },
 
@@ -129,7 +131,7 @@ app.registerExtension({
         });
 
         /* if we are on version 1.16 or later, stash input data to convert nodes when they are loaded */
-        if (graphConverter.running_116_plus()) {
+        //if (graphConverter.running_116_plus()) {
             const original_loadGraphData = app.loadGraphData;
             app.loadGraphData = async function (data) {
                 try {
@@ -143,7 +145,7 @@ app.registerExtension({
                 app.ui.settings.setSettingValue("Comfy.Validation.Workflows", cvw_was);
                 //return v;
             }
-        }
+        //}
         
         /* 
         When we draw a node, render the virtual connection points
@@ -170,14 +172,15 @@ app.registerExtension({
         */
         const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
         LGraphCanvas.prototype.drawFrontCanvas = function() {
+            var widgets_disabled = []
             try {
-                shared.linkRenderController.disable_all_connected_widgets(true)
+                widgets_disabled = shared.linkRenderController.disable_all_connected_widgets()
                 return original_drawFrontCanvas.apply(this, arguments);
             }  catch (e) {
                 Logger.log_error(e)
             } finally {
                 try {
-                    shared.linkRenderController.disable_all_connected_widgets(false)
+                    widgets_disabled.forEach((w)=>w.disabled=false)
                 } catch (e) {
                     Logger.log_error(e)
                 } 
@@ -213,93 +216,29 @@ app.registerExtension({
             return options;
         }
 
-        /*
-        Finding a widget by it's name is something done a lot of times in rendering, 
-        so add a method that caches the names that can be used deep in the rendering code.
-
-        TODO: Ought to delete this._widgetNameMap when widgets are added or removed.
-        TODO: Or better maybe to retire this.
-        */
-        LGraphNode.prototype._getWidgetByName = function(nm) {
-            if (this._widgetNameMap === undefined || !this._widgetNameMap[nm]) {
-                this._widgetNameMap = {}
-                this.widgets?.forEach((w)=>{this._widgetNameMap[w.name] = w})
-            }
-            if (!this._widgetNameMap[nm]) {
-                let breakpoint_be_here; // someone is asking for a widget that doesn't exist
-            }
-            return this._widgetNameMap[nm]
-        }
 	},
 
     init() {
         shared.graphAnalyser        = new GraphAnalyser();
         shared.linkRenderController = new LinkRenderController();
 
+        /*
+        Modifications to the graph:
+        - track start and end of the graph being changed
+        - catch convertToSubgraph to try to fix UE links
+        */
         const original_beforeChange = app.graph.beforeChange
         app.graph.beforeChange = function () {
-            shared.in_midst_of_change = true
+            shared.in_midst_of_change += 1
             original_beforeChange?.apply(this, arguments)
         }
 
         const original_afterChange = app.graph.afterChange
         app.graph.afterChange = function () {
             original_afterChange?.apply(this, arguments)
-            shared.in_midst_of_change = false
-        }
-
-        const original_graphToPrompt = app.graphToPrompt;
-        app.graphToPrompt = async function () {
-            if (shared.prompt_being_queued) {
-                return await shared.graphAnalyser.graph_to_prompt( );
-            } else {
-                Logger.log_problem("graphToPrompt called when !prompt_being_queued - why?")
-                if (app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
-                    Logger.log_info("always_modify_graph is set, so doing so anyway")
-                    return await shared.graphAnalyser.graph_to_prompt( );
-                }
-                return await original_graphToPrompt.apply(app, arguments);
-            }
+            shared.in_midst_of_change = Math.max(0, shared.in_midst_of_change-1)  // afterChange gets called without a beforeChange sometimes
         }
         
-        app.ue_modified_prompt = async function () { // API function
-            return await shared.graphAnalyser.graph_to_prompt();
-        }
-
-        const original_queuePrompt = app.queuePrompt;
-        app.queuePrompt = async function () {
-            try {
-                shared.prompt_being_queued = true;
-                return await original_queuePrompt.apply(app, arguments);
-            } finally {
-                shared.prompt_being_queued = false;
-            }
-        }
-        
-        app.canvas.__node_over = app.canvas.node_over;
-        defineProperty(app.canvas, 'node_over', {
-            get: ( )=>{return app.canvas.__node_over },
-            set: (v)=>{app.canvas.__node_over = v; shared.linkRenderController.node_over_changed(v)}   
-        } )
-
-        app.canvas.canvas.addEventListener('litegraph:set-graph', ()=>{
-            shared.linkRenderController.mark_link_list_outdated()
-            setTimeout(()=>{app.canvas.setDirty(true,true)},200)
-        })
-
-        app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
-            if (e?.detail?.subType=='node-double-click') {
-                const node = e.detail.node
-                if (is_UEnode(node, true)) {
-                    if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
-                    edit_restrictions(null, null, null, null, node)
-                }
-            }
-        })
-
-        if (false) add_debug();
-
-
         const original_subgraph = app.graph.convertToSubgraph
         app.graph.convertToSubgraph = function () {
             const ctb_was = shared.graphAnalyser.connect_to_bypassed
@@ -317,7 +256,73 @@ app.registerExtension({
             }
         }
 
-        /* catch changes in language (and read initial value) */
+        /*
+        Modifications to app
+        - intercept graphToPrompt and queuePrompt so we know where we are
+        - provide API
+        */
+        const original_graphToPrompt = app.graphToPrompt;
+        app.graphToPrompt = async function () {
+            try {
+                shared.in_graphToPrompt += 1
+                if (shared.in_queuePrompt || app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
+                    //Logger.log_shared('In graphToPrompt (going to modify graph):')
+                    return await shared.graphAnalyser.call_function_with_modified_graph( original_graphToPrompt, arguments )
+                } else {
+                    //Logger.log_shared('In graphToPrompt (not going to modify graph):')
+                    return await original_graphToPrompt.apply(this, arguments)
+                }
+            } finally {
+                shared.in_graphToPrompt -= 1
+            }
+        }
+        
+        const original_queuePrompt = app.queuePrompt;
+        app.queuePrompt = async function () {
+            try {
+                shared.in_queuePrompt += 1;
+                return await original_queuePrompt.apply(app, arguments);
+            } finally {
+                shared.in_queuePrompt -= 1;
+            }
+        }
+
+        app.ue_modified_prompt = async function () { // API function
+            return await shared.graphAnalyser.call_function_with_modified_graph( original_queuePrompt ) 
+        }
+
+        /*
+        Modifications to the canvas
+        - listen for set-graph to mark the link list as out of date when we open or close a subgraph
+        - catch node-double-click to open the restrictions dialog
+        - onDrawForeground to highlight subgraph output links
+        */
+
+        app.canvas.canvas.addEventListener('litegraph:set-graph', ()=>{
+            shared.linkRenderController.mark_link_list_outdated()
+            setTimeout(()=>{app.canvas.setDirty(true,true)},200)
+        })
+
+        app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
+            if (e?.detail?.subType=='node-double-click') {
+                const node = e.detail.node
+                if (node_can_broadcast(node)) {
+                    if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
+                    edit_restrictions(null, null, null, null, node)
+                }
+            }
+        })
+
+        const original_onDrawForeground = app.canvas.onDrawForeground
+        app.canvas.onDrawForeground = function(ctx, visible_area) {
+            if (original_onDrawForeground) original_onDrawForeground.apply(this, arguments)
+            if (this.subgraph) shared.linkRenderController.highlight_subgraph_node_connections.bind(shared.linkRenderController)(this.subgraph, ctx)
+        }
+        
+        /* 
+        Midifications to app.ui.settings
+        - catch changes in language (and read initial value) for i18n
+        */
         const locale_onChange = app.ui.settings.settingsLookup['Comfy.Locale'].onChange
         app.ui.settings.settingsLookup['Comfy.Locale'].onChange = function(is_now, was_before) {
             language_changed(is_now, was_before)
@@ -326,14 +331,15 @@ app.registerExtension({
         language_changed(app.ui.settings.getSettingValue('Comfy.Locale'), null)
     },
 
+
     beforeConfigureGraph() {
         shared.linkRenderController.pause("before configure", 1000)
         shared.graphAnalyser.pause("before configure", 1000)
-        shared.graph_being_configured = true
+        shared.graph_being_configured += 1
     },
 
     afterConfigureGraph() {
-        shared.graph_being_configured = false
+        shared.graph_being_configured -= 1
         ue_callbacks.dispatch('afterConfigureGraph')
     }
 
