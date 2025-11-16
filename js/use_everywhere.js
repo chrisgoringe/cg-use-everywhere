@@ -28,19 +28,19 @@ function add_methods_to_all_nodes(node) {
         
         const original_onDrawTitleBar = node.onDrawTitleBar;
         node.onDrawTitleBar = function(ctx, title_height) {
-            if (original_onDrawTitleBar) original_onDrawTitleBar.apply(this, arguments);
+            original_onDrawTitleBar?.apply(this, arguments);
             title_bar_additions(node, ctx, title_height)
         }
 
         const original_onMouseEnter = node.onMouseEnter;
         node.onMouseEnter = function(e) {
-            if (original_onMouseEnter) original_onMouseEnter(e)
+            original_onMouseEnter?.apply(this, arguments)
             shared.linkRenderController.node_over_changed()
         }
 
         const original_onMouseLeave = node.onMouseLeave;
-        node.onMouseEnter = function(e) {
-            if (original_onMouseLeave) original_onMouseLeave(e)
+        node.onMouseLeave = function(e) {
+            original_onMouseLeave?.apply(this, arguments)
             shared.linkRenderController.node_over_changed()
         }
 
