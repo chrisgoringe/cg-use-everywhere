@@ -85,11 +85,19 @@ export function title_bar_additions(node, ctx, title_height) {
         const color = restricted ? ( sending ? "rgba(255, 255, 72, 1)" : "rgba(255, 255, 72, 0.35)" ) :
                                    ( sending ? "rgba(72, 255, 72, 1)" : "rgba(72, 255, 72, 0.35)" );
 
+        const offset_x = (node.subgraph) ?  5 :  5
+        const offset_y = (node.subgraph) ?  4 :  5
+        const width    = (node.subgraph) ? 24 : 20
+        const height   = (node.subgraph) ? 23 : 20
+        const radius   = (node.subgraph) ?  6 :  6
+
+        const line_w   = (node.subgraph) ?  1 :  2
+
         ctx.save();
-        ctx.lineWidth = 2;
+        ctx.lineWidth = line_w;
         ctx.strokeStyle = color;
         ctx.beginPath();
-        ctx.roundRect(5,5-title_height,20,20,8);
+        ctx.roundRect(offset_x, offset_y-title_height, width, height, radius);
         ctx.stroke();
         ctx.restore();
     }
