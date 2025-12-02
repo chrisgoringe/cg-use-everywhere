@@ -288,7 +288,7 @@ app.registerExtension({
         }
 
         app.ue_modified_prompt = async function () { // API function
-            return await shared.graphAnalyser.call_function_with_modified_graph( original_queuePrompt ) 
+            return await shared.graphAnalyser.call_function_with_modified_graph( original_graphToPrompt ) 
         }
 
         /*
