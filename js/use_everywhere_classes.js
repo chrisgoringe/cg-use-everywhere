@@ -243,7 +243,9 @@ export class UseEverywhereList {
                     msg.matches.push( {
                         type  : m.controller.type,
                         id    : m.controller.id,
-                        index : m.control_node_input_index
+                        index : m.control_node_input_index,
+                        node  : node,
+                        node_index : node.inputs.findIndex((i)=>(i==input))
                     })
                 })
 

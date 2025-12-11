@@ -328,6 +328,24 @@ export class LinkRenderController extends Pausable {
         var any_links_shown = false;
         var any_links = false;
 
+        shared.graphAnalyser.ambiguities.forEach((ambiguity)=>{
+            ambiguity.matches.forEach((m)=>{
+                if (app.canvas.node_over == m.node) {
+                    this._render_ue_link(
+                        {
+                            graph                    : m.node.graph, 
+                            sending_to               : m.node, 
+                            input_index              : m.node_index, 
+                            control_node             : m.node.graph._nodes_by_id[m.id],
+                            control_node_input_index : m.index,
+                            type                     : m.type,
+                        }, ctx, 0, "#F00")
+                } 
+ 
+            })
+        })
+
+
         this.ue_list.all_ue_connections().forEach((ue_connection) => {
             any_links = true;
             var show = false;
@@ -361,7 +379,7 @@ export class LinkRenderController extends Pausable {
 
     }
 
-    _render_ue_link(ue_connection, ctx, animate) {
+    _render_ue_link(ue_connection, ctx, animate, color) {
         try {
             const graph = ue_connection.graph
             const node = get_real_node(ue_connection.sending_to.id, graph);
@@ -395,8 +413,7 @@ export class LinkRenderController extends Pausable {
                                         ((delta_y>0) ? LiteGraph.DOWN : LiteGraph.UP) : 
                                         ((input_source && delta_x<0) ? LiteGraph.LEFT : LiteGraph.RIGHT)
 
-            var color = LGraphCanvas.link_type_colors[ue_connection.type];
-            if (color=="") color = app.canvas.default_link_color;
+            color = color ||  LGraphCanvas.link_type_colors[ue_connection.type] || app.canvas.default_link_color;
 
             ctx.save() 
             const rcb = app.canvas.render_connections_border;
@@ -410,7 +427,7 @@ export class LinkRenderController extends Pausable {
                 }
                 app.canvas.renderLink(ctx, pos1, pos2, undefined, skip_border, animate%2, modify(color), sta_direction, end_direction, undefined);
             } catch(e) { 
-                Logger.log_problem(`Issue with UE link ${ue_connection}.`);
+                Logger.log_error(e);
             } finally { 
                 ctx.restore() 
                 app.canvas.render_connections_border = rcb;
