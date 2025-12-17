@@ -8,6 +8,20 @@
 
 Check out [Image Picker](https://github.com/chrisgoringe/cg-image-filter) for another way to make some workflows smoother.
 
+# Common Questions
+
+## How do I get positive and negative conditionings to work?
+
+Connect both to a single UE node, and then rename the inputs. See [here](https://github.com/chrisgoringe/cg-use-everywhere/issues/317#issuecomment-3663225670).
+
+## Why doesn't it work with reroutes / primitives?
+
+Nodes which dynamically work out their data type are a real problem that isn't worth the complexity to fix. See [here](https://github.com/chrisgoringe/cg-use-everywhere/tree/main#primitives-and-reroutes) for more info.
+
+## Can I broadcast a COMBO, like my choice of sampler?
+
+Yes. See Combo Clone node [here](https://github.com/chrisgoringe/cg-use-everywhere/tree/main#special-case-nodes).
+
 # Recent Changes
 
 If upgrading from before version 7, see the end of this document for the major changes in v7.
