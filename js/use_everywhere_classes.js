@@ -14,6 +14,10 @@ export function display_name(node) {
     return "un-nameable node";
 }
 
+export function input_name(input) {
+    return input?.label || input?.localized_name || input?.name || "";
+}
+
 function regex_for(node, k) {
     try {
         const w0 = node.properties.ue_properties[`${k}_regex`]
@@ -44,6 +48,7 @@ class UseEverywhere {
         if (this.priority === undefined) this.priority = 0;
         if (this.graph === undefined) this.graph = visible_graph();
         this.string_to_combo = (this.controller.properties.ue_properties.string_to_combo > 0)
+        this.send_to_any     = (this.controller.properties.ue_properties.send_to_any > 0)
 
         const from_node = get_real_node(this?.output[0], this.graph);
         const to_node = get_real_node(this?.controller.id, this.graph)
@@ -79,6 +84,7 @@ class UseEverywhere {
     }
     /*
     Does this broadcast match a given node,input?
+    Logic here is to run through a series of reasons why it would NOT match.
     */
     matches(node, input) {
         if (!node) {
@@ -86,40 +92,35 @@ class UseEverywhere {
             return false;
         }
 
+        // additional requirement function
         if (this.additional_requirement && !this.additional_requirement(input, node)) return false
 
+        // don't send to self
         if (this.output[0] == node.id) return false;
-        if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;
-        const input_label = input.label || input.localized_name || input.name;
-        const node_label = display_name(node) // node.title ? node.title : (node.properties['Node name for S&R'] ? node.properties['Node name for S&R'] : node.type);
-        if (this.title_regex) {
-            if ( this.title_regex.regex.test(node_label) == this.title_regex.invert ) return false;
-        }
-        /*if (node.type=="Highway" && typeof this.input_regex==='string') { // Highway nodes - broken if there are two matches...
-            const input_label_split = input_label.split(':');
-            if (input_label_split.length==1) {
-                if (input_label==this.input_regex) {
-                    input.type = this.type;
-                    input.name += `:${this.type}`;
-                    return true;
-                }
-                return false;
-            } else {
-                if ((input_label_split[0]==this.input_regex) && input_label_split[1]==input.type) return true;
-                return false;
-            }
-        }*/
+
+        // type must match except in special cases
         if (this.type != input.type) {
-            if (this.type=="STRING" && 
-                input.type=="COMBO" && 
-                this.string_to_combo) {
-                    // allow a string to be sent to a COMBO
+            if (this.type=="STRING" && input.type=="COMBO" && this.string_to_combo) {
+                // allow a string to be sent to a COMBO
+            } else if (input.type=="*" && this.send_to_any) {
+                // allow sending to '*' inputs if send_to_any is true
             } else {
                 return false
             }
         } 
-        //if (this.input_regex && typeof this.input_regex==='string') return false; // input_regex started '+', which targets Highway nodes only
-        if (this.input_regex && ( this.input_regex.regex.test(input_label)==this.input_regex.invert )) return false;
+
+        // apply restrictions (colour and group, includes group regex)
+        if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;
+
+        // title regex
+        if (this.title_regex) {
+            if ( this.title_regex.regex.test(display_name(node)) == this.title_regex.invert ) return false;
+        }
+
+        // input regex
+        if (this.input_regex) {
+            if (this.input_regex.regex.test(input_name(input))==this.input_regex.invert ) return false;
+        }
         
         return true;
     }

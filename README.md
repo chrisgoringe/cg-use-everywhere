@@ -29,6 +29,12 @@ If upgrading from before version 7, see the end of this document for the major c
 <details>
 <summary>Changes since 7.0</summary>
 
+## 7.6
+
+- Added visual indicators to subgraph nodes
+- Added hover-over conflicted node to show conflict
+- Added "Sen to Any" option in restrictions
+
 ## 7.5
 
 - Added per-output granularity to any-node broadcasting
