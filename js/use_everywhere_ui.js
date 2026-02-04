@@ -49,7 +49,7 @@ export function nodes_in_groups_matching(regex, already_limited_to) {
 
 export function nodes_my_color(node, already_limited_to) {
     const nodes_in = new Set();
-    const color = get_real_node(node.id)?.color
+    const color = get_real_node(node.id, node.graph)?.color
     if (already_limited_to) {
         already_limited_to.forEach((nid) => {
             if (get_real_node(nid, node.graph)?.color==color) nodes_in.add(nid)
