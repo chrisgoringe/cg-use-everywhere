@@ -24,16 +24,14 @@ Yes. See Combo Clone node [here](https://github.com/chrisgoringe/cg-use-everywhe
 
 # Recent Changes
 
-If upgrading from before version 7, see the end of this document for the major changes in v7.
-
-<details>
-<summary>Changes since 7.0</summary>
-
 ## 7.6
 
 - Added visual indicators to subgraph nodes
 - Added hover-over conflicted node to show conflict
-- Added "Sen to Any" option in restrictions
+- Added "Send to Any" option in restrictions
+
+<details>
+<summary>Changes since 7.0</summary>
 
 ## 7.5
 
@@ -105,7 +103,7 @@ This is what the default wan 2.2 s2v video workflow looks like:
 # Any node broadcasting
 
 <details>
-<summary>New in version 7.4 - any node can broadcast itas outputs</summary>
+<summary>New in version 7.4 - any node can broadcast it's outputs</summary>
 
 As of version `7.4`, any node can be set to broadcast with `Add UE broadcasting` in the right-click menu. I find this really helpful for subgraphs especially.
 
@@ -127,17 +125,6 @@ The key to using Anything Everywhere nodes is understanding where the data will 
 
 By default the data will be sent to any input of the same data type which does not have a connection, 
 and does not have a widget providing the value.
-
-<details>
-<summary>
-At the receiving end: you can specify that an input should not accept data, or that one with a widget should.
-</summary>
-
-In the `UE Connectable Inputs` menu (right-click on a node): 
-the green bar indicates an input is connectable. The `Reject UE links` option can be used to make this node completely reject UE links, regardless of other settings.
-
-![uec](docs/connectable.png)
-</details>
 
 <details>
 <summary>
@@ -164,12 +151,21 @@ either the name of the input slot on the target node, or the name of the target 
 The `match start` and `match end` options require that the input names match from the start (or end) for the full length of the shorter: 
 so you can match `seed` to `seed` or `noise_seed` by naming the `Anything Everywhere` input `seed` and selecting `Match end of input names`.
 
+`Send To Any`(default 'no') can be used to allow this node to send data to inputs with the `Any` type. 
+
 You can rename input slots by right-clicking on the input dot - but you can't rename widget inputs - this is a limitation imposed by ComfyUI ([discussion](https://github.com/Comfy-Org/ComfyUI_frontend/issues/3654)). The work-around is to rename the target node (or use multiple `Anything Everywhere` nodes with other constraints, especially color matching).
 
-`String to Combos` (default `no`) can be used to allow a `STRING` input to be sent to a `COMBO` widget. Since there may be a lot of combo widgets, this should be used with care - you will almost certainly want to use other restrictions (such as an `input regex`, or the `Repeated Types` constraint with multiple strings (eg `sampler_name` and `scheduler`)). *No validation takes place* to ensure that the string sent is one of the combo options!
+</details>
 
-You are probably better off using the `Combo Clone` [helper node](#special-case-nodes)
+<details>
+<summary>
+At the receiving end: you can specify that an input should not accept data, or that one with a widget should.
+</summary>
 
+In the `UE Connectable Inputs` menu (right-click on a node): 
+the green bar indicates an input is connectable. The `Reject UE links` option can be used to make this node completely reject UE links, regardless of other settings.
+
+![uec](docs/connectable.png)
 </details>
 
 <details>
@@ -181,7 +177,10 @@ Each node has an automatically calculated priority - in general the more restric
 You can see this prority in the restrictions dialog, and you can choose to replace the automatically calculated value if you wish.
 
 If two more more `Anything Everywhere` nodes match the same input, the higher priority node is used. If there is a tie, _no connection is made_.
-When there is a tie, if you right-click on the canvas you will find an option to show which nodes are the problem.
+The input is marked with a red cross to indicate that there is a conflict. If you hover over the node, the two (or more) conflicting UE inputs
+are shown as red lines.
+
+Alternatively, if you right-click on the canvas you will find an option to show which nodes are the problem.
 
 </details>
 
