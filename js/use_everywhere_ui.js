@@ -170,7 +170,7 @@ export class LinkRenderController extends Pausable {
         const widgets_disabled = []
 
         app.canvas.graph.extra['ue_links']?.forEach((uel) => {
-            const node = app.canvas.graph._nodes_by_id[uel.downstream]
+            const node = app.canvas.graph.getNodeById(uel.downstream)
             if (node) {
                 const name = node.inputs[uel.downstream_slot]?.name;
                 if (name) {
@@ -336,7 +336,7 @@ export class LinkRenderController extends Pausable {
                             graph                    : m.node.graph, 
                             sending_to               : m.node, 
                             input_index              : m.node_index, 
-                            control_node             : m.node.graph._nodes_by_id[m.id],
+                            control_node             : m.node.graph.getNodeById(m.id),
                             control_node_input_index : m.index,
                             type                     : m.type,
                         }, ctx, 0, "#F00")
@@ -387,7 +387,7 @@ export class LinkRenderController extends Pausable {
             /* this is the end node; get the position of the input */
             var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
 
-            const control_node = graph._nodes_by_id[ue_connection.control_node.id]
+            const control_node = graph.getNodeById(ue_connection.control_node.id)
             if (!control_node) {
                 Logger.problem(`Couldn't find position for UE link ${ue_connection}.`,null,true)
                 return;
