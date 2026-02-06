@@ -100,6 +100,11 @@ function create_editor_html(node) {
         add_select_options(node, send_to_combos_select, ["no", "yes"], `string_to_combo`)
     }
 
+    const send_to_any_row = add_row(table, i18n("Send to Any"))
+    const send_to_any_select = document.createElement('select')
+    add_cell(send_to_any_row, send_to_any_select)
+    add_select_options(node, send_to_any_select, ["no", "yes"], `send_to_any`)
+
     const priority_row = add_row(table, i18n("Priority"))
     const priority_edit = document.createElement("input")
     priority_edit.value = `${node.properties.ue_properties.priority || default_priority(node)}`

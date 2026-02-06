@@ -72,6 +72,7 @@ const DEFAULT_PROPERTIES = {
                     priority              : undefined,
                     repeated_type_rule    : 0,
                     string_to_combo       : 0,
+                    send_to_any           : 0
                 }
 
 /*
