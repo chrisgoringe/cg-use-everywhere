@@ -1,7 +1,7 @@
 from comfy_api.latest import ComfyExtension, io
 from .use_everywhere import SeedEverywhere, AnythingEverywhere, AnythingSomewhere, AnythingEverywhereTriplet, SimpleString, ComboClone, AnythingEverywherePrompts
 
-UE_VERSION = "7.6"
+UE_VERSION = "7.7"
 WEB_DIRECTORY = "./js"
 __all__ = [ "WEB_DIRECTORY"]
 

@@ -24,14 +24,16 @@ Yes. See Combo Clone node [here](https://github.com/chrisgoringe/cg-use-everywhe
 
 # Recent Changes
 
+## 7.7
+
+<details>
+<summary>Changes since 7.0</summary>
+
 ## 7.6
 
 - Added visual indicators to subgraph nodes
 - Added hover-over conflicted node to show conflict
 - Added "Send to Any" option in restrictions
-
-<details>
-<summary>Changes since 7.0</summary>
 
 ## 7.5
 
