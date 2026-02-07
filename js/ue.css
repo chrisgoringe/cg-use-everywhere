@@ -45,11 +45,24 @@
     .ue_editor_body {
         padding: 0px 4px;
     }
+
+    .ue_editor_body table {
+        border-collapse: collapse;
+    }
+
     .ue_editor_body th {
         text-align: right;
     }
     .ue_editor_body th::after {
         content: ':';
+    }
+
+    tr {
+        min-height: 24px;
+    }
+
+    .ue_editor_body tr.break_below {
+        border-bottom: 1px dashed white;
     }
 
     .ue_editor_body td {

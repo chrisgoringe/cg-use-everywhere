@@ -71,6 +71,7 @@ const DEFAULT_PROPERTIES = {
                     group_regex_invert    : false,
                     priority              : undefined,
                     repeated_type_rule    : 0,
+                    apply_to_unrepeated   : 0,
                     string_to_combo       : 0,
                     send_to_any           : 0
                 }
