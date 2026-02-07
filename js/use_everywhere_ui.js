@@ -167,29 +167,40 @@ export class LinkRenderController extends Pausable {
     }
 
     disable_all_connected_widgets( ) {
-        const widgets_disabled = []
-
+        this.widgets_disabled = []
+        /* broken by ComfyUI update see issue 438
         app.canvas.graph.extra['ue_links']?.forEach((uel) => {
             const node = app.canvas.graph._nodes_by_id[uel.downstream]
             if (node) {
                 const name = node.inputs[uel.downstream_slot]?.name;
                 if (name) {
                     const widget = node.widgets?.find((w)=>(w.name==name)) //  _getWidgetByName(name) 
-                    if (widget) {
-                        if (!widget.disabled) {
-                            widgets_disabled.push(widget)
-                            widget.disabled = true;
-                        }
-                        widget.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
-                            widgets_disabled.push(w)
-                            w.disabled = true;
-                        })
-                    } 
+                    try {
+                        if (widget) {
+                            if (!widget.disabled) {
+                                this.widgets_disabled.push(widget)
+                                widget.computeDisabled = true;
+                            }
+                            widget.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
+                                this.widgets_disabled.push(w)
+                                w.computeDisabled = true;
+                            })
+                        } 
+                    } catch (e) {
+                        Logger.log_error(e, `Error disabling widget ${name} on node ${node.id} for UE link ${uel.id}`)
+                    }
                 } 
             } 
-        })   
-        return widgets_disabled
+        })   */
     }
+
+    enable_all_disabled_widgets() {
+        try {
+            this.widgets_disabled.forEach((w)=>w.computeDisabled=false)
+        } catch (e) {     
+            Logger.log_error(e)
+        }
+    }      
 
     highlight_subgraph_node_connections(subgraph, ctx) {
         if (!settingsCache.getSettingValue('Use Everywhere.Graphics.highlight')) return;
