@@ -23,16 +23,19 @@ export function edit_restrictions(a,b,c,d, node) { // a,b,c,d parameters are ign
 }
 
 function add_row(table, header) {
-    const row = document.createElement('tr')
+    const row = document.createElement('div')
+    row.className = 'ue_properties_row'
     table.appendChild(row)
-    const header_elem = document.createElement('th')
+    const header_elem = document.createElement('span')
+    header_elem.className = 'ue_properties_title'
     header_elem.innerText = header
     row.appendChild(header_elem)
     return row
 }
 
 function add_cell(row, cell) {
-    const td = document.createElement('td')
+    const td = document.createElement('span')
+    td.className = 'ue_properties_cell'
     row.appendChild(td)
     td.appendChild(cell)
 }
@@ -52,7 +55,8 @@ function changed(node, property, value) {
 }
 
 function create_editor_html(node) {
-    const table = document.createElement('table')
+    const table = document.createElement('div')
+    table.className = 'ue_properties_table'
 
     for (var i=0; i<=2; i++) {
         const name = REGEXES[i]
@@ -106,7 +110,7 @@ function create_editor_html(node) {
         const send_to_combos_select = document.createElement('select')
         add_cell(send_to_combos_row, send_to_combos_select)
         add_select_options(node, send_to_combos_select, ["no", "yes"], `string_to_combo`)
-        send_to_any_row.classList.add('break_below')
+        send_to_combos_row.classList.add('break_below')
     }
 
     const send_to_any_row = add_row(table, i18n("Send to Any"))
@@ -126,6 +130,7 @@ function create_editor_html(node) {
     priority_edit.id = 'priority_value'
     if (!node.properties.ue_properties.priority) priority_edit.style.opacity = 0.5
     add_cell(priority_row,priority_edit)
+    priority_row.classList.add('break_below')
 
     return table
 }

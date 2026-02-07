@@ -32,44 +32,48 @@
         background-color: rgb(45 24 24 / 80%);
     }
 
+    .ue_properties_table {
+        display: flex;
+        flex-direction: column;
+    }
+
     .ue_editor_header {
-    width: 100%;
-    text-align: center;
-    background-color: rgb(45 24 24 / 80%);
-    background-size: 100% 14px;
-    background-image: repeating-linear-gradient(0deg, #636363, black 1px, rgb(45 24 24 / 80%) 1px, rgb(45 24 24 / 80%) 2px);
-    padding-top: 4px;
-
+        width: 100%;
+        text-align: center;
+        background-color: rgb(45 24 24 / 80%);
+        background-size: 100% 14px;
+        background-image: repeating-linear-gradient(0deg, #636363, black 1px, rgb(45 24 24 / 80%) 1px, rgb(45 24 24 / 80%) 2px);
+        padding-top: 4px;
+        border-bottom: thin dashed #ddd;
+        padding-bottom: 2px;
+            margin-bottom: 2px;
     }
 
-    .ue_editor_body {
-        padding: 0px 4px;
+    .ue_properties_row {
+        display: flex;
+        flex-direction: row;
     }
 
-    .ue_editor_body table {
-        border-collapse: collapse;
+    .break_below {
+        border-bottom: thin dashed #ddd;
+        padding-bottom: 2px;
     }
 
-    .ue_editor_body th {
+    span.ue_properties_title {
         text-align: right;
+        flex-grow: 1;
+        padding-right: 4px;
     }
-    .ue_editor_body th::after {
+
+    .ue_properties_title::after {
         content: ':';
     }
 
-    tr {
-        min-height: 24px;
+    .ue_properties_cell {
+        flex-grow: 0;
+        width: 250px
     }
 
-    .ue_editor_body tr.break_below {
-        border-bottom: 1px dashed white;
-    }
-
-    .ue_editor_body td {
-        select {
-            width: 100%;
-        }
-    }
 
     .ue_editor_footer {
         margin: 8px;
@@ -80,7 +84,7 @@
 
     .regex_input_container {
         display: flex;
-        width: 250px;
+        width: 100%;
         justify-content: space-between;
         input {
             flex-grow: 1;
