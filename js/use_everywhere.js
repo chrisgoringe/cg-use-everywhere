@@ -172,15 +172,14 @@ app.registerExtension({
         */
         const original_drawFrontCanvas = LGraphCanvas.prototype.drawFrontCanvas
         LGraphCanvas.prototype.drawFrontCanvas = function() {
-            var widgets_disabled = []
             try {
-                widgets_disabled = shared.linkRenderController.disable_all_connected_widgets()
+                shared.linkRenderController.disable_all_connected_widgets()
                 return original_drawFrontCanvas.apply(this, arguments);
             }  catch (e) {
                 Logger.log_error(e)
             } finally {
                 try {
-                    widgets_disabled.forEach((w)=>w.disabled=false)
+                    shared.linkRenderController.enable_all_disabled_widgets()
                 } catch (e) {
                     Logger.log_error(e)
                 } 
