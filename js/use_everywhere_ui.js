@@ -168,38 +168,28 @@ export class LinkRenderController extends Pausable {
 
     disable_all_connected_widgets( ) {
         this.widgets_disabled = []
-        /* broken by ComfyUI update see issue 438
         app.canvas.graph.extra['ue_links']?.forEach((uel) => {
             const node = app.canvas.graph.getNodeById(uel.downstream)
             if (node) {
                 const name = node.inputs[uel.downstream_slot]?.name;
                 if (name) {
-                    const widget = node.widgets?.find((w)=>(w.name==name)) //  _getWidgetByName(name) 
-                    try {
-                        if (widget) {
-                            if (!widget.disabled) {
-                                this.widgets_disabled.push(widget)
-                                widget.computeDisabled = true;
-                            }
-                            widget.linkedWidgets?.filter((w)=>!w.disabled).forEach((w)=>{
-                                this.widgets_disabled.push(w)
-                                w.computeDisabled = true;
-                            })
-                        } 
-                    } catch (e) {
-                        Logger.log_error(e, `Error disabling widget ${name} on node ${node.id} for UE link ${uel.id}`)
-                    }
+                    const widget = node.widgets?.find((w)=>(w.name==name)) 
+                    if (widget && !widget.disabled) {
+                        try {
+                            widget._disabled = widget.disabled;
+                            widget.disabled  = true;
+                            this.widgets_disabled.push(widget)
+                        } catch (e) { Logger.log_error(e, `Error disabling widget ${name} on node ${node.id}`) }
+                    } 
                 } 
             } 
-        })   */
+        })   
     }
 
     enable_all_disabled_widgets() {
-        try {
-            this.widgets_disabled.forEach((w)=>w.computeDisabled=false)
-        } catch (e) {     
-            Logger.log_error(e)
-        }
+        this.widgets_disabled.forEach((w)=>{
+            try { w.disabled=w._disabled } catch (e) { Logger.log_error(e, `Error enabling widget ${w}`) }
+        })
     }      
 
     highlight_subgraph_node_connections(subgraph, ctx) {
