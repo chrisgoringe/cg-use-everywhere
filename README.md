@@ -26,14 +26,18 @@ Yes. See Combo Clone node [here](https://github.com/chrisgoringe/cg-use-everywhe
 
 ## 7.7
 
-<details>
-<summary>Changes since 7.0</summary>
+- Added "Apply to unrepeated output" options
+- Cleaned up restrictions dialog
+- Internal refactoring to conform to ComfyUI changes
 
 ## 7.6
 
 - Added visual indicators to subgraph nodes
 - Added hover-over conflicted node to show conflict
 - Added "Send to Any" option in restrictions
+
+<details>
+<summary>Older changes since 7.0</summary>
 
 ## 7.5
 
@@ -142,10 +146,6 @@ The node will only send data to another node if the regex matches the receiving 
 
 The Group and Colour restrictions will constrain the node to only send to nodes in (or not in) the same group, and of the same (or different) colour.
 
-If you select multiple restrictions, all must be satisfied for the node to send.
-
-If any restrictions are applied, the `Anything Everywhere` node gets a green circle in the top left hand corner, and a tooltip if you hover the mouse over it (as long as Show Links is not set to None).
-
 `Repeated Types` determines behaviour when more than one input of the same type is connected to an `Anything Everywhere` node.
 In this case an additional constraint is used to disambiguate which inputs match 
 by comparing the name of the input slot on the `Anything Everywhere` node with 
@@ -153,7 +153,15 @@ either the name of the input slot on the target node, or the name of the target 
 The `match start` and `match end` options require that the input names match from the start (or end) for the full length of the shorter: 
 so you can match `seed` to `seed` or `noise_seed` by naming the `Anything Everywhere` input `seed` and selecting `Match end of input names`.
 
+If `Apply to Unrepeated` is set to `Yes`, the `Repeated Types` rule will be applied to all outputs, whether or not they are repeated.
+
 `Send To Any`(default 'no') can be used to allow this node to send data to inputs with the `Any` type. 
+
+`Priority` is used to resolve conflicts between multiple sending nodes. It has a default value (which generally follows the rule that the more restrictive the rules, the higher the priority), but you can override that value. 
+
+If you select multiple restrictions, all must be satisfied for the node to send.
+
+If any restrictions are applied, the `Anything Everywhere` node gets a green circle in the top left hand corner, and a tooltip if you hover the mouse over it (as long as Show Links is not set to None).
 
 You can rename input slots by right-clicking on the input dot - but you can't rename widget inputs - this is a limitation imposed by ComfyUI ([discussion](https://github.com/Comfy-Org/ComfyUI_frontend/issues/3654)). The work-around is to rename the target node (or use multiple `Anything Everywhere` nodes with other constraints, especially color matching).
 
