@@ -66,7 +66,7 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
         const links_out_of_subgraph = new Set()
         const problem_links = new Set()
 
-        const new_subgraph_node = graph._nodes_by_id[graph.last_node_id];
+        const new_subgraph_node = graph.getNodeById(graph.last_node_id);
         const new_subgraph = new_subgraph_node?.subgraph;
 
         added_links.forEach(added_link => { 
@@ -96,7 +96,7 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
 
         links_out_of_subgraph.forEach((llink)=>{
             const control_node_id = llink.control_node?.id
-            const control_node_in_graph = graph._nodes_by_id[control_node_id]
+            const control_node_in_graph = graph.getNodeById(control_node_id)
             if (control_node_in_graph) {
                 // the control node is outside, so we should disconnect anything else that is connected to the same output of the subgraph node
                 new_subgraph_node.outputs[new_subgraph.links[llink.id].target_slot].links.forEach((link_id)=>{
@@ -121,7 +121,7 @@ function _convert_graph_to_links(graph, ues, control_node_id) {
         }
 
         removed_links.forEach(llink => {
-            graph._nodes_by_id[llink.origin_id].connect(llink.origin_slot, graph._nodes_by_id[llink.target_id], llink.target_slot)
+            graph.getNodeById(llink.origin_id).connect(llink.origin_slot, graph.getNodeById(llink.target_id), llink.target_slot)
         })
     };
 

@@ -48,7 +48,7 @@ export function get_real_node(node_id, graph) {
     const nid = node_id.toString();
     if (nid==-10) return wrap_input(graph.inputNode); // special case for subgraph input
     if (nid==-20) return wrap_input(graph.outputNode); // special case for subgraph input
-    return graph._nodes_by_id[nid];
+    return graph.getNodeById(nid);
 }
 
 export class Logger {
