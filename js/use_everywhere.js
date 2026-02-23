@@ -298,7 +298,7 @@ app.registerExtension({
                 const node = e.detail.node
                 if (node_can_broadcast(node)) {
                     if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
-                    edit_restrictions(null, null, null, null, node)
+                    edit_restrictions(node)
                 }
             }
         })

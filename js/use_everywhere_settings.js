@@ -245,7 +245,7 @@ function add_restrictions_and_convert(options, node) {
     options.push(
         {
             content: "Edit restrictions",
-            callback: edit_restrictions,
+            callback: async () => { edit_restrictions(node) },
         }        
     )
 

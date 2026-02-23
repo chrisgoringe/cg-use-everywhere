@@ -4,20 +4,6 @@ import { node_can_broadcast } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 
-const perslot = 24
-export function nodes2_getConnectionPos(node, is_input, index, result) {
-    result = [...node.pos]
-    if (!is_input) {
-        result[0] += node.size[0]
-    }
-    if (!node.flags.collapsed) {
-        result[1] +=  perslot*(index+1)
-    } else {
-        result[1] += - perslot / 2
-    }
-    return result
-}
-
 const badge_size = 12
 
 export function nodes2_overlay(ctx) {
