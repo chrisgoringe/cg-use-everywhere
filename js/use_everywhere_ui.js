@@ -1,4 +1,4 @@
-import { Logger, get_real_node, Pausable, node_can_broadcast, is_able_to_broadcast } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, Pausable, node_can_broadcast, is_able_to_broadcast, running_nodes2 } from "./use_everywhere_utilities.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
@@ -6,6 +6,7 @@ import { maybe_show_tooltip } from "./tooltip_window.js";
 import { is_connectable } from "./use_everywhere_settings.js";
 import { shared } from "./shared.js";
 import { titlebar_color } from "./ue_shared_ui.js";
+import { nodes2_getConnectionPos } from "./ue_nodes2.js";
 
 export function nodes_in_my_group(node) {
     const nodes_in = new Set();
@@ -382,7 +383,13 @@ export class LinkRenderController extends Pausable {
             const node = get_real_node(ue_connection.sending_to.id, graph);
 
             /* this is the end node; get the position of the input */
-            var pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
+            var pos2;
+            if (running_nodes2()) {
+                pos2 = nodes2_getConnectionPos(node, true, ue_connection.input_index, this.slot_pos1);
+            } else {
+                pos2 = node.getConnectionPos(true, ue_connection.input_index, this.slot_pos1);
+            }
+  
 
             const control_node = graph.getNodeById(ue_connection.control_node.id)
             if (!control_node) {
@@ -399,7 +406,12 @@ export class LinkRenderController extends Pausable {
             */
             const input_source = (ue_connection.control_node_input_index >= 0 && !control_node.properties.ue_convert); 
             const source_index = (ue_connection.control_node_input_index >= 0 ) ? ue_connection.control_node_input_index : -1-ue_connection.control_node_input_index;
-            const pos1 = control_node.getConnectionPos(input_source, source_index, this.slot_pos2);    
+            var pos1;
+            if (running_nodes2()) {
+                pos1 = nodes2_getConnectionPos(control_node, input_source, source_index, this.slot_pos2);  
+            } else {
+                pos1 = control_node.getConnectionPos(input_source, source_index, this.slot_pos2);    
+            }
 
 
             /* get the direction that we start and end */
