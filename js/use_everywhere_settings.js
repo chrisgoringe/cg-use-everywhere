@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
-import { Logger, is_UEnode, node_can_broadcast, is_able_to_broadcast } from "./use_everywhere_utilities.js";
+import { Logger, is_UEnode, node_can_broadcast, is_able_to_broadcast, running_nodes2 } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
@@ -125,6 +125,7 @@ ui_update_settings.forEach((id) => {
 })
 
 function show_connectable(submenu_root, node) {
+    if (running_nodes2()) return; // nodes2 has broken this...
     node.inputs.forEach((input, i) => {
         const current_element = submenu_root?.querySelector(`:nth-child(${i+1})`);
         if (current_element) current_element.style.borderLeft = (is_connectable(node,input.name)) ? "2px solid #484" : "";
@@ -164,15 +165,22 @@ function widget_ue_submenu(value, options, e, menu, node) {
     node.inputs
         .filter(i => !i.hidden)
         .filter(i => !i.name?.includes('$$'))
-        .forEach((input) => { label_to_name[input.label || input.name] = input.name });
+        .forEach((input) => { 
+            var label = input.label || input.name
+            if (running_nodes2()) {
+                label = (is_connectable(node, input.name) ? "☑ " : "☐ ") + label
+            } 
+            label_to_name[label] = input.name 
+        });
 
     const submenu = new LiteGraph.ContextMenu(
         Object.keys(label_to_name),
         { event: e, callback: function (label) { 
+            const parentElement = this?.parentElement 
             const name = label_to_name[label];
             toggle_connectable(node, name);
             shared.linkRenderController.mark_link_list_outdated();
-            show_connectable(this.parentElement, node)
+            show_connectable(parentElement, node)
             return true; // keep open
         },
         parentMenu: menu, node:node}
