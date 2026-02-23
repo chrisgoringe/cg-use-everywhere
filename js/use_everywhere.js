@@ -3,7 +3,7 @@ import { api } from "../../scripts/api.js";
 
 import { shared, deferred_actions } from "./shared.js";
 
-import { is_UEnode, inject, Logger, graphConverter, create, node_can_broadcast } from "./use_everywhere_utilities.js";
+import { is_UEnode, inject, Logger, graphConverter, create, node_can_broadcast, running_nodes2 } from "./use_everywhere_utilities.js";
 import { title_bar_additions, LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_everywhere_settings.js";
@@ -16,6 +16,7 @@ import { language_changed } from "./i18n.js";
 import { input_changed, fix_inputs } from "./connections.js";
 import { comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
 import { ue_callbacks } from "./recursive_callbacks.js";
+import { nodes2_overlay } from "./ue_nodes2.js";
 
 /*
 All nodes need the onDrawTitleBar method so they can show if they are broadcasting UE data.
@@ -26,11 +27,11 @@ function add_methods_to_all_nodes(node) {
     try {
         add_extra_menu_items(node, inject_outdating_into_object_method) // right click menu additions
         
-        const original_onDrawTitleBar = node.onDrawTitleBar;
-        node.onDrawTitleBar = function(ctx, title_height) {
-            original_onDrawTitleBar?.apply(this, arguments);
-            title_bar_additions(node, ctx, title_height)
-        }
+        //const original_onDrawTitleBar = node.onDrawTitleBar;
+        //node.onDrawTitleBar = function(ctx, title_height) {
+        //    original_onDrawTitleBar?.apply(this, arguments);
+        //    title_bar_additions(node, ctx, title_height)
+        //}
 
         const original_onMouseEnter = node.onMouseEnter;
         node.onMouseEnter = function(e) {
@@ -155,7 +156,11 @@ app.registerExtension({
             try {
                 shared.linkRenderController.pause('drawFrontCanvas')
                 const v = original_drawNode.apply(this, arguments);
-                shared.linkRenderController.highlight_ue_connections(node, ctx);
+                if (running_nodes2()) {
+                    //nodes2_ui(node, ctx);
+                } else {
+                    shared.linkRenderController.highlight_ue_connections(node, ctx);
+                }       
                 if (node._last_seen_bg !== node.bgcolor) shared.linkRenderController.mark_link_list_outdated();
                 node._last_seen_bg = node.bgcolor
                 return v
@@ -165,6 +170,7 @@ app.registerExtension({
                 shared.linkRenderController.unpause()
             }
         }
+
 
         /*
         Before drawing the canvas, temporarily disable all the ue connected widgets  
@@ -316,6 +322,18 @@ app.registerExtension({
         app.canvas.onDrawForeground = function(ctx, visible_area) {
             if (original_onDrawForeground) original_onDrawForeground.apply(this, arguments)
             if (this.subgraph) shared.linkRenderController.highlight_subgraph_node_connections.bind(shared.linkRenderController)(this.subgraph, ctx)
+        }
+
+
+        /*
+        In nodes2, can we do all the ue graphics in an overlay?
+        */
+        const original_onDrawOverlay = app.canvas.onDrawOverlay
+        app.canvas.onDrawOverlay = function(ctx) {
+            original_onDrawOverlay?.apply(this, arguments)
+            if (running_nodes2()) {
+                nodes2_overlay(ctx)
+            }
         }
         
         /* 

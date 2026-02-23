@@ -5,6 +5,10 @@ import { i18n } from "./i18n.js";
 import { ue_callbacks } from "./recursive_callbacks.js";
 import { shared } from "./shared.js";
 
+export function running_nodes2() {
+    return app.ui.settings.getSettingValue('Comfy.VueNodes.Enabled')
+}
+
 export function create( tag, clss, parent, properties ) {
     const nd = document.createElement(tag);
     if (clss)       clss.split(" ").forEach((s) => nd.classList.add(s))

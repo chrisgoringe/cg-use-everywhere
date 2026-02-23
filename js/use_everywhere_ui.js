@@ -5,7 +5,7 @@ import { in_visible_graph, visible_graph } from "./use_everywhere_subgraph_utils
 import { maybe_show_tooltip } from "./tooltip_window.js";
 import { is_connectable } from "./use_everywhere_settings.js";
 import { shared } from "./shared.js";
-import { any_restrictions } from "./ue_properties.js";
+import { titlebar_color } from "./ue_shared_ui.js";
 
 export function nodes_in_my_group(node) {
     const nodes_in = new Set();
@@ -79,11 +79,7 @@ export function nodes_not_my_color(node, already_limited_to) {
 
 export function title_bar_additions(node, ctx, title_height) {
     if (node_can_broadcast(node)) {
-        const restricted = any_restrictions(node);
-        const sending    = shared.linkRenderController.node_sending_anywhere(node);
-
-        const color = restricted ? ( sending ? "rgba(255, 255, 72, 1)" : "rgba(255, 255, 72, 0.35)" ) :
-                                   ( sending ? "rgba(72, 255, 72, 1)" : "rgba(72, 255, 72, 0.35)" );
+        const color = titlebar_color(node)
 
         const offset_x = (node.subgraph) ?  5 :  5
         const offset_y = (node.subgraph) ?  4 :  5
