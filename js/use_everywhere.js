@@ -205,21 +205,6 @@ app.registerExtension({
                 Logger.log_error(e)
             }
         }
-        
-        /* 
-        Canvas menu is the right click on backdrop.  Add our settings there.
-        */
-        const original_getCanvasMenuOptions = LGraphCanvas.prototype.getCanvasMenuOptions;
-        LGraphCanvas.prototype.getCanvasMenuOptions = function () {
-            // Add our items to the canvas menu 
-            const options = original_getCanvasMenuOptions.apply(this, arguments);
-            canvas_menu_settings(options);
-            
-            //  every menu item makes our list dirty
-            inject_outdating_into_objects(options,'callback',`menu option on canvas`);
-
-            return options;
-        }
 
 	},
 
@@ -358,6 +343,10 @@ app.registerExtension({
     afterConfigureGraph() {
         shared.graph_being_configured -= 1
         ue_callbacks.dispatch('afterConfigureGraph')
+    }, 
+
+    getCanvasMenuItems(canvas) {
+        return canvas_menu_settings()
     }
 
 });

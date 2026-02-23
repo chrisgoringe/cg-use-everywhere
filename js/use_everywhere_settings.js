@@ -307,7 +307,8 @@ function remove_ue_nodes(graph) {
     graph._nodes.filter((node)=>is_UEnode(node)).forEach((node)=>{graph.remove(node)})
 }
 
-export function canvas_menu_settings(options) {
+export function canvas_menu_settings() {
+    const options = []
     options.push(null); // divider
     options.push(
         {
@@ -360,5 +361,6 @@ export function canvas_menu_settings(options) {
         })
     }
     options.push(null); // divider
+    return options
 }
 
