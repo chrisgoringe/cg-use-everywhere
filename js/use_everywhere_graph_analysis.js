@@ -1,6 +1,6 @@
 import { UseEverywhereList } from "./use_everywhere_classes.js";
 import { node_is_live, is_connected, is_UEnode, Logger, Pausable, node_can_broadcast } from "./use_everywhere_utilities.js";
-import { convert_to_links } from "./use_everywhere_apply.js";
+import { convert_to_links, remove_comfyDynamic_autogrow } from "./use_everywhere_apply.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { is_connectable } from "./use_everywhere_settings.js";
@@ -23,6 +23,7 @@ class GraphAnalyser extends Pausable {
             Logger.log_problem(`modify_graph called but no ues could be obtained for ${graph.id}`)
             console.trace()
         }
+        this.mods.push( remove_comfyDynamic_autogrow(graph) )
         const modifications = convert_to_links( ues, null, graph )
         this.mods.push( modifications );
         if (!graph.extra) graph.extra = {}
