@@ -24,6 +24,12 @@ Yes. See Combo Clone node [here](https://github.com/chrisgoringe/cg-use-everywhe
 
 # Recent Changes
 
+## 7.8
+
+- Added regex match of outputs to the repeated types options
+- Fixed issues with the new ComfyUI autogrow inputs
+- Fixed API export to save with real links [389](https://github.com/chrisgoringe/cg-use-everywhere/issues/389)
+
 ## 7.7
 
 - Added "Apply to unrepeated output" options
@@ -152,6 +158,9 @@ by comparing the name of the input slot on the `Anything Everywhere` node with
 either the name of the input slot on the target node, or the name of the target node.
 The `match start` and `match end` options require that the input names match from the start (or end) for the full length of the shorter: 
 so you can match `seed` to `seed` or `noise_seed` by naming the `Anything Everywhere` input `seed` and selecting `Match end of input names`.
+
+You can also give the output a name which is a regex, and select `Regex match of input names` - so if your output is named `prompt|text` it
+will match inputs named `prompt` or `text`.
 
 If `Apply to Unrepeated` is set to `Yes`, the `Repeated Types` rule will be applied to all outputs, whether or not they are repeated.
 
