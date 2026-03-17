@@ -363,6 +363,14 @@ export class UseEverywhereList {
                                 return (target_name == input_name) 
                             }
                         }
+                        if (rule == 4) { // 4 input as regex matches input
+                            additional_requirement = (target_input, _) => { 
+                                const re = new RegExp(input_name)
+                                const target_name = target_input.label || target_input.name
+                                return re.exec(target_name) 
+                            }
+                        }
+
                     }
                     this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], input_regex, additional_requirement);
                 }
