@@ -276,6 +276,18 @@ app.registerExtension({
         }
 
         /*
+        Find the Export as API function and wrap it
+        */
+        const export_workflow_api = app.extensionManager.command.commands.find((c)=>(c.id=='Comfy.ExportWorkflowAPI'))
+        if (export_workflow_api) {
+            const original = export_workflow_api.function
+            export_workflow_api.function = async function () {
+                await shared.graphAnalyser.call_function_with_modified_graph( ()=>{ original.apply(this, arguments)} )
+            }
+        }
+
+
+        /*
         Modifications to the canvas
         - listen for set-graph to mark the link list as out of date when we open or close a subgraph
         - catch node-double-click to open the restrictions dialog
