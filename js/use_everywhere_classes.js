@@ -240,13 +240,16 @@ export class UseEverywhereList {
                 const msg = new Ambiguity()
                 Object.assign(msg, { name:display_name(node), id:node.id, input:input.name, matches:[] })
 
+
                 matches.filter((m)=>(m.priority == matches[0].priority)).forEach((m)=>{
+                    var ni = node.inputs?.findIndex((i)=>(i==input))
+                    if (ni==undefined) ni = -10
                     msg.matches.push( {
                         type  : m.controller.type,
                         id    : m.controller.id,
                         index : m.control_node_input_index,
                         node  : node,
-                        node_index : node.inputs.findIndex((i)=>(i==input))
+                        node_index : ni
                     })
                 })
 
