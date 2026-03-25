@@ -26,10 +26,10 @@ function add_methods_to_all_nodes(node) {
     try {
         add_extra_menu_items(node, inject_outdating_into_object_method) // right click menu additions
         
-        const original_onDrawTitleBar = node.onDrawTitleBar;
-        node.onDrawTitleBar = function(ctx, title_height) {
-            original_onDrawTitleBar?.apply(this, arguments);
-            title_bar_additions(node, ctx, title_height)
+        const original_onDrawForeground = node.onDrawForeground;
+        node.onDrawForeground = function(ctx) {
+            original_onDrawForeground?.apply(this, arguments);
+            title_bar_additions(this, ctx, this.title_height || LiteGraph.NODE_TITLE_HEIGHT)
         }
 
         const original_onMouseEnter = node.onMouseEnter;
