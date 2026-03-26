@@ -194,13 +194,26 @@ export class LinkRenderController extends Pausable {
 
     highlight_subgraph_node_connections(subgraph, ctx) {
         if (!settingsCache.getSettingValue('Use Everywhere.Graphics.highlight')) return;
-        this.ue_list.all_connected_inputs(subgraph.outputNode).forEach((ue_connection)=>{
-            const pos2 = subgraph?.outputNode?.slots[ue_connection.input_index]?.pos;
+        const node = subgraph?.outputNode
+        const ue_connections = this.ue_list.all_connected_inputs(subgraph.outputNode)
+
+        ue_connections.forEach((ue_connection)=>{
+            const pos2 = node.slots[ue_connection.input_index]?.pos;
             if (pos2) {
                 drawcircle(ctx, pos2, CONNECTED_1, 5, "first", {strokeStyle:LGraphCanvas.link_type_colors[ue_connection.type]})
                 drawcircle(ctx, pos2, CONNECTED_2, 4, "last")
             }
         })
+
+        shared.graphAnalyser.ambiguities.filter((ambiguity)=>(ambiguity.id==-20)).forEach((ambiguity)=>{
+            const index = ambiguity.matches[0]?.node_index
+            const pos2 = node.slots[index]?.pos
+            if (pos2) {
+                drawcross(ctx, pos2, AMBIGUITY, 7)
+            }
+        })
+
+
     }
 
     highlight_ue_connections(node, ctx) {        
@@ -336,13 +349,13 @@ export class LinkRenderController extends Pausable {
 
         shared.graphAnalyser.ambiguities.forEach((ambiguity)=>{
             ambiguity.matches.forEach((m)=>{
-                if (app.canvas.node_over == m.node) {
+                if (app.canvas.node_over == m.node || ambiguity.id==-20 && ambiguity.graph.outputNode?.isPointerOver) {  
                     this._render_ue_link(
                         {
-                            graph                    : m.node.graph, 
+                            graph                    : ambiguity.graph, 
                             sending_to               : m.node, 
                             input_index              : m.node_index, 
-                            control_node             : m.node.graph.getNodeById(m.id),
+                            control_node             : ambiguity.graph.getNodeById(m.id),
                             control_node_input_index : m.index,
                             type                     : m.type,
                         }, ctx, 0, "#F00")
