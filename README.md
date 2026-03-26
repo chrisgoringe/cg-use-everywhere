@@ -8,11 +8,38 @@
 
 Check out [Image Picker](https://github.com/chrisgoringe/cg-image-filter) for another way to make some workflows smoother.
 
+# What is Anything Everywhere?
+
+The `Anything Everywhere` node takes one or more inputs and sends the data to other nodes that need it. 
+You can connect as many inputs to an `Anything Everywhere` node as you like, and there are a range of ways
+to control where the data will be sent.
+
+Here's the standard ComfyUI template modified to use `AnythingEverywhere`
+
+|workflow|output image you can drop into Comfy|
+|-|-|
+|![simple](docs/simple-example.png)|![simple](docs/simple-example-image.png)|
+
+The `MODEL`, `CLIP`, and `VAE` are automatically broadcast to all the places they are needed.
+
+Doesn't make much difference in this simple case, but with complex workflows it really does.
+This is what the default wan 2.2 s2v video workflow looks like:
+
+|before|after|
+|-|-|
+|![before](docs/before.png)|![after](docs/after.png)|
+
+# Getting started
+
+Drop [this workflow](docs/UE_example.json) into Comfy, and take a look at how it works.
+
 # Common Questions
 
 ## How do I get positive and negative conditionings to work?
 
 Connect both to a single UE node, and then rename the inputs. See [here](https://github.com/chrisgoringe/cg-use-everywhere/issues/317#issuecomment-3663225670).
+
+Or use node broadcasting, as in the [example workflow](docs/UE_example.json)
 
 ## Why doesn't it work with reroutes / primitives?
 
@@ -43,7 +70,7 @@ Yes. See Combo Clone node [here](https://github.com/chrisgoringe/cg-use-everywhe
 - Added "Send to Any" option in restrictions
 
 <details>
-<summary>Older changes since 7.0</summary>
+<summary>Older changes</summary>
 
 ## 7.5
 
@@ -90,27 +117,6 @@ Bugfixes:
 - Fixed a serious bug with UE on Safari [details](https://github.com/chrisgoringe/cg-use-everywhere/issues/359)
 
 </details>
-
-# What is Anything Everywhere?
-
-The `Anything Everywhere` node takes one or more inputs and sends the data to other nodes that need it. 
-You can connect as many inputs to an `Anything Everywhere` node as you like, and there are a range of ways
-to control where the data will be sent.
-
-Here's the standard ComfyUI template modified to use `AnythingEverywhere`
-
-|workflow|output image you can drop into Comfy|
-|-|-|
-|![simple](docs/simple-example.png)|![simple](docs/simple-example-image.png)|
-
-The `MODEL`, `CLIP`, and `VAE` are automatically broadcast to all the places they are needed.
-
-Doesn't make much difference in this simple case, but with complex workflows it really does.
-This is what the default wan 2.2 s2v video workflow looks like:
-
-|before|after|
-|-|-|
-|![before](docs/before.png)|![after](docs/after.png)|
 
 # Any node broadcasting
 
@@ -223,13 +229,13 @@ Animation takes quite a lot of processing, so don't use it unless you really nee
 Any node that is capable of broadcasting data (a UE node, or another node to which broadcasting has been added) is marked with a circle in the top left hand corner.
 
 If the circle is green, the node has no additional restrictions on where data will be sent; 
-if it is red, it has one or more restrictions (which you can see by hovering your mouse over it, or by editing restrictions 
+if it is yellow, it has one or more restrictions (which you can see by hovering your mouse over it, or by editing restrictions 
 with the option on the right click menu, or by double clicking the node).
 
-If the node is actually sending data, the circle (red or green) is bold; if the node is capable of sending but is not actually making
+If the node is actually sending data, the circle (red or yellow) is bold; if the node is capable of sending but is not actually making
 and connections, it is muted.
 
-![redgreen](docs/redgreen.png)
+![redgreen](docs/yellowgreen.png)
 </details>
 
 <details>
@@ -248,6 +254,16 @@ Similarly, if a node has had broadcasting added to it, the outputs that can broa
 here `merged` can broadcast, but isn't, `x` can broadcast and is, and `y` is set to not broadcast.
 
 ![outputs](docs/outputs.png)
+
+</details>
+
+<details>
+<summary>Conflicts show up in red</summary>
+
+If two (or more) broadcasters with the same priority could send to the same input, the input will be marked with a red cross. 
+If UE links are being shown all possible links are shown in red. Here two model loaders are broadcasting...
+
+![conflict](docs/conflict.png)
 
 </details>
 
