@@ -250,10 +250,8 @@ app.registerExtension({
             try {
                 shared.in_graphToPrompt += 1
                 if (shared.in_queuePrompt || app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
-                    //Logger.log_shared('In graphToPrompt (going to modify graph):')
                     return await shared.graphAnalyser.call_function_with_modified_graph( original_graphToPrompt, arguments )
                 } else {
-                    //Logger.log_shared('In graphToPrompt (not going to modify graph):')
                     return await original_graphToPrompt.apply(this, arguments)
                 }
             } finally {
