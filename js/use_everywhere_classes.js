@@ -152,10 +152,15 @@ function validity_errors(params) {
 }
 
 export class Ambiguity {
+    constructor( data ) {
+        Object.assign(this, data)
+        this.matches = []
+    }
 /*
     name    : display_name of node
     id      : node.id
     input   : input.name
+    graph   : the graph the node is in
     matches : [
         {
             type  : m[i].controller.type,
@@ -237,16 +242,17 @@ export class UseEverywhereList {
         if (matches.length>1) {
             matches.sort((a,b) => b.priority-a.priority);
             if(matches[0].priority == matches[1].priority) {
-                const msg = new Ambiguity()
-                Object.assign(msg, { name:display_name(node), id:node.id, input:input.name, matches:[] })
+                const msg = new Ambiguity( { name:display_name(node), id:node.id, input:input.name, graph:(node.graph || node.subgraph) } )
 
                 matches.filter((m)=>(m.priority == matches[0].priority)).forEach((m)=>{
+                    var ni = node.inputs?.findIndex((i)=>(i==input))
+                    if (ni==undefined) ni = node.allSlots?.findIndex((i)=>(i==input))
                     msg.matches.push( {
                         type  : m.controller.type,
                         id    : m.controller.id,
                         index : m.control_node_input_index,
                         node  : node,
-                        node_index : node.inputs.findIndex((i)=>(i==input))
+                        node_index : ni
                     })
                 })
 
@@ -363,6 +369,14 @@ export class UseEverywhereList {
                                 return (target_name == input_name) 
                             }
                         }
+                        if (rule == 4) { // 4 input as regex matches input
+                            additional_requirement = (target_input, _) => { 
+                                const re = new RegExp(input_name)
+                                const target_name = target_input.label || target_input.name
+                                return re.exec(target_name) 
+                            }
+                        }
+
                     }
                     this.add_ue(node, i, connection.type, [connection.link.origin_id.toString(), connection.link.origin_slot], input_regex, additional_requirement);
                 }

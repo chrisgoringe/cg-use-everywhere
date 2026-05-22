@@ -32,6 +32,7 @@ export function language_changed(is_now, was_before) {
         i18n("Match start of input names"), 
         i18n("Match end of input names"), 
         i18n("Inputs matches target node name"), 
+        i18n("Regex match of input names"),
     ]
 
     GROUP_RESTRICTION_OPTIONS = [

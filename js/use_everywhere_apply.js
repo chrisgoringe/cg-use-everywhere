@@ -38,6 +38,20 @@ function _convert_to_links(ue, added_links, removed_links) {
     });
 }
 
+export function remove_comfyDynamic_autogrow(graph) {
+    graph.nodes.filter((node)=>(node.comfyDynamic?.autogrow)).forEach((node)=>{
+        node.__ue_removed_comfyDynamic_autogrow = node.comfyDynamic.autogrow
+        node.comfyDynamic.autogrow = {}
+    })
+    const restorer = function() {
+        graph.nodes.filter((node)=>(node.__ue_removed_comfyDynamic_autogrow)).forEach((node)=>{
+            node.comfyDynamic.autogrow = node.__ue_removed_comfyDynamic_autogrow
+            node.__ue_removed_comfyDynamic_autogrow = undefined
+        })
+    }
+    return { restorer:restorer }
+}
+
 export function convert_to_links(ues, control_node, graph) {
     if (control_node) {
         if (!graph) graph = control_node.graph
