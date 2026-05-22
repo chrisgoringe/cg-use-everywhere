@@ -1,38 +1,72 @@
 import { app } from "../../scripts/app.js";
 import { titlebar_color } from "./ue_shared_ui.js";
-import { node_can_broadcast } from "./use_everywhere_utilities.js";
+import { node_can_broadcast, is_able_to_broadcast } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
+import { shared } from "./shared.js";
 
-const badge_size = 15
-const titlebar_height = 30
-const nudge = 5
+
 
 export function nodes2_overlay(ctx) {
     ctx.save()
     app.canvas.ds.toCanvasContext(ctx)
     visible_graph().nodes.forEach((node) => {
-        if (node.mouseOver) console.log(node.id)
-        ctx.save()
-        ctx.translate(node.pos[0], node.pos[1])
         n2_titlebar_additions(node, ctx)
         n2_highlight_connections(node, ctx)
-        ctx.restore()
     });
     ctx.restore()
 }
 
+const highlight_color = "rgba(255, 255, 255, 0.8)"
+const radius = 9
+const blur = 5
+
 function n2_highlight_connections(node, ctx) {
-    if (!(settingsCache.getSettingValue('Use Everywhere.Graphics.highlight') && node.inputs)) return;
-    let a;
+    if (!(settingsCache.getSettingValue('Use Everywhere.Graphics.highlight') 
+          && node.inputs
+          && shared.linkRenderController.ue_list)) return;
+    ctx.save()
+    ctx.lineWidth   = 1
+    ctx.shadowColor = "white"
+    ctx.strokeStyle = highlight_color
+    ctx.shadowBlur  = blur    
+
+    const ue_list = shared.linkRenderController.ue_list
+
+    /* highlight all connected inputs */
+    ue_list.all_connected_inputs(node)
+        .filter((uec)=>uec.control_node)
+        .filter((uec)=>node.inputs[uec.input_index])
+        .forEach((uec) => {
+            const pos2 = node.getSlotPosition(uec.input_index, true)
+            ctx.beginPath();
+            ctx.arc(pos2[0], pos2[1], radius, 0, 2*Math.PI);
+            ctx.stroke();
+        });
+
+
+    const sending_slots = ue_list.all_sending_slots(node)
+    node.outputs.forEach((output,i) => {
+        if (is_able_to_broadcast(node, output.name) && sending_slots.has(i)) {
+            const pos2 = node.getSlotPosition(i, false);
+            ctx.beginPath();
+            ctx.arc(pos2[0], pos2[1], radius, 0, 2*Math.PI);
+            ctx.stroke();
+        }
+    })
+    ctx.restore()
 }
+
+const badge_size = 12
+const titlebar_height = 30
+const nudge = 5
 
 function n2_titlebar_additions(node, ctx) {
     if (!node_can_broadcast(node)) return;
+    ctx.save()
     const color = titlebar_color(node)
-    const offset_x = nudge
-    const offset_y = nudge - titlebar_height 
-    ctx.save(); 
+    const offset_x = nudge + node.pos[0]
+    const offset_y = nudge - titlebar_height + node.pos[1]
     ctx.lineWidth = badge_size;
     ctx.strokeStyle = color;
     ctx.beginPath();
@@ -40,7 +74,8 @@ function n2_titlebar_additions(node, ctx) {
     ctx.stroke();
     ctx.lineWidth = 1;
     ctx.strokeStyle = "rgba(0, 0, 0, 1)";
+    ctx.beginPath();
     ctx.arc(offset_x, offset_y, badge_size, 0, 2*Math.PI);
     ctx.stroke();
-    ctx.restore();
+    ctx.restore()
 }
