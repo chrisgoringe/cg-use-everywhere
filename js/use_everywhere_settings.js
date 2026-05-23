@@ -220,10 +220,7 @@ function output_ue_submenu(value, options, e, menu, node) {
     show_broadcasting(submenu.root, node)
 }
 
-
-
 export function add_extra_menu_items(node) {
-    if (node.ue_extra_menu_items_added) return
     const getExtraMenuOptions = node.getExtraMenuOptions;
     node.getExtraMenuOptions = function(_, options) {
         getExtraMenuOptions?.apply(this, arguments);
@@ -238,7 +235,6 @@ export function add_extra_menu_items(node) {
     }
     node.ue_extra_menu_items_added = true
 }
-
 
 function add_restrictions_and_convert(options, node) {
     options.push(
