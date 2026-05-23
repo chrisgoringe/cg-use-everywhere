@@ -38,7 +38,7 @@ function hide_tooltip() {
 function tooltipable() {
     if (
         (!app.canvas?.node_over)                                             ||
-        ( edit_window.showing)                                               ||
+        ( edit_window.style.display != 'none' )                              ||
         (!settingsCache.getSettingValue('Use Everywhere.Graphics.tooltips')) ||
         (!any_restrictions(app.canvas.node_over))
     ) return false

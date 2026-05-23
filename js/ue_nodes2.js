@@ -55,7 +55,7 @@ function n2_highlight_connections(node, ctx) {
         }
     })
 
-    /* Note ambiguities */
+    /* Highlight inputs with ambiguities */
     ctx.lineWidth   = 2
     ctx.strokeStyle = "red"
     ctx.shadowBlur  = 0
