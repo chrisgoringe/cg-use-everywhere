@@ -222,7 +222,7 @@ function output_ue_submenu(value, options, e, menu, node) {
 
 
 
-export function add_extra_menu_items(node, ioio) {
+export function add_extra_menu_items(node) {
     if (node.ue_extra_menu_items_added) return
     const getExtraMenuOptions = node.getExtraMenuOptions;
     node.getExtraMenuOptions = function(_, options) {
@@ -235,7 +235,6 @@ export function add_extra_menu_items(node, ioio) {
             add_input_and_output_settings(options, node)
         }
         options.push(null);
-        ioio(options,'callback',`menu option on ${this.id}`);
     }
     node.ue_extra_menu_items_added = true
 }

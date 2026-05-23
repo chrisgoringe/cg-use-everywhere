@@ -294,21 +294,6 @@ export function node_can_broadcast(node) {
     return (node.properties?.ue_convert || is_UEnode(node))
 }
 
-
-
-/*
-Inject a call into a method on object with name methodname.
-The injection is added at the end of the existing method (if the method didn't exist, it is created)
-injectionthis and injectionarguments are passed into the apply call (as the this and the arguments)
-*/
-export function inject(object, methodname, tracetext, injection, injectionthis, injectionarguments) {
-    const original = object[methodname];
-    object[methodname] = function() {
-        original?.apply(this, arguments);
-        injection.apply(injectionthis, injectionarguments);
-    }
-}
-
 export class Pausable {
     constructor(name) {
         this.name = name

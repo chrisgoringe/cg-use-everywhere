@@ -3,7 +3,7 @@ import { api } from "../../scripts/api.js";
 
 import { shared, deferred_actions } from "./shared.js";
 
-import { is_UEnode, inject, Logger, graphConverter, create, node_can_broadcast, running_nodes2 } from "./use_everywhere_utilities.js";
+import { is_UEnode, Logger, graphConverter, create, node_can_broadcast, running_nodes2 } from "./use_everywhere_utilities.js";
 import { title_bar_additions, LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_everywhere_settings.js";
@@ -25,14 +25,8 @@ function add_methods_to_all_nodes(node) {
     if (node.ue_methods_added) return Logger.log_problem(`Node ${node.id} already has UE methods added`);
 
     try {
-        add_extra_menu_items(node, inject_outdating_into_object_method) // right click menu additions
-        
-        //const original_onDrawTitleBar = node.onDrawTitleBar;
-        //node.onDrawTitleBar = function(ctx, title_height) {
-        //    original_onDrawTitleBar?.apply(this, arguments);
-        //    title_bar_additions(node, ctx, title_height)
-        //}
-
+        add_extra_menu_items(node) // right click menu additions
+    
         const original_onMouseEnter = node.onMouseEnter;
         node.onMouseEnter = function(e) {
             original_onMouseEnter?.apply(this, arguments)
@@ -50,20 +44,6 @@ function add_methods_to_all_nodes(node) {
         Logger.log_error(e);
     }
     
-}
-
-/*
-Inject a call to linkRenderController.mark_list_link_outdated into a method with name methodname on all objects in the array
-If object is undefined, do nothing.
-The injection is added at the end of the existing method (if the method didn't exist, it is created).
-*/
-function inject_outdating_into_objects(array, methodname, tracetext) {
-    if (array) {
-        array.forEach((object) => { inject_outdating_into_object_method(object, methodname, tracetext); })
-    }
-}
-function inject_outdating_into_object_method(object, methodname, tracetext) {
-    if (object) inject(object, methodname, tracetext, shared.linkRenderController.mark_link_list_outdated, shared.linkRenderController);
 }
 
 app.registerExtension({
