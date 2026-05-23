@@ -5,14 +5,14 @@ import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { shared } from "./shared.js";
 
-
-
 export function nodes2_overlay(ctx) {
+    if (!shared.linkRenderController.ue_list) return;
     ctx.save()
     app.canvas.ds.toCanvasContext(ctx)
     visible_graph().nodes.forEach((node) => {
         n2_titlebar_additions(node, ctx)
         n2_highlight_connections(node, ctx)
+        n2_widgets(node)
     });
     ctx.restore()
 }
@@ -23,8 +23,7 @@ const blur = 5
 
 function n2_highlight_connections(node, ctx) {
     if (!(settingsCache.getSettingValue('Use Everywhere.Graphics.highlight') 
-          && node.inputs
-          && shared.linkRenderController.ue_list)) return;
+          && node.inputs)) return;
     ctx.save()
     ctx.lineWidth   = 1
     ctx.shadowColor = "white"
@@ -68,7 +67,6 @@ function n2_highlight_connections(node, ctx) {
             ctx.lineTo(pos2[0],pos2[1]+radius)
             ctx.moveTo(pos2[0]-radius-4,pos2[1]+radius)
             ctx.lineTo(pos2[0],pos2[1]-radius)
-            
             ctx.stroke();
         }
     })
@@ -97,4 +95,19 @@ function n2_titlebar_additions(node, ctx) {
     ctx.arc(offset_x, offset_y, badge_size, 0, 2*Math.PI);
     ctx.stroke();
     ctx.restore()
+}
+
+function n2_widgets(node) {
+    const widgets = document.querySelector(`div[data-node-id='${node.id}']`)?.querySelector("div[data-testid='node-widgets']")
+    if (!widgets) return;
+    const connected = shared.linkRenderController.ue_list.all_connected_inputs(node)
+    Array.from(widgets.children).forEach((widget_el, index) => {
+        const input_el = widget_el.querySelector("input")
+        const widget   = node.widgets[index]
+        if (!input_el || !widget) return;
+        const wname = widget.label;
+        const inputindex = node.inputs.findIndex((input)=>(input.label==wname))
+        const connection = connected.find((uec)=>(uec.input_index==inputindex))
+        input_el.disabled = !!connection 
+    })
 }
