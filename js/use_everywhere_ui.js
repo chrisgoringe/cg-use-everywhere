@@ -345,7 +345,12 @@ export class LinkRenderController extends Pausable {
 
         shared.graphAnalyser.ambiguities.forEach((ambiguity)=>{
             ambiguity.matches.forEach((m)=>{
-                if (app.canvas.node_over == m.node || ambiguity.id==-20 && ambiguity.graph.outputNode?.isPointerOver) {  
+                if (
+                    m.node.selected 
+                    || app.canvas.graph.getNodeById(m.id)?.selected 
+                    || app.canvas.node_over == m.node 
+                    || ambiguity.id==-20 && ambiguity.graph.outputNode?.isPointerOver
+                ) {  
                     this._render_ue_link(
                         {
                             graph                    : ambiguity.graph, 

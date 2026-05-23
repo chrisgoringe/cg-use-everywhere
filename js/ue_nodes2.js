@@ -44,7 +44,7 @@ function n2_highlight_connections(node, ctx) {
             ctx.stroke();
         });
 
-
+    /* Highlight connected outputs */
     const sending_slots = ue_list.all_sending_slots(node)
     node.outputs.forEach((output,i) => {
         if (is_able_to_broadcast(node, output.name) && sending_slots.has(i)) {
@@ -54,6 +54,25 @@ function n2_highlight_connections(node, ctx) {
             ctx.stroke();
         }
     })
+
+    /* Note ambiguities */
+    ctx.lineWidth   = 2
+    ctx.strokeStyle = "red"
+    ctx.shadowBlur  = 0
+    shared.graphAnalyser.ambiguities.filter((ambiguity)=>(ambiguity.id==node.id)).forEach((ambiguity)=>{
+        const index = node.inputs.findIndex((input)=>(input.name==ambiguity.input))
+        if (index>=0) {
+            const pos2 = node.getSlotPosition(index, true);
+            ctx.beginPath();
+            ctx.moveTo(pos2[0]-radius-4,pos2[1]-radius)
+            ctx.lineTo(pos2[0],pos2[1]+radius)
+            ctx.moveTo(pos2[0]-radius-4,pos2[1]+radius)
+            ctx.lineTo(pos2[0],pos2[1]-radius)
+            
+            ctx.stroke();
+        }
+    })
+
     ctx.restore()
 }
 
