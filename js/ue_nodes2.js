@@ -18,10 +18,12 @@ export function addMouseEvents(node) {
     }
     element.addEventListener("mouseenter", () => {
         node.mouseOver = true
+        shared.mouseOverNode = node
         shared.linkRenderController.node_over_changed()
     })
     element.addEventListener("mouseleave", () => {
         node.mouseOver = false
+        shared.mouseOverNode = null
         shared.linkRenderController.node_over_changed()
     })  
 }

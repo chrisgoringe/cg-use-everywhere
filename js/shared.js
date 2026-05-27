@@ -9,7 +9,8 @@ class Shared {
         this.graph_currently_modified = 0
         this.graphAnalyser            = undefined
         this.linkRenderController     = undefined
-        this.report_keys = [ 'graph_being_configured', 'in_queuePrompt', 'in_graphToPrompt', 'in_midst_of_change', 'graph_currently_modified' ]
+        this.report_keys = [ 'graph_being_configured', 'in_queuePrompt', 'in_graphToPrompt', 'in_midst_of_change', 'graph_currently_modified' ],
+        this.mouseOverNode = null
     }
 }
 
