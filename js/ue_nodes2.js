@@ -4,6 +4,27 @@ import { node_can_broadcast, is_able_to_broadcast } from "./use_everywhere_utili
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { shared } from "./shared.js";
+import { Logger } from "./use_everywhere_utilities.js";
+
+function nodeElement(node) {
+    return document.querySelector(`div[data-node-id='${node.id}']`)
+}
+
+export function addMouseEvents(node) {
+    const element = nodeElement(node)
+    if (!element) {
+        Logger.log_problem(`Could not find node element for node ${node.id}`)
+        return
+    }
+    element.addEventListener("mouseenter", () => {
+        node.mouseOver = true
+        shared.linkRenderController.node_over_changed()
+    })
+    element.addEventListener("mouseleave", () => {
+        node.mouseOver = false
+        shared.linkRenderController.node_over_changed()
+    })  
+}
 
 export function nodes2_overlay(ctx) {
     if (!shared.linkRenderController.ue_list) return;
@@ -98,7 +119,7 @@ function n2_titlebar_additions(node, ctx) {
 }
 
 function n2_widgets(node) {
-    const widgets = document.querySelector(`div[data-node-id='${node.id}']`)?.querySelector("div[data-testid='node-widgets']")
+    const widgets = nodeElement(node)?.querySelector("div[data-testid='node-widgets']")
     if (!widgets) return;
     const connected = shared.linkRenderController.ue_list.all_connected_inputs(node)
     Array.from(widgets.children).forEach((widget_el, index) => {

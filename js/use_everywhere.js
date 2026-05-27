@@ -15,8 +15,8 @@ import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
 import { input_changed, fix_inputs } from "./connections.js";
 import { comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
-import { ue_callbacks } from "./recursive_callbacks.js";
-import { nodes2_overlay } from "./ue_nodes2.js";
+import { ue_callbacks, for_all_nodes } from "./recursive_callbacks.js";
+import { nodes2_overlay, addMouseEvents } from "./ue_nodes2.js";
 
 /*
 All nodes need the onDrawTitleBar method so they can show if they are broadcasting UE data.
@@ -26,17 +26,21 @@ function add_methods_to_all_nodes(node) {
 
     try {
         add_extra_menu_items(node) // right click menu additions
-    
-        const original_onMouseEnter = node.onMouseEnter;
-        node.onMouseEnter = function(e) {
-            original_onMouseEnter?.apply(this, arguments)
-            shared.linkRenderController.node_over_changed()
-        }
 
-        const original_onMouseLeave = node.onMouseLeave;
-        node.onMouseLeave = function(e) {
-            original_onMouseLeave?.apply(this, arguments)
-            shared.linkRenderController.node_over_changed()
+        if (running_nodes2()) {
+            // nothing
+        } else {
+            const original_onMouseEnter = node.onMouseEnter;
+            node.onMouseEnter = function(e) {
+                original_onMouseEnter?.apply(this, arguments)
+                shared.linkRenderController.node_over_changed()
+            }
+
+            const original_onMouseLeave = node.onMouseLeave;
+            node.onMouseLeave = function(e) {
+                original_onMouseLeave?.apply(this, arguments)
+                shared.linkRenderController.node_over_changed()
+            }
         }
 
         node.ue_methods_added = true;
@@ -185,6 +189,10 @@ app.registerExtension({
                 Logger.log_error(e)
             }
         }
+
+        ue_callbacks.register_allnode_callback('afterConfigureGraph', ()=>{
+            setTimeout(for_all_nodes, 1000, addMouseEvents)
+        })
 
 	},
 

@@ -327,6 +327,12 @@ export class LinkRenderController extends Pausable {
         }
     }
 
+    mouse_over_connected_node(ue_connection) {
+        if (app.canvas.node_over && this.node_in_ueconnection(ue_connection, app.canvas.node_over.id)) return true;
+        if (ue_connection.control_node?.mouseOver) return true;
+        if (ue_connection.sending_to?.mouseOver) return true;
+    }
+
     _render_all_ue_links(ctx) {
         if (!this._list_ready()) return;
         this.last_used_ue_list = this.ue_list;
@@ -349,6 +355,7 @@ export class LinkRenderController extends Pausable {
                     m.node.selected 
                     || app.canvas.graph.getNodeById(m.id)?.selected 
                     || app.canvas.node_over == m.node 
+                    || m.node.mouseOver
                     || ambiguity.id==-20 && ambiguity.graph.outputNode?.isPointerOver
                 ) {  
                     this._render_ue_link(
@@ -370,7 +377,7 @@ export class LinkRenderController extends Pausable {
             any_links = true;
             var show = false;
             if ( mode==4 ) show = true;
-            if ( (mode==2 || mode==3) && app.canvas.node_over && this.node_in_ueconnection(ue_connection, app.canvas.node_over.id) ) show = true;
+            if ( (mode==2 || mode==3) && this.mouse_over_connected_node(ue_connection) ) show = true;
             if ( (mode==1 || mode==3) && this.any_node_in_ueconnection(ue_connection, app.canvas.selected_nodes)) show = true;
 
             show = show && in_visible_graph(ue_connection.control_node) && in_visible_graph(ue_connection.sending_to);
