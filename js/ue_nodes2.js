@@ -13,6 +13,7 @@ function nodeElement(node) {
 
 export function addMouseEvents(node) {
     const element = nodeElement(node)
+    const header  = element.querySelector(`div[data-testid="node-header-${node.id}"]`)
     if (!element) {
         Logger.log_problem(`Could not find node element for node ${node.id}`)
         return
@@ -27,16 +28,14 @@ export function addMouseEvents(node) {
         shared.mouseOverNode = null
         shared.linkRenderController.node_over_changed()
     })
-    const body = element.querySelector(`div[data-testid="node-body-${node.id}"]`)
-    if (body) {
-        body.addEventListener("click", (e) => {
-            if (e.detail==2 && node_can_broadcast(node)) {
+    element.addEventListener("click", (e) => {
+        if (e.detail==2) {
+            if (header?.contains(e.target)) return; 
+            if (node_can_broadcast(node)) {
                 edit_restrictions(node)
-            }
-        })
-    } else {
-        Logger.log_problem(`Could not find body element for node ${node.id}`)
-    }
+            } 
+        }
+    })
 }
 
 export function nodes2_overlay(ctx) {
