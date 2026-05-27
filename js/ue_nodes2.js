@@ -5,6 +5,7 @@ import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { shared } from "./shared.js";
 import { Logger } from "./use_everywhere_utilities.js";
+import { edit_restrictions } from "./ue_properties_editor.js";
 
 function nodeElement(node) {
     return document.querySelector(`div[data-node-id='${node.id}']`)
@@ -25,7 +26,17 @@ export function addMouseEvents(node) {
         node.mouseOver = false
         shared.mouseOverNode = null
         shared.linkRenderController.node_over_changed()
-    })  
+    })
+    const body = element.querySelector(`div[data-testid="node-body-${node.id}"]`)
+    if (body) {
+        body.addEventListener("click", (e) => {
+            if (e.detail==2 && node_can_broadcast(node)) {
+                edit_restrictions(node)
+            }
+        })
+    } else {
+        Logger.log_problem(`Could not find body element for node ${node.id}`)
+    }
 }
 
 export function nodes2_overlay(ctx) {

@@ -291,15 +291,17 @@ app.registerExtension({
             setTimeout(()=>{app.canvas.setDirty(true,true)},200)
         })
 
-        app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
-            if (e?.detail?.subType=='node-double-click') {
-                const node = e.detail.node
-                if (node_can_broadcast(node)) {
-                    if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
-                    edit_restrictions(node)
+        if (!running_nodes2()) {
+            app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
+                if (e?.detail?.subType=='node-double-click') {
+                    const node = e.detail.node
+                    if (node_can_broadcast(node)) {
+                        if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
+                        edit_restrictions(node)
+                    }
                 }
-            }
-        })
+            })
+        }
 
         const original_onDrawForeground = app.canvas.onDrawForeground
         app.canvas.onDrawForeground = function(ctx, visible_area) {
