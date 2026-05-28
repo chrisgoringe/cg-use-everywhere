@@ -77,7 +77,7 @@ export function nodes_not_my_color(node, already_limited_to) {
     return [...nodes_in];
 }
 
-export function title_bar_additions(node, ctx, title_height) {
+export function title_bar_additions(node, ctx, title_height=30) {
     if (node_can_broadcast(node)) {
         const color = titlebar_color(node)
 

@@ -19,7 +19,7 @@ import { ue_callbacks, for_all_nodes } from "./recursive_callbacks.js";
 import { nodes2_overlay, addMouseEvents } from "./ue_nodes2.js";
 
 /*
-All nodes need the onDrawTitleBar method so they can show if they are broadcasting UE data.
+All nodes (pre Nodes 2.0) need the onDrawTitleBar method so they can show if they are broadcasting UE data.
 */
 function add_methods_to_all_nodes(node) {
     if (node.ue_methods_added) return Logger.log_problem(`Node ${node.id} already has UE methods added`);
@@ -40,6 +40,12 @@ function add_methods_to_all_nodes(node) {
             node.onMouseLeave = function(e) {
                 original_onMouseLeave?.apply(this, arguments)
                 shared.linkRenderController.node_over_changed()
+            }
+
+            const original_onDrawTitle = node.onDrawTitle;
+            node.onDrawTitle = function(ctx) {
+                title_bar_additions(this, ctx)
+                original_onDrawTitle?.apply(this, arguments)
             }
         }
 
@@ -191,7 +197,7 @@ app.registerExtension({
         }
 
         ue_callbacks.register_allnode_callback('afterConfigureGraph', ()=>{
-            setTimeout(for_all_nodes, 1000, addMouseEvents)
+            if (running_nodes2()) setTimeout(for_all_nodes, 1000, addMouseEvents)
         })
 
 	},

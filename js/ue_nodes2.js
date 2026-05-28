@@ -13,11 +13,11 @@ function nodeElement(node) {
 
 export function addMouseEvents(node) {
     const element = nodeElement(node)
-    const header  = element.querySelector(`div[data-testid="node-header-${node.id}"]`)
     if (!element) {
         Logger.log_problem(`Could not find node element for node ${node.id}`)
         return
     }
+    const header  = element.querySelector(`div[data-testid="node-header-${node.id}"]`)
     element.addEventListener("mouseenter", () => {
         node.mouseOver = true
         shared.mouseOverNode = node
