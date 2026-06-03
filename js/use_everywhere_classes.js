@@ -314,7 +314,7 @@ export class UseEverywhereList {
 
     add_ue_from_node(node) {
 
-        if (node.properties.ue_properties.seed_inputs) {
+        if (node.properties.ue_properties?.seed_inputs) {
             this.add_ue(node, -1, "INT", [node.id.toString(),0], regex_for(node, 'input') );
         } else {
             var check_if_able_to_broadcast
