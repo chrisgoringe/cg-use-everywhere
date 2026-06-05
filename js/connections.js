@@ -121,7 +121,7 @@ function fix_unconnected_inputs(node) {
 function fix_star_inputs(node) {
     node.inputs.filter((input)=>(input.type=='*' && input.link)).forEach((input)=>{
         const llink = node.graph.links[input.link]
-        if (llink.type) input.type = llink.type
+        if (llink?.type) input.type = llink.type
     })
 }
 
