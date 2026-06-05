@@ -323,19 +323,13 @@ export class Pausable {
 }
 
 export function get_connection(node, i) {
-    const graph = node.graph
-    const in_link = node?.inputs[i]?.link;
-    if (in_link) {
-        var llink = graph.links[in_link]
-        llink = handle_bypass(llink, llink.type, graph)
-        if (!llink) {
-            Logger.log(`handle_bypass failing - subgraph issue?`, null, true)
-            llink = graph.links[in_link]
-        }
+    const graph = node?.graph
+    const link = node?.inputs[i]?.link;
+    if (link && graph.links[link]) {
+        var llink = handle_bypass(graph.links[link], graph.links[link].type, graph) || graph.links[link]
         return { link:llink, type:llink.type }
-    } else {
-        return { link:undefined, type:undefined }
-    }
+    } 
+    return { link:undefined, type:undefined }
 }
 
 export function is_able_to_broadcast(node, output_name) {
