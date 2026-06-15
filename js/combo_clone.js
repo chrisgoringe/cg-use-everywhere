@@ -3,7 +3,7 @@ import { Logger } from "./use_everywhere_utilities.js"
 
 function update_me(node) {
     if (node.properties.comboclone) {
-        Logger.log_problem(`Reseting combo clone node ${node.id}`)
+        Logger.log_problem(`Resetting combo clone node ${node.id}`)
         node.widgets[0].options.values = [...node.properties.comboclone.options]
         node.outputs[0].type = "COMBO"
         node.outputs[0].label = node.properties.comboclone.name

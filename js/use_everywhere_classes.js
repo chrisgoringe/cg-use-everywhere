@@ -33,12 +33,12 @@ const PROMPT_REGEXES = [new RegExp(i18n_functional('prompt_regex')), new RegExp(
 
 /*
 The UseEverywhere object represents a single 'broadcast'. It generally contains
-    controller                  - the UE node that controls the broadcase
+    controller                  - the UE node that controls the broadcast
     control_node_input_index    - the input on that node 
     type                        - the data type
     output                      - the output that is being rebroadcast as a list (node_id, output_index)
     title_regex, input_regex    - the UE? matching rules
-    priority                    - priorty :)
+    priority                    - priority :)
     graph                       - the graph or subgraph
 */
 class UseEverywhere {
