@@ -474,6 +474,7 @@ The following people have contributed code or helpful discussions, without which
 - [TinyTerra](https://github.com/TinyTerra)
 - [bananasss00](https://github.com/bananasss00)
 - [JorgeR81](https://github.com/JorgeR81)
+- [kevgeoleo](https://github.com/kevgeoleo)
 
 Feel free to [make suggestions, or implement features](https://github.com/chrisgoringe/cg-use-everywhere/issues) to get your name added here!
 
