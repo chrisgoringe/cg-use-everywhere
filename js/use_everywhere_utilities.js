@@ -5,6 +5,10 @@ import { i18n } from "./i18n.js";
 import { ue_callbacks } from "./recursive_callbacks.js";
 import { shared } from "./shared.js";
 
+export function running_nodes2() {
+    return app.ui.settings.getSettingValue('Comfy.VueNodes.Enabled')
+}
+
 export function create( tag, clss, parent, properties ) {
     const nd = document.createElement(tag);
     if (clss)       clss.split(" ").forEach((s) => nd.classList.add(s))
@@ -288,21 +292,6 @@ export function is_UEnode(node) {
 
 export function node_can_broadcast(node) {
     return (node.properties?.ue_convert || is_UEnode(node))
-}
-
-
-
-/*
-Inject a call into a method on object with name methodname.
-The injection is added at the end of the existing method (if the method didn't exist, it is created)
-injectionthis and injectionarguments are passed into the apply call (as the this and the arguments)
-*/
-export function inject(object, methodname, tracetext, injection, injectionthis, injectionarguments) {
-    const original = object[methodname];
-    object[methodname] = function() {
-        original?.apply(this, arguments);
-        injection.apply(injectionthis, injectionarguments);
-    }
 }
 
 export class Pausable {

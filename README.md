@@ -35,6 +35,14 @@ Drop [this workflow](docs/UE_example.json) into Comfy, and take a look at how it
 
 # Common Questions
 
+## Known issues with Nodes 2.0
+
+See [8.0.1 issues list](https://github.com/chrisgoringe/cg-use-everywhere/milestone/23)
+- Can't rename inputs and outputs any more. [471](https://github.com/chrisgoringe/cg-use-everywhere/issues/471)
+  - Work around - turn node into a subgraph and rename internally. 
+- Exporting doesn't work. [458](https://github.com/chrisgoringe/cg-use-everywhere/issues/458)
+- The UE connectable submenu closes every time you change something. [450](https://github.com/chrisgoringe/cg-use-everywhere/issues/450)
+
 ## How do I get positive and negative conditionings to work?
 
 Connect both to a single UE node, and then rename the inputs. See [here](https://github.com/chrisgoringe/cg-use-everywhere/issues/317#issuecomment-3663225670).
@@ -50,6 +58,11 @@ Nodes which dynamically work out their data type are a real problem that isn't w
 Yes. See Combo Clone node [here](https://github.com/chrisgoringe/cg-use-everywhere/tree/main#special-case-nodes).
 
 # Recent Changes
+
+## 8.0
+
+- Updated to work with Nodes 2.0. Lots of changes, anticipate some issues! Please check [8.0.1 issues list](https://github.com/chrisgoringe/cg-use-everywhere/milestone/23) before reporting a bug.
+
 
 ## 7.8
 
@@ -474,6 +487,7 @@ The following people have contributed code or helpful discussions, without which
 - [TinyTerra](https://github.com/TinyTerra)
 - [bananasss00](https://github.com/bananasss00)
 - [JorgeR81](https://github.com/JorgeR81)
+- [kevgeoleo](https://github.com/kevgeoleo)
 
 Feel free to [make suggestions, or implement features](https://github.com/chrisgoringe/cg-use-everywhere/issues) to get your name added here!
 

@@ -3,7 +3,7 @@ import { api } from "../../scripts/api.js";
 
 import { shared, deferred_actions } from "./shared.js";
 
-import { is_UEnode, inject, Logger, graphConverter, create, node_can_broadcast } from "./use_everywhere_utilities.js";
+import { is_UEnode, Logger, graphConverter, create, node_can_broadcast, running_nodes2 } from "./use_everywhere_utilities.js";
 import { title_bar_additions, LinkRenderController } from "./use_everywhere_ui.js";
 import { GraphAnalyser } from "./use_everywhere_graph_analysis.js";
 import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_everywhere_settings.js";
@@ -15,54 +15,46 @@ import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
 import { input_changed, fix_inputs } from "./connections.js";
 import { comboclone_on_connection, is_combo_clone } from "./combo_clone.js";
-import { ue_callbacks } from "./recursive_callbacks.js";
+import { ue_callbacks, for_all_nodes } from "./recursive_callbacks.js";
+import { nodes2_overlay, addMouseEvents } from "./ue_nodes2.js";
 
 /*
-All nodes need the onDrawTitleBar method so they can show if they are broadcasting UE data.
+All nodes (pre Nodes 2.0) need the onDrawTitleBar method so they can show if they are broadcasting UE data.
 */
 function add_methods_to_all_nodes(node) {
-    if (node.ue_methods_added) return Logger.log_problem(`Node ${node.id} already has UE methods added`);
+    if (node._ue_mouse_events_added) return Logger.log_problem(`Node ${node.id} already has UE methods added`);
 
     try {
-        add_extra_menu_items(node, inject_outdating_into_object_method) // right click menu additions
-        
-        const original_onDrawForeground = node.onDrawForeground;
-        node.onDrawForeground = function(ctx) {
-            original_onDrawForeground?.apply(this, arguments);
-            title_bar_additions(this, ctx, this.title_height || LiteGraph.NODE_TITLE_HEIGHT)
+        add_extra_menu_items(node) // right click menu additions
+
+        if (running_nodes2()) {
+            // this is handled in addMouseEvents in ue_nodes2.js
+            // because they need to be added to the dom element
+        } else {
+            const original_onMouseEnter = node.onMouseEnter;
+            node.onMouseEnter = function(e) {
+                original_onMouseEnter?.apply(this, arguments)
+                shared.linkRenderController.node_over_changed()
+            }
+
+            const original_onMouseLeave = node.onMouseLeave;
+            node.onMouseLeave = function(e) {
+                original_onMouseLeave?.apply(this, arguments)
+                shared.linkRenderController.node_over_changed()
+            }
+
+            const original_onDrawTitle = node.onDrawTitle;
+            node.onDrawTitle = function(ctx) {
+                title_bar_additions(this, ctx)
+                original_onDrawTitle?.apply(this, arguments)
+            }
         }
 
-        const original_onMouseEnter = node.onMouseEnter;
-        node.onMouseEnter = function(e) {
-            original_onMouseEnter?.apply(this, arguments)
-            shared.linkRenderController.node_over_changed()
-        }
-
-        const original_onMouseLeave = node.onMouseLeave;
-        node.onMouseLeave = function(e) {
-            original_onMouseLeave?.apply(this, arguments)
-            shared.linkRenderController.node_over_changed()
-        }
-
-        node.ue_methods_added = true;
+        node._ue_mouse_events_added = true;
     } catch (e) {
         Logger.log_error(e);
     }
     
-}
-
-/*
-Inject a call to linkRenderController.mark_list_link_outdated into a method with name methodname on all objects in the array
-If object is undefined, do nothing.
-The injection is added at the end of the existing method (if the method didn't exist, it is created).
-*/
-function inject_outdating_into_objects(array, methodname, tracetext) {
-    if (array) {
-        array.forEach((object) => { inject_outdating_into_object_method(object, methodname, tracetext); })
-    }
-}
-function inject_outdating_into_object_method(object, methodname, tracetext) {
-    if (object) inject(object, methodname, tracetext, shared.linkRenderController.mark_link_list_outdated, shared.linkRenderController);
 }
 
 app.registerExtension({
@@ -155,7 +147,11 @@ app.registerExtension({
             try {
                 shared.linkRenderController.pause('drawFrontCanvas')
                 const v = original_drawNode.apply(this, arguments);
-                shared.linkRenderController.highlight_ue_connections(node, ctx);
+                if (running_nodes2()) {
+                    addMouseEvents(node)
+                } else {
+                    shared.linkRenderController.highlight_ue_connections(node, ctx);
+                }       
                 if (node._last_seen_bg !== node.bgcolor) shared.linkRenderController.mark_link_list_outdated();
                 node._last_seen_bg = node.bgcolor
                 return v
@@ -165,6 +161,7 @@ app.registerExtension({
                 shared.linkRenderController.unpause()
             }
         }
+
 
         /*
         Before drawing the canvas, temporarily disable all the ue connected widgets  
@@ -250,10 +247,8 @@ app.registerExtension({
             try {
                 shared.in_graphToPrompt += 1
                 if (shared.in_queuePrompt || app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
-                    //Logger.log_shared('In graphToPrompt (going to modify graph):')
                     return await shared.graphAnalyser.call_function_with_modified_graph( original_graphToPrompt, arguments )
                 } else {
-                    //Logger.log_shared('In graphToPrompt (not going to modify graph):')
                     return await original_graphToPrompt.apply(this, arguments)
                 }
             } finally {
@@ -299,20 +294,34 @@ app.registerExtension({
             setTimeout(()=>{app.canvas.setDirty(true,true)},200)
         })
 
-        app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
-            if (e?.detail?.subType=='node-double-click') {
-                const node = e.detail.node
-                if (node_can_broadcast(node)) {
-                    if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
-                    edit_restrictions(null, null, null, null, node)
+        if (!running_nodes2()) {
+            app.canvas.canvas.addEventListener('litegraph:canvas', (e)=>{
+                if (e?.detail?.subType=='node-double-click') {
+                    const node = e.detail.node
+                    if (node_can_broadcast(node)) {
+                        if (app.ui.settings.getSettingValue('Comfy.Node.DoubleClickTitleToEdit') && e.detail.originalEvent.canvasY<node.pos[1]) return
+                        edit_restrictions(node)
+                    }
                 }
-            }
-        })
+            })
+        }
 
         const original_onDrawForeground = app.canvas.onDrawForeground
         app.canvas.onDrawForeground = function(ctx, visible_area) {
             if (original_onDrawForeground) original_onDrawForeground.apply(this, arguments)
             if (this.subgraph) shared.linkRenderController.highlight_subgraph_node_connections.bind(shared.linkRenderController)(this.subgraph, ctx)
+        }
+
+
+        /*
+        In nodes2, can we do all the ue graphics in an overlay?
+        */
+        const original_onDrawOverlay = app.canvas.onDrawOverlay
+        app.canvas.onDrawOverlay = function(ctx) {
+            original_onDrawOverlay?.apply(this, arguments)
+            if (running_nodes2()) {
+                nodes2_overlay(ctx)
+            }
         }
         
         /* 

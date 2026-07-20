@@ -32,12 +32,10 @@ export class FloatingWindow extends HTMLElement {
         this.style.display = 'flex';
         const tt = document.getElementById('ue_tooltip')
         if (tt) tt.style.display = 'none' 
-        this.showing = true
+        if (this.firstFocusable) requestAnimationFrame(() => this.firstFocusable.focus())
     }
-    hide() { 
-        this.style.display = 'none' 
-        this.showing = false
-    }
+    hide() { this.style.display = 'none' }
+
     set_title(title) { 
         this.header.innerText = title 
     }
@@ -101,20 +99,9 @@ export class FloatingWindow extends HTMLElement {
     }
 
     setup_focus_trap() {
-        this.firstFocusable = null
-        this.lastFocusable = null
-
         const focusableEls = this.querySelectorAll('a[href]:not([disabled]), button:not([disabled]), textarea:not([disabled]), input[type="text"]:not([disabled]), input[type="radio"]:not([disabled]), input[type="checkbox"]:not([disabled]), select:not([disabled])')
-        if (focusableEls?.length == 0) return
-
-        this.firstFocusable = focusableEls[0] ?? null
-        this.lastFocusable  = focusableEls[focusableEls.length - 1] ?? null
-
-        if (this.firstFocusable) {
-            setTimeout(() => {
-                this.firstFocusable.focus()
-            }, 0);
-        }
+        this.firstFocusable = (focusableEls.length>0) ? focusableEls[0] : null
+        this.lastFocusable  = (focusableEls.length>0) ? focusableEls[focusableEls.length - 1] : null
     }
 }
 

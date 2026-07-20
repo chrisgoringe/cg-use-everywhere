@@ -1,11 +1,11 @@
-import { Logger, get_real_node, Pausable, node_can_broadcast, is_able_to_broadcast } from "./use_everywhere_utilities.js";
+import { Logger, get_real_node, Pausable, node_can_broadcast, is_able_to_broadcast, running_nodes2 } from "./use_everywhere_utilities.js";
 import { app } from "../../scripts/app.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { in_visible_graph, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { maybe_show_tooltip } from "./tooltip_window.js";
 import { is_connectable } from "./use_everywhere_settings.js";
 import { shared } from "./shared.js";
-import { any_restrictions } from "./ue_properties.js";
+import { titlebar_color } from "./ue_shared_ui.js";
 
 export function nodes_in_my_group(node) {
     const nodes_in = new Set();
@@ -77,13 +77,9 @@ export function nodes_not_my_color(node, already_limited_to) {
     return [...nodes_in];
 }
 
-export function title_bar_additions(node, ctx, title_height) {
+export function title_bar_additions(node, ctx, title_height=30) {
     if (node_can_broadcast(node)) {
-        const restricted = any_restrictions(node);
-        const sending    = shared.linkRenderController.node_sending_anywhere(node);
-
-        const color = restricted ? ( sending ? "rgba(255, 255, 72, 1)" : "rgba(255, 255, 72, 0.35)" ) :
-                                   ( sending ? "rgba(72, 255, 72, 1)" : "rgba(72, 255, 72, 0.35)" );
+        const color = titlebar_color(node)
 
         const offset_x = (node.subgraph) ?  5 :  5
         const offset_y = (node.subgraph) ?  4 :  5
@@ -331,6 +327,12 @@ export class LinkRenderController extends Pausable {
         }
     }
 
+    mouse_over_connected_node(ue_connection) {
+        if (app.canvas.node_over && this.node_in_ueconnection(ue_connection, app.canvas.node_over.id)) return true;
+        if (ue_connection.control_node?.mouseOver) return true;
+        if (ue_connection.sending_to?.mouseOver) return true;
+    }
+
     _render_all_ue_links(ctx) {
         if (!this._list_ready()) return;
         this.last_used_ue_list = this.ue_list;
@@ -349,7 +351,13 @@ export class LinkRenderController extends Pausable {
 
         shared.graphAnalyser.ambiguities.forEach((ambiguity)=>{
             ambiguity.matches.forEach((m)=>{
-                if (app.canvas.node_over == m.node || ambiguity.id==-20 && ambiguity.graph.outputNode?.isPointerOver) {  
+                if (
+                    m.node.selected 
+                    || app.canvas.graph.getNodeById(m.id)?.selected 
+                    || app.canvas.node_over == m.node 
+                    || m.node.mouseOver
+                    || ambiguity.id==-20 && ambiguity.graph.outputNode?.isPointerOver
+                ) {  
                     this._render_ue_link(
                         {
                             graph                    : ambiguity.graph, 
@@ -369,7 +377,7 @@ export class LinkRenderController extends Pausable {
             any_links = true;
             var show = false;
             if ( mode==4 ) show = true;
-            if ( (mode==2 || mode==3) && app.canvas.node_over && this.node_in_ueconnection(ue_connection, app.canvas.node_over.id) ) show = true;
+            if ( (mode==2 || mode==3) && this.mouse_over_connected_node(ue_connection) ) show = true;
             if ( (mode==1 || mode==3) && this.any_node_in_ueconnection(ue_connection, app.canvas.selected_nodes)) show = true;
 
             show = show && in_visible_graph(ue_connection.control_node) && in_visible_graph(ue_connection.sending_to);
