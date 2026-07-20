@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { titlebar_color } from "./ue_shared_ui.js";
-import { node_can_broadcast, is_able_to_broadcast } from "./use_everywhere_utilities.js";
+import { node_can_broadcast, is_able_to_broadcast, running_nodes2 } from "./use_everywhere_utilities.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { shared } from "./shared.js";
@@ -11,13 +11,19 @@ function nodeElement(node) {
     return document.querySelector(`div[data-node-id='${node.id}']`)
 }
 
+function headerElement(node) {
+    return nodeElement(node)?.querySelector(`div[data-testid="node-header-${node.id}"]`)
+}
+
 export function addMouseEvents(node) {
+    Logger.log_detail(`addMouseEvents called for ${node.id}`)
+    if (!running_nodes2()) return Logger.log_problem(`Not running nodes2`)
+    
     const element = nodeElement(node)
-    if (!element) {
-        Logger.log_problem(`Could not find node element for node ${node.id}`)
-        return
-    }
-    const header  = element.querySelector(`div[data-testid="node-header-${node.id}"]`)
+    if (!element) return Logger.log_info(`Could not find node element for ${node.id}`)
+    if (element._ue_mouse_events_for_nodes2_added) return Logger.log_detail(`Already added`)
+    
+    Logger.log_info(`adding MouseEvents for ${node.id}`)
     element.addEventListener("mouseenter", () => {
         node.mouseOver = true
         shared.mouseOverNode = node
@@ -28,6 +34,7 @@ export function addMouseEvents(node) {
         shared.mouseOverNode = null
         shared.linkRenderController.node_over_changed()
     })
+    const header = headerElement(node)
     element.addEventListener("click", (e) => {
         if (e.detail==2) {
             if (header?.contains(e.target)) return; 
@@ -36,6 +43,7 @@ export function addMouseEvents(node) {
             } 
         }
     })
+    element._ue_mouse_events_for_nodes2_added = true
 }
 
 export function nodes2_overlay(ctx) {

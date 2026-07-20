@@ -22,13 +22,14 @@ import { nodes2_overlay, addMouseEvents } from "./ue_nodes2.js";
 All nodes (pre Nodes 2.0) need the onDrawTitleBar method so they can show if they are broadcasting UE data.
 */
 function add_methods_to_all_nodes(node) {
-    if (node.ue_methods_added) return Logger.log_problem(`Node ${node.id} already has UE methods added`);
+    if (node._ue_mouse_events_added) return Logger.log_problem(`Node ${node.id} already has UE methods added`);
 
     try {
         add_extra_menu_items(node) // right click menu additions
 
         if (running_nodes2()) {
-            // nothing
+            // this is handled in addMouseEvents in ue_nodes2.js
+            // because they need to be added to the dom element
         } else {
             const original_onMouseEnter = node.onMouseEnter;
             node.onMouseEnter = function(e) {
@@ -49,7 +50,7 @@ function add_methods_to_all_nodes(node) {
             }
         }
 
-        node.ue_methods_added = true;
+        node._ue_mouse_events_added = true;
     } catch (e) {
         Logger.log_error(e);
     }
@@ -147,7 +148,7 @@ app.registerExtension({
                 shared.linkRenderController.pause('drawFrontCanvas')
                 const v = original_drawNode.apply(this, arguments);
                 if (running_nodes2()) {
-                    //nodes2_ui(node, ctx);
+                    addMouseEvents(node)
                 } else {
                     shared.linkRenderController.highlight_ue_connections(node, ctx);
                 }       
@@ -195,10 +196,6 @@ app.registerExtension({
                 Logger.log_error(e)
             }
         }
-
-        ue_callbacks.register_allnode_callback('afterConfigureGraph', ()=>{
-            if (running_nodes2()) setTimeout(for_all_nodes, 1000, addMouseEvents)
-        })
 
 	},
 
