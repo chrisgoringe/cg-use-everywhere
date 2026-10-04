@@ -68,6 +68,32 @@ class GraphAnalyser extends Pausable {
         })
     }
 
+    /* [UE-FIX 2026-10-04] When the origin node of a link has been deleted, the front end can
+       leave the link object in graph.links (a "dangling" link) while the input still reports a
+       link id. Anything Everywhere then treats that input as already connected and never wires
+       it, but the serializer cannot resolve the missing origin and drops the input, producing
+       "Required input is missing: <name>" on the server. Remove such links so UE can re-feed
+       the input (and the UI cleans itself up). */
+    prune_dangling_links(graph) {
+        if (!graph || !graph.links) return
+        const origin_of = (link) => (link.origin_id !== undefined) ? link.origin_id : link?._state?.originNodeId
+        const to_remove = []
+        for (const key of Object.keys(graph.links)) {
+            const link = graph.links[key]
+            if (!link) continue
+            const oid = origin_of(link)
+            if (oid === undefined || oid === null) continue
+            if (String(oid) === "-10" || String(oid) === "-20") continue  // subgraph input/output pseudo nodes
+            if (!graph.getNodeById(oid)) to_remove.push(key)
+        }
+        to_remove.forEach((key)=>{
+            try { graph.removeLink(Number(key)) }
+            catch (e) { try { delete graph.links[key] } catch (e2) {} }
+        })
+        if (to_remove.length) Logger.log_info(`Removed ${to_remove.length} dangling link(s)`)
+        return to_remove
+    }
+
     analyse_graph(graph, ignore_pause) {
         if (this.paused() && !ignore_pause) return null
 
@@ -80,6 +106,8 @@ class GraphAnalyser extends Pausable {
 
         this.clean_slots(graph.links, graph.inputNode?.slots)
         this.clean_slots(graph.links, graph.outputNode?.slots)  
+
+        this.prune_dangling_links(graph)
 
         this.ambiguities = [];
         const treat_bypassed_as_live = settingsCache.getSettingValue("Use Everywhere.Options.connect_to_bypassed") || this.connect_to_bypassed

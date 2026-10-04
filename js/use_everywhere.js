@@ -243,13 +243,24 @@ app.registerExtension({
         - provide API
         */
         const original_graphToPrompt = app.graphToPrompt;
+        /* [UE-FIX 2026-10-01] ComfyUI frontend >= 1.52.7 declares
+           async graphToPrompt(e = this.rootGraph) -- calling it without a receiver throws
+           ("Cannot read properties of undefined (reading 'rootGraph')"). Keep a copy bound
+           to the app instance and use it for every internal call. */
+        const original_graphToPrompt_bound = original_graphToPrompt.bind(app);
+        /* [UE-FIX 2026-10-01] Do not rely only on our own queuePrompt wrapper: if another
+           extension wraps app.queuePrompt after us, shared.in_queuePrompt never becomes > 0
+           and the UE links are silently skipped, so the queued prompt fails server validation
+           with "Required input is missing: clip". The frontend sets ComfyApp.processingQueue
+           = true for the whole duration of its own queue loop, so treat that as queueing too. */
+        const ue_is_queueing = () => (shared.in_queuePrompt || !!app.processingQueue);
         app.graphToPrompt = async function () {
             try {
                 shared.in_graphToPrompt += 1
-                if (shared.in_queuePrompt || app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
-                    return await shared.graphAnalyser.call_function_with_modified_graph( original_graphToPrompt, arguments )
+                if (ue_is_queueing() || app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
+                    return await shared.graphAnalyser.call_function_with_modified_graph( original_graphToPrompt_bound, arguments )
                 } else {
-                    return await original_graphToPrompt.apply(this, arguments)
+                    return await original_graphToPrompt_bound.apply(app, arguments)
                 }
             } finally {
                 shared.in_graphToPrompt -= 1
@@ -267,7 +278,7 @@ app.registerExtension({
         }
 
         app.ue_modified_prompt = async function () { // API function
-            return await shared.graphAnalyser.call_function_with_modified_graph( original_graphToPrompt ) 
+            return await shared.graphAnalyser.call_function_with_modified_graph( original_graphToPrompt_bound ) 
         }
 
         /*

@@ -285,7 +285,12 @@ export function is_connected(input, treat_bypassed_as_live, graph) {
 Is this a UE node?
 */
 export function is_UEnode(node) {
-    const type = node.comfyClass;
+    /* [UE-FIX 2026-10-04] ComfyUI frontend >= ~1.53 no longer sets node.comfyClass on
+       litegraph node instances (it is undefined; the class name lives in node.type).
+       Without a fallback this extension cannot recognise its own nodes, so no virtual
+       links are created and the queued prompt fails server validation with
+       "Required input is missing: clip". */
+    const type = node.comfyClass || node.type;
     if (type == "Anything Everywhere") return true;
     return ((type) && (type.startsWith("Anything Everywhere") || type==="Seed Everywhere" || type==="Prompts Everywhere"))
 }
