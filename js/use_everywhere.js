@@ -57,6 +57,48 @@ function add_methods_to_all_nodes(node) {
     
 }
 
+/*
+Modifications to the graph:
+- track start and end of the graph being changed
+- catch convertToSubgraph to try to fix UE links
+
+Newer frontends create a separate graph per workflow tab, so this is applied to
+each root graph as it is configured (not just the one that existed at init).
+*/
+function hook_graph(graph) {
+    if (!graph || graph._ue_graph_hooked) return;
+    graph._ue_graph_hooked = true;
+
+    const original_beforeChange = graph.beforeChange
+    graph.beforeChange = function () {
+        shared.in_midst_of_change += 1
+        original_beforeChange?.apply(this, arguments)
+    }
+
+    const original_afterChange = graph.afterChange
+    graph.afterChange = function () {
+        original_afterChange?.apply(this, arguments)
+        shared.in_midst_of_change = Math.max(0, shared.in_midst_of_change-1)  // afterChange gets called without a beforeChange sometimes
+    }
+    
+    const original_subgraph = graph.convertToSubgraph
+    graph.convertToSubgraph = function () {
+        const ctb_was = shared.graphAnalyser.connect_to_bypassed
+        shared.graphAnalyser.connect_to_bypassed = true
+        try {
+            const cur_list = shared.graphAnalyser.analyse_graph(visible_graph())
+            if (!cur_list) Logger.log_problem('convert to subgraph failed to get ues')
+            const mods = convert_to_links(cur_list, null, visible_graph());
+            const r = original_subgraph.apply(this, arguments);
+            mods.restorer()
+            fix_new_subgraph_node(r.node)
+            return r
+        } finally {
+            shared.graphAnalyser.connect_to_bypassed = ctb_was
+        }
+    }
+}
+
 app.registerExtension({
 	name: "cg.customnodes.use_everywhere",
     settings: SETTINGS, 
@@ -203,39 +245,7 @@ app.registerExtension({
         shared.graphAnalyser        = new GraphAnalyser();
         shared.linkRenderController = new LinkRenderController();
 
-        /*
-        Modifications to the graph:
-        - track start and end of the graph being changed
-        - catch convertToSubgraph to try to fix UE links
-        */
-        const original_beforeChange = app.graph.beforeChange
-        app.graph.beforeChange = function () {
-            shared.in_midst_of_change += 1
-            original_beforeChange?.apply(this, arguments)
-        }
-
-        const original_afterChange = app.graph.afterChange
-        app.graph.afterChange = function () {
-            original_afterChange?.apply(this, arguments)
-            shared.in_midst_of_change = Math.max(0, shared.in_midst_of_change-1)  // afterChange gets called without a beforeChange sometimes
-        }
-        
-        const original_subgraph = app.graph.convertToSubgraph
-        app.graph.convertToSubgraph = function () {
-            const ctb_was = shared.graphAnalyser.connect_to_bypassed
-            shared.graphAnalyser.connect_to_bypassed = true
-            try {
-                const cur_list = shared.graphAnalyser.analyse_graph(visible_graph())
-                if (!cur_list) Logger.log_problem('convert to subgraph failed to get ues')
-                const mods = convert_to_links(cur_list, null, visible_graph());
-                const r = original_subgraph.apply(this, arguments);
-                mods.restorer()
-                fix_new_subgraph_node(r.node)
-                return r
-            } finally {
-                shared.graphAnalyser.connect_to_bypassed = ctb_was
-            }
-        }
+        hook_graph(app.graph)
 
         /*
         Modifications to app
@@ -338,6 +348,7 @@ app.registerExtension({
 
 
     beforeConfigureGraph() {
+        hook_graph(app.graph)
         shared.linkRenderController.pause("before configure", 1000)
         shared.graphAnalyser.pause("before configure", 1000)
         shared.graph_being_configured += 1
