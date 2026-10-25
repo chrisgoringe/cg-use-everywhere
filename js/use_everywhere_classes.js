@@ -3,7 +3,7 @@ import { default_priority } from "./ue_properties.js";
 import { connection_from_output_as_input, visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { nodes_in_my_group, nodes_not_in_my_group, nodes_my_color, nodes_not_my_color, nodes_in_groups_matching } from "./use_everywhere_ui.js";
 import { Logger, node_is_live, get_real_node, get_connection, find_duplicate_broadcasted_types, is_able_to_broadcast } from "./use_everywhere_utilities.js";
-
+import { settingsCache } from "./use_everywhere_cache.js";
 
 export function display_name(node) { 
     if (node?.title) return node.title;
@@ -86,6 +86,15 @@ class UseEverywhere {
     Does this broadcast match a given node,input?
     Logic here is to run through a series of reasons why it would NOT match.
     */
+   type_match (input_type) {
+        if (this.type==input_type) return true
+        if (this.type=="STRING" && input.type=="COMBO" && this.string_to_combo) return true
+        if (input_type=="*" && this.send_to_any) return true
+        if (settingsCache.getSettingValue("Use Everywhere.Options.connect_to_flexible_inputs")) {
+            if ((input_type.split(',')).find((t)=>t==this.type)) return true
+        }
+        return false
+    }
     matches(node, input) {
         if (!node) {
             Logger.log_problem(`UseEverywhere.matches called with no node`);
@@ -98,16 +107,9 @@ class UseEverywhere {
         // don't send to self
         if (this.output[0] == node.id) return false;
 
+
         // type must match except in special cases
-        if (this.type != input.type) {
-            if (this.type=="STRING" && input.type=="COMBO" && this.string_to_combo) {
-                // allow a string to be sent to a COMBO
-            } else if (input.type=="*" && this.send_to_any) {
-                // allow sending to '*' inputs if send_to_any is true
-            } else {
-                return false
-            }
-        } 
+        if (!this.type_match(input.type)) return false
 
         // apply restrictions (colour and group, includes group regex)
         if (this.restrict_to && !this.restrict_to.includes(node.id)) return false;

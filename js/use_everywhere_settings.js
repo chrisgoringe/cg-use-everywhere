@@ -77,6 +77,14 @@ const _SETTINGS = [
         tooltip: "By default UE links are made to the node downstream of bypassed nodes."
     },
     {
+        id: "Use Everywhere.Options.connect_to_flexible_inputs",
+        name: "Connect if type matches any input option",
+        type: "boolean",
+        defaultValue: true,
+        onChange: settingsCache.onSettingChange,
+        tooltip: "If off, 'INT' doesn't link to 'FLOAT,INT'. Note that this setting doesn't imply connection to an 'ANY', that is controlled on a case by case basis"
+    },
+    {
         id: "Use Everywhere.Options.logging",
         name: "Logging",
         type: "combo",
