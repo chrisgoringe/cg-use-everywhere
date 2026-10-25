@@ -1,4 +1,4 @@
-export const VERSION = "7.8"
+export const VERSION = "8.0"
 
 class Shared {
     constructor() {
