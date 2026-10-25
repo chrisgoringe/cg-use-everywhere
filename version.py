@@ -1,7 +1,7 @@
 import re, sys
 from pathlib import Path
 
-version = "8.0.1"
+version = Path("VERSION").read_text().strip()
 files   = [r"js/shared.js", "pyproject.toml", "__init__.py"]
 out_of_date = {}
 
