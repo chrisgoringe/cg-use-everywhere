@@ -488,6 +488,7 @@ The following people have contributed code or helpful discussions, without which
 - [bananasss00](https://github.com/bananasss00)
 - [JorgeR81](https://github.com/JorgeR81)
 - [kevgeoleo](https://github.com/kevgeoleo)
+- [Danamir](https://github.com/Danamir)
 
 Feel free to [make suggestions, or implement features](https://github.com/chrisgoringe/cg-use-everywhere/issues) to get your name added here!
 
