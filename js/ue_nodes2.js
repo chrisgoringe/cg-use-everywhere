@@ -50,11 +50,13 @@ export function nodes2_overlay(ctx) {
     if (!shared.linkRenderController.ue_list) return;
     ctx.save()
     app.canvas.ds.toCanvasContext(ctx)
+    const connected_widgets = new Map()
     visible_graph().nodes.forEach((node) => {
         n2_titlebar_additions(node, ctx)
         n2_highlight_connections(node, ctx)
-        n2_widgets(node)
+        n2_connected_widgets(node).forEach((widget) => connected_widgets.set(widget, node))
     });
+    n2_suppress_widgets(connected_widgets)
     ctx.restore()
 }
 
@@ -138,17 +140,27 @@ function n2_titlebar_additions(node, ctx) {
     ctx.restore()
 }
 
-function n2_widgets(node) {
-    const widgets = nodeElement(node)?.querySelector("div[data-testid='node-widgets']")
-    if (!widgets) return;
-    const connected = shared.linkRenderController.ue_list.all_connected_inputs(node)
-    Array.from(widgets.children).forEach((widget_el, index) => {
-        const input_el = widget_el.querySelector("input")
-        const widget   = node.widgets[index]
-        if (!input_el || !widget) return;
-        const wname = widget.label;
-        const inputindex = node.inputs.findIndex((input)=>(input.label==wname))
-        const connection = connected.find((uec)=>(uec.input_index==inputindex))
-        input_el.disabled = !!connection 
+function n2_connected_widgets(node) {
+    if (!node.widgets) return [];
+    return shared.linkRenderController.ue_list.all_connected_inputs(node)
+        .map((uec) => node.inputs[uec.input_index]?.name)
+        .map((name) => node.widgets.find((w)=>(w.name==name)))
+        .filter((widget) => widget)
+}
+
+/*
+A widget with a UE connection is shown like one with a real link: control hidden, socket kept.
+The front end resets connectionSuppressed from the real links whenever a node's links change,
+so it is set again on each draw, and updateComputedDisabled restores widgets that lost their UE connection.
+*/
+let suppressed_widgets = new Map()
+
+function n2_suppress_widgets(connected_widgets) {
+    suppressed_widgets.forEach((node, widget) => {
+        if (!connected_widgets.has(widget)) node.updateComputedDisabled?.()
     })
+    connected_widgets.forEach((node, widget) => {
+        if (!widget.connectionSuppressed) widget.connectionSuppressed = true
+    })
+    suppressed_widgets = connected_widgets
 }
