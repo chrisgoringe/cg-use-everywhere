@@ -252,7 +252,7 @@ app.registerExtension({
         - intercept graphToPrompt and queuePrompt so we know where we are
         - provide API
         */
-        const original_graphToPrompt = app.graphToPrompt;
+        const original_graphToPrompt = app.graphToPrompt.bind(app);
         app.graphToPrompt = async function () {
             try {
                 shared.in_graphToPrompt += 1
