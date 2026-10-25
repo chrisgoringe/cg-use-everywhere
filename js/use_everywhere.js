@@ -253,10 +253,11 @@ app.registerExtension({
         - provide API
         */
         const original_graphToPrompt = app.graphToPrompt.bind(app);
+        const ue_is_queueing = () => (shared.in_queuePrompt || !!app.processingQueue);
         app.graphToPrompt = async function () {
             try {
                 shared.in_graphToPrompt += 1
-                if (shared.in_queuePrompt || app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
+                if (ue_is_queueing() || app.ui.settings.getSettingValue("Use Everywhere.Options.always_modify_graph")) {
                     return await shared.graphAnalyser.call_function_with_modified_graph( original_graphToPrompt, arguments )
                 } else {
                     return await original_graphToPrompt.apply(this, arguments)

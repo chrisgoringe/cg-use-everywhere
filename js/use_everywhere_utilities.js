@@ -285,7 +285,7 @@ export function is_connected(input, treat_bypassed_as_live, graph) {
 Is this a UE node?
 */
 export function is_UEnode(node) {
-    const type = node.comfyClass;
+    const type = node.comfyClass || node.type;
     if (type == "Anything Everywhere") return true;
     return ((type) && (type.startsWith("Anything Everywhere") || type==="Seed Everywhere" || type==="Prompts Everywhere"))
 }
