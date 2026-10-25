@@ -1,7 +1,7 @@
 
 import { any_restrictions, describe_restrictions } from "./ue_properties.js";
 import { app } from "../../scripts/app.js";
-import { create } from "./use_everywhere_utilities.js";
+import { create, node_can_broadcast } from "./use_everywhere_utilities.js";
 import { edit_window } from "./floating_window.js";
 import { settingsCache } from "./use_everywhere_cache.js";
 import { shared } from "./shared.js";
@@ -39,7 +39,8 @@ function hide_tooltip() {
 
 function tooltipable(nodeover) {
     if (
-        (!nodeover)                                                    ||
+        (!nodeover)                                                          ||
+        (!node_can_broadcast(nodeover))                                      ||
         ( edit_window.style.display != 'none' )                              ||
         (!settingsCache.getSettingValue('Use Everywhere.Graphics.tooltips')) ||
         (!any_restrictions(nodeover))
