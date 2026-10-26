@@ -84,11 +84,10 @@ class UseEverywhere {
     }
     /*
     Does this broadcast match a given node,input?
-    Logic here is to run through a series of reasons why it would NOT match.
     */
-   type_match (input_type) {
+    type_match (input_type) {
         if (this.type==input_type) return true
-        if (this.type=="STRING" && input.type=="COMBO" && this.string_to_combo) return true
+        if (this.type=="STRING" && input_type=="COMBO" && this.string_to_combo) return true
         if (input_type=="*" && this.send_to_any) return true
         if (settingsCache.getSettingValue("Use Everywhere.Options.connect_to_flexible_inputs")) {
             if ((input_type.split(',')).find((t)=>t==this.type)) return true
