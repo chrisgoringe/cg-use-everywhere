@@ -4,7 +4,7 @@ import { Logger, is_UEnode, node_can_broadcast, is_able_to_broadcast, running_no
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
-import { i18ify_settings } from "./i18n.js";
+import { color_opt_list, group_opt_list, i18ify_settings, repeated_type_opt_list } from "./i18n.js";
 import { VERSION, shared } from "./shared.js";
 import { for_all_graphs } from "./recursive_callbacks.js";
 
@@ -14,6 +14,51 @@ const _SETTINGS = [
         name: `Version ${VERSION}`,
         type: () => {return document.createElement('span')},
     },  
+    {
+        id: "Use Everywhere.Defaults.applytounrepeated",
+        name: "Default setting for 'Apply to Unrepeated'",
+        type: "boolean",
+        defaultValue: false,
+        onChange: settingsCache.onSettingChange,
+    },  
+    {
+        id: "Use Everywhere.Defaults.sendtoany",
+        name: "Default setting for 'Send to Any'",
+        type: "boolean",
+        defaultValue: false,
+        onChange: settingsCache.onSettingChange,
+    },  
+    {
+        id: "Use Everywhere.Defaults.sendstringtocombos",
+        name: "Default setting for 'Send String to Combos'",
+        type: "boolean",
+        defaultValue: false,
+        onChange: settingsCache.onSettingChange,
+    }, 
+    {
+        id: "Use Everywhere.Defaults.repeatedtypes",
+        name: "Default setting for 'repeated types'",
+        type: "combo",
+        options: repeated_type_opt_list(),
+        defaultValue: 0,
+        onChange: settingsCache.onSettingChange,
+    },
+    {
+        id: "Use Everywhere.Defaults.group",
+        name: "Default setting for 'Group'",
+        type: "combo",
+        options: group_opt_list(),
+        defaultValue: 0,
+        onChange: settingsCache.onSettingChange,
+    },
+    {
+        id: "Use Everywhere.Defaults.color",
+        name: "Default setting for 'Color'",
+        type: "combo",
+        options: color_opt_list(),
+        defaultValue: 0,
+        onChange: settingsCache.onSettingChange,
+    },
     {
         id: "Use Everywhere.Graphics.showlinks",
         name: "Show links",

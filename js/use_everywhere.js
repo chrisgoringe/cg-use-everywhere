@@ -10,7 +10,7 @@ import { canvas_menu_settings, SETTINGS, add_extra_menu_items } from "./use_ever
 import { settingsCache } from "./use_everywhere_cache.js";
 import { convert_to_links } from "./use_everywhere_apply.js";
 import { visible_graph, fix_new_subgraph_node } from "./use_everywhere_subgraph_utils.js";
-import { setup_ue_properties_oncreate, setup_ue_properties_onload } from "./ue_properties.js";
+import { set_default_ue_properties, update_ue_properties_onload } from "./ue_properties.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
 import { language_changed } from "./i18n.js";
 import { input_changed, fix_inputs } from "./connections.js";
@@ -136,23 +136,14 @@ app.registerExtension({
 
     async nodeCreated(node) { // the node isn't part of the graph yet, so can't do anything involving id or links.
         add_methods_to_all_nodes(node)
-
         if (shared.graph_being_configured) return
-
-        if (is_UEnode(node)) {
-            setup_ue_properties_oncreate(node)
-        } else if (!node.properties.ue_properties) {
-            node.properties.ue_properties = { 
-                widget_ue_connectable : {}, 
-                input_ue_unconnectable : {} 
-            }
-        }
+        set_default_ue_properties(node)
     }, 
 
     // When a graph node is loaded convert it if needed
     loadedGraphNode(node) { 
         graphConverter.convert_if_pre_116(node);
-        setup_ue_properties_onload(node)
+        update_ue_properties_onload(node)
     },
 
 	async setup() {

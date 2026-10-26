@@ -37,10 +37,9 @@ Drop [this workflow](docs/UE_example.json) into Comfy, and take a look at how it
 
 ## Known issues with Nodes 2.0
 
-See [8.0.1 issues list](https://github.com/chrisgoringe/cg-use-everywhere/milestone/23)
+These are caused by bugs or feature regressions in Nodes 2.0
 - Can't rename inputs and outputs any more. [471](https://github.com/chrisgoringe/cg-use-everywhere/issues/471)
   - Work around - turn node into a subgraph and rename internally. 
-- Exporting doesn't work. [458](https://github.com/chrisgoringe/cg-use-everywhere/issues/458)
 - The UE connectable submenu closes every time you change something. [450](https://github.com/chrisgoringe/cg-use-everywhere/issues/450)
 
 ## How do I get positive and negative conditionings to work?
@@ -58,6 +57,12 @@ Nodes which dynamically work out their data type are a real problem that isn't w
 Yes. See Combo Clone node [here](https://github.com/chrisgoringe/cg-use-everywhere/tree/main#special-case-nodes).
 
 # Recent Changes
+
+## 8.0.1
+
+- A number of minor fixes thanks to PRs [476](https://github.com/chrisgoringe/cg-use-everywhere/pull/476), [477](https://github.com/chrisgoringe/cg-use-everywhere/pull/477), [478](https://github.com/chrisgoringe/cg-use-everywhere/pull/478)
+- New global option allow connection to inputs which have more than one type (eg. numbers which can take INT or FLOAT). On by default, turn off if it causes you problems
+- New global defaults for new nodes (default values of various things in the restrictions dialog)
 
 ## 8.0
 

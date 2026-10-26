@@ -4,7 +4,6 @@ export var REPEATED_TYPE_OPTIONS;
 export var GROUP_RESTRICTION_OPTIONS;
 export var COLOR_RESTRICTION_OPTIONS;
 
-
 var _FUNCTIONAL = null
 var _FUNCTIONAL_REGEX = null
 
@@ -17,13 +16,23 @@ const _DISPLAY = {
     }
 }
 
+function opt_list(l) {
+    const lst = []
+    l.forEach((t,v)=>{lst.push({value:v, text:t})})
+    return lst
+}
+
+export function repeated_type_opt_list() { return opt_list(REPEATED_TYPE_OPTIONS) }
+export function group_opt_list() { return opt_list(GROUP_RESTRICTION_OPTIONS) }
+export function color_opt_list() { return opt_list(COLOR_RESTRICTION_OPTIONS) }
+
 function DISPLAY(v, lang) { return _DISPLAY[lang || current_language()]?.[v] || _DISPLAY['en'][v] || v }
 
 function current_language() {
     return app.ui.settings.getSettingValue('Comfy.Locale')
 }
 
-export function language_changed(is_now, was_before) {
+export function language_changed() {
     _FUNCTIONAL = null
     _FUNCTIONAL_REGEX = null
 
@@ -105,3 +114,5 @@ const toTitleCase = (phrase) => {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 };
+
+language_changed()
