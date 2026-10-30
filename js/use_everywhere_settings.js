@@ -250,7 +250,11 @@ function show_broadcasting(submenu_root, node) {
 
 function toggle_broadcasting(node, output_name){
     const p = node.properties.ue_properties
-    p.output_not_broadcasting[output_name] = !!!p.output_not_broadcasting[output_name]
+    p.output_not_broadcasting[output_name] = output_broadcasting(node, output_name)
+}
+
+function output_broadcasting(node, output_name) {
+    return !node.properties.ue_properties.output_not_broadcasting[output_name]
 }
 
 function output_ue_submenu(value, options, e, menu, node) {
@@ -258,14 +262,22 @@ function output_ue_submenu(value, options, e, menu, node) {
     if (!(node.properties.ue_properties.output_not_broadcasting)) node.properties.ue_properties.output_not_broadcasting = {};
     
     const label_to_name = {}
-    node.outputs.forEach((output) => {label_to_name[output.label || output.name] = output.name})
+    node.outputs.forEach((output) => { 
+        var label = output.label || output.name
+        if (running_nodes2()) {
+            label = (output_broadcasting(node, output.name) ? "☑ " : "☐ ") + label
+        } 
+        label_to_name[label] = output.name 
+    });
+
     const submenu = new LiteGraph.ContextMenu(
         Object.keys(label_to_name),
         { event: e, callback: function (label) { 
+            const parentElement = this?.parentElement 
             const name = label_to_name[label];
             toggle_broadcasting(node, name);
             shared.linkRenderController.mark_link_list_outdated();
-            show_broadcasting(this.parentElement, node)
+            show_broadcasting(parentElement, node)
             return true; // keep open
         },
         parentMenu: menu, node:node}
