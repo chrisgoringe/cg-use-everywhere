@@ -23,7 +23,7 @@ export function addMouseEvents(node) {
     if (!element) return Logger.log_info(`Could not find node element for ${node.id}`)
     if (element._ue_mouse_events_for_nodes2_added) return Logger.log_detail(`Already added`)
     
-    Logger.log_info(`adding MouseEvents for ${node.id}`)
+    Logger.log_detail(`adding MouseEvents for ${node.id}`)
     element.addEventListener("mouseenter", () => {
         node.mouseOver = true
         shared.mouseOverNode = node

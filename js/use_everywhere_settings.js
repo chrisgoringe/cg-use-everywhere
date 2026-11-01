@@ -4,7 +4,7 @@ import { Logger, is_UEnode, node_can_broadcast, is_able_to_broadcast, running_no
 import { settingsCache } from "./use_everywhere_cache.js";
 import { visible_graph } from "./use_everywhere_subgraph_utils.js";
 import { edit_restrictions } from "./ue_properties_editor.js";
-import { i18ify_settings } from "./i18n.js";
+import { color_opt_list, group_opt_list, i18ify_settings, repeated_type_opt_list } from "./i18n.js";
 import { VERSION, shared } from "./shared.js";
 import { for_all_graphs } from "./recursive_callbacks.js";
 
@@ -14,6 +14,51 @@ const _SETTINGS = [
         name: `Version ${VERSION}`,
         type: () => {return document.createElement('span')},
     },  
+    {
+        id: "Use Everywhere.Defaults.applytounrepeated",
+        name: "Default setting for 'Apply to Unrepeated'",
+        type: "boolean",
+        defaultValue: false,
+        onChange: settingsCache.onSettingChange,
+    },  
+    {
+        id: "Use Everywhere.Defaults.sendtoany",
+        name: "Default setting for 'Send to Any'",
+        type: "boolean",
+        defaultValue: false,
+        onChange: settingsCache.onSettingChange,
+    },  
+    {
+        id: "Use Everywhere.Defaults.sendstringtocombos",
+        name: "Default setting for 'Send String to Combos'",
+        type: "boolean",
+        defaultValue: false,
+        onChange: settingsCache.onSettingChange,
+    }, 
+    {
+        id: "Use Everywhere.Defaults.repeatedtypes",
+        name: "Default setting for 'repeated types'",
+        type: "combo",
+        options: repeated_type_opt_list(),
+        defaultValue: 0,
+        onChange: settingsCache.onSettingChange,
+    },
+    {
+        id: "Use Everywhere.Defaults.group",
+        name: "Default setting for 'Group'",
+        type: "combo",
+        options: group_opt_list(),
+        defaultValue: 0,
+        onChange: settingsCache.onSettingChange,
+    },
+    {
+        id: "Use Everywhere.Defaults.color",
+        name: "Default setting for 'Color'",
+        type: "combo",
+        options: color_opt_list(),
+        defaultValue: 0,
+        onChange: settingsCache.onSettingChange,
+    },
     {
         id: "Use Everywhere.Graphics.showlinks",
         name: "Show links",
@@ -75,6 +120,14 @@ const _SETTINGS = [
         defaultValue: true,
         onChange: settingsCache.onSettingChange,
         tooltip: "By default UE links are made to the node downstream of bypassed nodes."
+    },
+    {
+        id: "Use Everywhere.Options.connect_to_flexible_inputs",
+        name: "Connect if type matches any input option",
+        type: "boolean",
+        defaultValue: true,
+        onChange: settingsCache.onSettingChange,
+        tooltip: "If off, 'INT' doesn't link to 'FLOAT,INT'. Note that this setting doesn't imply connection to an 'ANY', that is controlled on a case by case basis"
     },
     {
         id: "Use Everywhere.Options.logging",
@@ -197,7 +250,11 @@ function show_broadcasting(submenu_root, node) {
 
 function toggle_broadcasting(node, output_name){
     const p = node.properties.ue_properties
-    p.output_not_broadcasting[output_name] = !!!p.output_not_broadcasting[output_name]
+    p.output_not_broadcasting[output_name] = output_broadcasting(node, output_name)
+}
+
+function output_broadcasting(node, output_name) {
+    return !node.properties.ue_properties.output_not_broadcasting[output_name]
 }
 
 function output_ue_submenu(value, options, e, menu, node) {
@@ -205,14 +262,22 @@ function output_ue_submenu(value, options, e, menu, node) {
     if (!(node.properties.ue_properties.output_not_broadcasting)) node.properties.ue_properties.output_not_broadcasting = {};
     
     const label_to_name = {}
-    node.outputs.forEach((output) => {label_to_name[output.label || output.name] = output.name})
+    node.outputs.forEach((output) => { 
+        var label = output.label || output.name
+        if (running_nodes2()) {
+            label = (output_broadcasting(node, output.name) ? "☑ " : "☐ ") + label
+        } 
+        label_to_name[label] = output.name 
+    });
+
     const submenu = new LiteGraph.ContextMenu(
         Object.keys(label_to_name),
         { event: e, callback: function (label) { 
+            const parentElement = this?.parentElement 
             const name = label_to_name[label];
             toggle_broadcasting(node, name);
             shared.linkRenderController.mark_link_list_outdated();
-            show_broadcasting(this.parentElement, node)
+            show_broadcasting(parentElement, node)
             return true; // keep open
         },
         parentMenu: menu, node:node}

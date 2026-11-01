@@ -71,12 +71,7 @@ class GraphAnalyser extends Pausable {
     analyse_graph(graph, ignore_pause) {
         if (this.paused() && !ignore_pause) return null
 
-        /* work around known bug in ComfyUI front end that doesn't clean up the linkIds
-        https://github.com/Comfy-Org/ComfyUI_frontend/issues/5673#issuecomment-3314310014
-
-        Fixed? Doesn't seems to be.
-        https://github.com/Comfy-Org/ComfyUI_frontend/pull/6258 */
-        
+        prune_dangling_links(graph)
 
         this.clean_slots(graph.links, graph.inputNode?.slots)
         this.clean_slots(graph.links, graph.outputNode?.slots)  
@@ -130,6 +125,26 @@ class GraphAnalyser extends Pausable {
         this.latest_ues = ues;
         return this.latest_ues;
     }
+}
+
+function prune_dangling_links(graph) {
+    if (!graph || !graph.links) return
+    const origin_of = (link) => (link.origin_id !== undefined) ? link.origin_id : link?._state?.originNodeId
+    const to_remove = []
+    for (const key of Object.keys(graph.links)) {
+        const link = graph.links[key]
+        if (!link) continue
+        const oid = origin_of(link)
+        if (oid === undefined || oid === null) continue
+        if (String(oid) === "-10" || String(oid) === "-20") continue  // subgraph input/output pseudo nodes
+        if (!graph.getNodeById(oid)) to_remove.push(key)
+    }
+    to_remove.forEach((key)=>{
+        try { graph.removeLink(Number(key)) }
+        catch (e) { try { delete graph.links[key] } catch (e2) {} }
+    })
+    if (to_remove.length) Logger.log_info(`Removed ${to_remove.length} dangling link(s)`)
+    return to_remove
 }
 
 export { GraphAnalyser }

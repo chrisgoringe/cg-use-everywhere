@@ -3,6 +3,7 @@ import { i18n, i18n_functional, GROUP_RESTRICTION_OPTIONS, COLOR_RESTRICTION_OPT
 import { shared } from "./shared.js";
 import { fix_inputs } from "./connections.js";
 import { VERSION } from "./shared.js";
+import { settingsCache } from "./use_everywhere_cache.js";
 
 const ALL_REGEXES = ['title', 'input', 'prompt', 'negative', 'group']
 
@@ -58,41 +59,46 @@ export function default_priority(node) {
 }
 
 const DEFAULT_PROPERTIES = {
-                    version               : VERSION,
-                    group_restricted      : 0,
-                    color_restricted      : 0,
-                    widget_ue_connectable : {},
-                    input_ue_unconnectable : {},
-                    title_regex           : null,
-                    input_regex           : null,
-                    group_regex           : null,
-                    title_regex_invert    : false,
-                    input_regex_invert    : false,
-                    group_regex_invert    : false,
-                    priority              : undefined,
-                    repeated_type_rule    : 0,
-                    apply_to_unrepeated   : 0,
-                    string_to_combo       : 0,
-                    send_to_any           : 0
-                }
+    version               : VERSION,
+    widget_ue_connectable : {},
+    input_ue_unconnectable: {},
+    title_regex           : null,
+    input_regex           : null,
+    group_regex           : null,
+    title_regex_invert    : false,
+    input_regex_invert    : false,
+    group_regex_invert    : false,
+    priority              : undefined,
+}
+
+
 
 /*
-Called whenever any node is created.
-
-If the graph is still being configured, then that means the node is being created as part of a load.
-In that case the properties need to be set later, in setup_ue_properties_onload
+Called whenever any node is created. If it is being loaded, properties will be set later, 
+overwriting these defaults
 */
-export function setup_ue_properties_oncreate(node) {
-    if (shared.graph_being_configured) return
+export function set_default_ue_properties(node) {
     if (!node.properties) node.properties = {}
     node.properties.ue_properties = {...DEFAULT_PROPERTIES}
+    node.properties.ue_properties.apply_to_unrepeated =
+        settingsCache.getSettingValue("Use Everywhere.Defaults.applytounrepeated") ? 1 : 0
+    node.properties.ue_properties.send_to_any = 
+        settingsCache.getSettingValue("Use Everywhere.Defaults.sendtoany") ? 1 : 0
+    node.properties.ue_properties.string_to_combo = 
+        settingsCache.getSettingValue("Use Everywhere.Defaults.sendstringtocombos") ? 1 : 0
+    node.properties.ue_properties.repeated_type_rule =
+        settingsCache.getSettingValue("Use Everywhere.Defaults.repeatedtypes")
+    node.properties.ue_properties.group_restricted =
+        settingsCache.getSettingValue("Use Everywhere.Defaults.group")
+    node.properties.ue_properties.color_restricted =
+        settingsCache.getSettingValue("Use Everywhere.Defaults.color")
     convert_node_types(node)
 }
 
 /*
 Convert node properties when loaded.
 */
-export function setup_ue_properties_onload(node) {
+export function update_ue_properties_onload(node) {
     if (!node.properties?.ue_properties) node.properties.ue_properties = {}
     if ( !version_at_least(node.properties?.ue_properties?.version, "7.0") ) {
         if (is_UEnode(node)) {
@@ -124,6 +130,9 @@ export function setup_ue_properties_onload(node) {
 
 }
 
+/*
+Convert legacy UE node types
+*/
 function convert_node_types(node) {
     if (!is_UEnode(node)) return
 
