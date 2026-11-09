@@ -1,4 +1,4 @@
-export const VERSION = "8.0.1"  // sync:version
+export const VERSION = "8.0.2"  // sync:version
 
 class Shared {
     constructor() {
