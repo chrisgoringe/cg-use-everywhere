@@ -371,8 +371,12 @@ function add_input_and_output_settings(options, node) {
     }
 }
 
+/**
+ * remove all UE nodes from the graph, and remove broadcasting from all other nodes.
+ */
 function remove_ue_nodes(graph) {
     graph._nodes.filter((node)=>is_UEnode(node)).forEach((node)=>{graph.remove(node)})
+    graph._nodes.forEach((node)=>{ node.properties.ue_convert = false })
 }
 
 export function canvas_menu_settings() {
