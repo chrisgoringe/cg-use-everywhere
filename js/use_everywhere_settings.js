@@ -7,6 +7,8 @@ import { edit_restrictions } from "./ue_properties_editor.js";
 import { color_opt_list, group_opt_list, i18ify_settings, repeated_type_opt_list } from "./i18n.js";
 import { VERSION, shared } from "./shared.js";
 import { for_all_graphs } from "./recursive_callbacks.js";
+import { SHOW_LINKS } from "./constants.js";
+
 
 const _SETTINGS = [
     {
@@ -63,7 +65,12 @@ const _SETTINGS = [
         id: "Use Everywhere.Graphics.showlinks",
         name: "Show links",
         type: "combo",
-        options: [ {value:0, text:"All off"}, {value:1, text:"Selected nodes"}, {value:2, text:"Mouseover node"}, {value:3, text:"Selected and mouseover nodes"}, {value:4, text:"All on"}],
+        options: [ 
+            {value:SHOW_LINKS.OFF,                     text:"All off"}, 
+            {value:SHOW_LINKS.SELECTED,                text:"Selected nodes"}, 
+            {value:SHOW_LINKS.MOUSE_OVER,              text:"Mouseover node"}, 
+            {value:SHOW_LINKS.SELECTED_AND_MOUSE_OVER, text:"Selected and mouseover nodes"}, 
+            {value:SHOW_LINKS.ON,                      text:"All on"}],
         defaultValue: 3,
         onChange: settingsCache.onSettingChange,
     },      
