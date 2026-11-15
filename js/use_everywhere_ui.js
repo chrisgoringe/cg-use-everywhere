@@ -119,7 +119,10 @@ export class LinkRenderController extends Pausable {
 
     node_over_changed() {
         const mode = settingsCache.getSettingValue('Use Everywhere.Graphics.showlinks');
-        if (mode==2 || mode==3) app.canvas.setDirty(true,true)
+        if (mode==2 || mode==3) {
+            this.mark_link_list_outdated()
+            app.canvas.setDirty(true,true)
+        }
     }
     
     // memory reuse
