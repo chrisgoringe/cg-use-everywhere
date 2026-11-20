@@ -158,6 +158,7 @@ app.registerExtension({
         /* if we are on version 1.16 or later, stash input data to convert nodes when they are loaded */
         //if (graphConverter.running_116_plus()) {
             const original_loadGraphData = app.loadGraphData;
+
             app.loadGraphData = async function (data) {
                 try {
                     graphConverter.store_node_input_map(data);
@@ -166,9 +167,11 @@ app.registerExtension({
                 if (settingsCache.getSettingValue("Use Everywhere.Options.block_graph_validation")) {
                     app.ui.settings.setSettingValue("Comfy.Validation.Workflows", false);
                 }
-                await original_loadGraphData.apply(this, arguments);
-                app.ui.settings.setSettingValue("Comfy.Validation.Workflows", cvw_was);
-                //return v;
+                try {
+                    return await original_loadGraphData.apply(this, arguments);
+                } finally {
+                    app.ui.settings.setSettingValue("Comfy.Validation.Workflows", cvw_was);
+                }
             }
         //}
         
