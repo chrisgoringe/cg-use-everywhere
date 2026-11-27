@@ -33,6 +33,13 @@ export class FloatingWindow extends HTMLElement {
         const tt = document.getElementById('ue_tooltip')
         if (tt) tt.style.display = 'none' 
         if (this.firstFocusable) requestAnimationFrame(() => this.firstFocusable.focus())
+        const r = this.getBoundingClientRect();
+        if (r.bottom > window.innerHeight) {
+            this.move_to(this.position.x, this.position.y -(r.bottom-window.innerHeight))
+        }
+        if (r.right > window.innerWidth) {
+            this.move_to(this.position.x - (r.right-window.innerWidth), this.position.y)
+        }
     }
     hide() { this.style.display = 'none' }
 

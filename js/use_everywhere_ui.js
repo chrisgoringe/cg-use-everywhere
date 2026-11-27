@@ -6,6 +6,7 @@ import { maybe_show_tooltip } from "./tooltip_window.js";
 import { is_connectable } from "./use_everywhere_settings.js";
 import { shared } from "./shared.js";
 import { titlebar_color } from "./ue_shared_ui.js";
+import { SHOW_LINKS, TITLE_BAR_PIXELS } from "./constants.js";
 
 export function nodes_in_my_group(node) {
     const nodes_in = new Set();
@@ -77,23 +78,15 @@ export function nodes_not_my_color(node, already_limited_to) {
     return [...nodes_in];
 }
 
-export function title_bar_additions(node, ctx, title_height=30) {
+export function title_bar_additions(node, ctx) {
     if (node_can_broadcast(node)) {
-        const color = titlebar_color(node)
-
-        const offset_x = (node.subgraph) ?  5 :  5
-        const offset_y = (node.subgraph) ?  4 :  5
-        const width    = (node.subgraph) ? 24 : 20
-        const height   = (node.subgraph) ? 23 : 20
-        const radius   = (node.subgraph) ?  6 :  6
-
-        const line_w   = (node.subgraph) ?  1 :  2
+        const pixels = (node.subgraph) ?  TITLE_BAR_PIXELS.SUBGRAPH : TITLE_BAR_PIXELS.NORMAL
 
         ctx.save();
-        ctx.lineWidth = line_w;
-        ctx.strokeStyle = color;
+        ctx.lineWidth = pixels.line_w;
+        ctx.strokeStyle = titlebar_color(node);
         ctx.beginPath();
-        ctx.roundRect(offset_x, offset_y-title_height, width, height, radius);
+        ctx.roundRect(pixels.offset_x, pixels.offset_y-pixels.title_height, pixels.width, pixels.height, pixels.radius);
         ctx.stroke();
         ctx.restore();
     }
@@ -119,7 +112,10 @@ export class LinkRenderController extends Pausable {
 
     node_over_changed() {
         const mode = settingsCache.getSettingValue('Use Everywhere.Graphics.showlinks');
-        if (mode==2 || mode==3) app.canvas.setDirty(true,true)
+        if (mode==SHOW_LINKS.MOUSE_OVER || mode==SHOW_LINKS.SELECTED_AND_MOUSE_OVER) {
+            this.mark_link_list_outdated()
+            app.canvas.setDirty(true,true)
+        }
     }
     
     // memory reuse

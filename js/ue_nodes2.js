@@ -11,8 +11,8 @@ function nodeElement(node) {
     return document.querySelector(`div[data-node-id='${node.id}']`)
 }
 
-function headerElement(node) {
-    return nodeElement(node)?.querySelector(`div[data-testid="node-header-${node.id}"]`)
+function bodyElement(node, nodeElement) {
+    return nodeElement?.querySelector(`div[data-testid="node-body-${node.id}"]`)
 }
 
 export function addMouseEvents(node) {
@@ -34,15 +34,20 @@ export function addMouseEvents(node) {
         shared.mouseOverNode = null
         shared.linkRenderController.node_over_changed()
     })
-    const header = headerElement(node)
-    element.addEventListener("click", (e) => {
-        if (e.detail==2) {
-            if (header?.contains(e.target)) return; 
-            if (node_can_broadcast(node)) {
-                edit_restrictions(node)
-            } 
-        }
-    })
+
+    const body = bodyElement(node, element)
+    if (body?.childNodes) {
+        Array.from(body.childNodes)
+            .filter((c)=>(c.nodeName=='DIV'))
+            .filter((c)=>(!c.classList.contains('lg-node-widgets')))
+            .forEach((elem)=>{
+                elem.addEventListener("click", (e) => {
+                    if (e.detail==2 && node_can_broadcast(node)) edit_restrictions(node)
+                })
+            }
+        )
+    }
+
     element._ue_mouse_events_for_nodes2_added = true
 }
 
