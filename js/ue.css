@@ -61,8 +61,9 @@
 
     span.ue_properties_title {
         text-align: right;
-        flex-grow: 1;
         padding-right: 4px;
+        width: 180px;
+        display: block;
     }
 
     .ue_properties_title::after {
@@ -70,10 +71,10 @@
     }
 
     .ue_properties_cell {
-        flex-grow: 0;
-        width: 250px
+        width: 300px;
+        display: block;
+        select { width: 90%; }
     }
-
 
     .ue_editor_footer {
         margin: 8px;
@@ -84,7 +85,7 @@
 
     .regex_input_container {
         display: flex;
-        width: 100%;
+        margin-right: 4px;
         justify-content: space-between;
         input {
             flex-grow: 1;
